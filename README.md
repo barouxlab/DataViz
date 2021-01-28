@@ -24,19 +24,16 @@ The graphical user interface uses the imported data and allows a user to produce
 
 ## Running the Application
 
-Running the application only requires inputting the following two lines of R code into an R system (version 4):
-
-From the GitHub Repository:
+To run this application, download/clone the repository using:
+```
+git clone https://github.com/barouxlab/DataViz.git
+```
+Then run the following lines from an R session located in the directory that contains the repo:
 ```
 if(!"shiny" %in% rownames(installed.packages())) install.packages("shiny"); library(shiny)
-runGitHub("DataViz", "barouxlab")
+runApp("DataViz")
 ```
-
-Or, if you clone the repsitory locally, run the following from the directory that contains the repo:
-```
-if(!"shiny" %in% rownames(installed.packages())) install.packages("shiny"); library(shiny)
-runApp("barouxlab-dataviz")
-```
+If you have any questions, please contact [Devin Routh](mailto:devin.routh@uzh.ch).
 
 ## File Notes
 If interacting with the repository files, the following notes may be helpful:
