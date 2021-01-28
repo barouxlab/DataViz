@@ -23,8 +23,12 @@ The data cleaning part uses a custom written R script that can accept either a Z
 The graphical user interface allows a user to produce 1-D and 2-D plots (e.g., boxplots and scatterplots, respectively) from the image segmentation data. The GUI also guides users into data subsetting and filtering for custom analyses.
 
 ## Running the Application
-
-To run this application, download/clone the repository using:
+The application can be run via the following two lines of code inputted from within an R session:
+```
+if(!"shiny" %in% rownames(installed.packages())) install.packages("shiny"); library(shiny)
+runUrl("https://github.com/barouxlab/DataViz/archive/main.zip")
+```
+To run DataViz from downloaded files, clone the repository using:
 ```
 git clone https://github.com/barouxlab/DataViz.git
 ```
