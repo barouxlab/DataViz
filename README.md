@@ -1,10 +1,10 @@
 # DataViz
 
 DataViz is an R-Shiny application that visualizes image segmentation data from [Imaris](https://imaris.oxinst.com/). 
-Originally developped to analyse dataset from segmented 3D nuclei images, it can be used for other Imaris data with similar objects and statistics.
+Originally developed to analyse datasets from segmented 3D nuclei images, it can also be applied to other Imaris data with similar objects and statistics.
 It can be used by anyone with a computer capable of running the [R language for Statistical Computing].(https://www.r-project.org/about.html).
 
-Dataviz was conceived by [Dr. Célia Baroux](https://www.botinst.uzh.ch/en/research/development/celiabaroux.html) and developed by [Devin Routh](https://www.zi.uzh.ch/en/teaching-and-research/science-it.html) at the University of Zürich.
+DataViz was conceived by [Dr. Célia Baroux](https://www.botinst.uzh.ch/en/research/development/celiabaroux.html) and developed by [Devin Routh](https://www.zi.uzh.ch/en/teaching-and-research/science-it.html) at the University of Zürich.
 
 The development process of DataViz is ongoing, so check back again for updates.
 
@@ -14,13 +14,13 @@ DataViz has two principal parts:
 - a data cleaning, harmonization, and processing pathway;
 - a graphical user interface for sub-selecting and visualizing Imaris segmented data;
 
-Dataviz can thus be used to clean, harmonize, subset/filter data as well as produce publication quality plots and graphics with state-of-the-art plotting packages.
+DataViz can thus be used to clean, harmonize, subset/filter data as well as produce publication quality plots and graphics with state-of-the-art plotting packages.
 
 ### Data Cleaning
 The data cleaning part uses a custom written R script that can accept either a Zip or CSV file input. The inputted files must include Imaris data, and both input formats require a specific structure/schema. See the example files (exampleCSV.csv and example_data_S3IT.zip) to ascertain the required structure and schema.
 
 ### Graphical User Interface (GUI)
-The graphical user interface uses the imported data and allows a user to produce 1-D and 2-D plots (e.g., boxplots and scatterplots, respectively) from the image segmentation data. The GUI also guides users into data subsetting and filtering for custom analysis.
+The graphical user interface allows a user to produce 1-D and 2-D plots (e.g., boxplots and scatterplots, respectively) from the image segmentation data. The GUI also guides users into data subsetting and filtering for custom analyses.
 
 ## Running the Application
 
