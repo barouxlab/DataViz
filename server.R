@@ -365,8 +365,8 @@ server = function(input, output, session) {
     observeEvent(input$downloadRefinedPlots,{
         showModal(
             modalDialog(
-                numericInput("plotWidth","Plot Width (in cm)",value=10),
-                numericInput("plotHeight","Plot Height (in cm)",value=10),
+                numericInput("plotWidthForDownload","Plot Width (in cm)",value=10),
+                numericInput("plotHeightForDownload","Plot Height (in cm)",value=10),
                 numericInput("plotResolution","Plot Resolution (in DPI)",value=72),
                 downloadButton("downloadHistograms","Download Histograms"),
                 downloadButton("downloadKDEs","Download KDE's"),
@@ -382,7 +382,7 @@ server = function(input, output, session) {
         },
         content = function(file) {
             req(histoRefined())
-            ggsave(file,plot=histoRefined(),device='png',width=input$plotWidth,height=input$plotHeight,units="cm",dpi=input$plotResolution)
+            ggsave(file,plot=histoRefined(),device='png',width=input$plotWidthForDownload,height=input$plotHeightForDownload,units="cm",dpi=input$plotResolution)
         }
     )
     
@@ -392,7 +392,7 @@ server = function(input, output, session) {
         },
         content = function(file) {
             req(kdeRefined())
-            ggsave(file,plot=kdeRefined(),device='png',width=input$plotWidth,height=input$plotHeight,units="cm",dpi=input$plotResolution)
+            ggsave(file,plot=kdeRefined(),device='png',width=input$plotWidthForDownload,height=input$plotHeightForDownload,units="cm",dpi=input$plotResolution)
         }
     )
     
@@ -402,7 +402,7 @@ server = function(input, output, session) {
         },
         content = function(file) {
             req(boxplotRefined())
-            ggsave(file,plot=boxplotRefined(),device='png',width=input$plotWidth,height=input$plotHeight,units="cm",dpi=input$plotResolution)
+            ggsave(file,plot=boxplotRefined(),device='png',width=input$plotWidthForDownload,height=input$plotHeightForDownload,units="cm",dpi=input$plotResolution)
         }
     )
     
