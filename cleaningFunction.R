@@ -79,7 +79,8 @@ cleaningFunction = function(inputTopLevelDirectory){
 
     # Join all of the separate files, make final relocations of columns, and make final column edits (data types, names, etc.).
     finalData = suppressMessages(dataToCat %>% reduce(full_join)) %>% relocate(c("ImageID","Treatment","Genotype")) %>%
-                               rename(`Image File` = ImageID, `Object ID` = ID, `Image Subset` = Image)
+                               rename(`Image File`=ImageID, `Object ID`=ID, `Image Subset`=Image) #%>%
+                               #relocate(c("Image Subset","Time"),.after=last_col())
     finalData$Channel = as.character(finalData$Channel)
     finalData$`Object ID` = as.character(finalData$`Object ID`)
     

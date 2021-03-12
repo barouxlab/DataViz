@@ -8,6 +8,7 @@ processingFunction = function(importedData){
     # These values are filled because the data itself should not be missing for subsequent operations.
     # Moreover, the names of variables (e.g., "Nucleus center of mass") are unified.
     importedData$`Surpass Object`[importedData$`Surpass Object`=="Nucleus_centre_of_mass"] = "Nucleus center of mass"
+    importedData$`Surpass Object`[importedData$`Surpass Object`=="Nucleus Center of Mass"] = "Nucleus center of mass"
     importedData$`Shortest Distance to Surfaces`[importedData$`Surpass Object`=="Nucleus center of mass"] = 0.05
     
     # Filter out any group that doesn't have a nucleus center of mass object or where Channel is NA
@@ -34,9 +35,20 @@ processingFunction = function(importedData){
     # added here.
     # !! For now, the channel ratios are set to be 2:1; future iterations of the code could automate these variables
     # to use any number of channels.
-    postProcessedData = dataWithNormedSumMeanStdDevSDtS  %>% group_by(`Image File`,`Object ID`,`Surpass Object`) %>%
+    dataWithRatios = dataWithNormedSumMeanStdDevSDtS  %>% group_by(`Image File`,
+                                                                      `Object ID`,
+                                                                      `Surpass Object`,
+                                                                      `Shortest Distance to Surfaces`) %>%
                         mutate("Normalized Intensity Sum Ratio Ch2:Ch1" = (`Normalized Intensity Sum`[which(`Channel`==2)])/(`Normalized Intensity Sum`[which(`Channel`==1)])) %>%
                         mutate("Normalized Intensity Mean Ratio Ch2:Ch1" = (`Normalized Intensity Mean`[which(`Channel`==2)])/(`Normalized Intensity Mean`[which(`Channel`==1)])) %>% ungroup()
+    
+    # Add a "Signal Density" variable
+    postProcessedData = dataWithRatios %>% group_by(`Image File`,
+                                                    `Object ID`,
+                                                    `Surpass Object`,
+                                                    `Channel`,
+                                                    `Shortest Distance to Surfaces`) %>%
+                                            mutate("Signal Density" = `Normalized Intensity Sum`/`Volume`)
     
     return(postProcessedData)
 }

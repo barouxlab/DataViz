@@ -118,7 +118,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                          ),
                                          tabPanel("Layout",
                                                   numericInput("numColumns","# of Plot Columns in Layout",value=2,min=1,max=100,step=1),
-                                                  sliderInput("plotHeight",label="Plot height",ticks=FALSE,min=200,max=2000,value=600,step=5)
+                                                  sliderInput("plotHeight",label="Plot height",ticks=FALSE,min=50,max=500,value=150,step=5)
                                                  ),
                                          tabPanel("Themes",
                                                   selectInput("theme",label=h4("Select theme for plots"),choices=names(themesForPlotting),selected=names(themesForPlotting)[4])
@@ -129,7 +129,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                  )
                                         )
                          ),
-                         mainPanel(
+                         mainPanel(style = "overflow-y: auto;",
                              tabsetPanel(type = "tabs",
                                          tabPanel("Directions",
                                                   p(""),
@@ -141,10 +141,11 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   p("6. If you refilter the data, follow the same steps 1-5.")
                                                  ),
                                          tabPanel("Histograms",
-                                                  plotOutput("histoRefined")),
+                                                  plotOutput("histoRefined"),
+                                                  plotOutput("histoRefinedPercentage")),
                                          tabPanel("Density Plots",
                                                   plotOutput("kdeRefined"),
-                                                  plotOutput("kdeRefinedSplit")),
+                                                  plotOutput("kdeRefinedPercentage")),
                                          tabPanel("Boxplots",
                                                   plotOutput("boxplotRefined")),
                                          tabPanel("Outliers",
