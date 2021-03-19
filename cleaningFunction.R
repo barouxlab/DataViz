@@ -39,7 +39,7 @@ cleaningFunction = function(inputTopLevelDirectory){
         # These strings determine which columns of the raw data will be kept. If a column from the 
         # original / unzipped data contains one of these strings, it will be included as a column
         # in the cleaned data.
-        stringIndicators = "Intensity|Category|Channel|Image|Surpass|Time|ID|Overall|Position|Shortest|Sphericity|Volume"
+        stringIndicators = "Intensity|Category|Channel|Image|Surpass|Time|ID|Overall|Position|Shortest|Surfaces|Sphericity|Volume|Area|Average|Diameter|Distance|Ellipticity"
     
         # Join each of the data frames together.
         # !! Optionally: don't suppress the messages for the read.csv function.
@@ -77,10 +77,26 @@ cleaningFunction = function(inputTopLevelDirectory){
     # Apply the function to all of the files in each of the specified directories.
     dataToCat = suppressMessages(lapply(subDirectoriesOfInterest,analyzeLowestDir))
 
-    # Join all of the separate files, make final relocations of columns, and make final column edits (data types, names, etc.).
-    finalData = suppressMessages(dataToCat %>% reduce(full_join)) %>% relocate(c("ImageID","Treatment","Genotype")) %>%
-                               rename(`Image File`=ImageID, `Object ID`=ID, `Image Subset`=Image) #%>%
-                               #relocate(c("Image Subset","Time"),.after=last_col())
+    # Join all of the separate files and make name edits as necessary
+    dataToPivot = suppressMessages(dataToCat %>% reduce(full_join)) %>% relocate(c("ImageID","Treatment","Genotype")) %>%
+                               rename(`Image File`=ImageID, `Object ID`=ID, `Image Subset`=Image)
+    
+    # Pivot the data from long to wide format, coalesce the data frame to merge jagged rows, and
+    # relocate the data as necessary with final data type casts
+    
+    # Make a coalesce by column function for the coalesce step
+    coalesce_by_column = function(df) {
+        return(dplyr::coalesce(!!! as.list(df)))
+    }
+    
+    dataToCoalesce = dataToPivot %>% distinct() %>%
+                    pivot_wider(names_from="Surfaces",values_from="Shortest Distance to Surfaces",names_prefix="Shortest Distance to ")
+    
+    finalData = dataToCoalesce %>%
+                               group_by(`Image File`,`Treatment`,`Object ID`,`Category`,`Channel`,`Surpass Object`) %>% 
+                               summarise_all(coalesce_by_column) %>% dplyr::select(-c(`Shortest Distance to NA`)) %>%
+                               relocate(c("Image Subset","Time"),.after=last_col()) %>% ungroup()
+    
     finalData$Channel = as.character(finalData$Channel)
     finalData$`Object ID` = as.character(finalData$`Object ID`)
     

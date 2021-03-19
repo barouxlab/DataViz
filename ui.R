@@ -1,11 +1,10 @@
 # Instantiate the UI function
 ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
-                tabPanel("Landing Page",
-                         sidebarPanel(
-                             actionButton("uploadFile", "Upload Data"),
-                             actionButton("processButton", "Process Data"),
+                header = tagList(add_busy_spinner(spin = "fading-circle", color = "#FFF", margins = c(0, 10))),
+                tabPanel("Getting Started",
+                         mainPanel(
                              p(""),
-                             p("Upload the data as a prepared CSV or Zip file, then press the 'Process Data' button to begin.",
+                             p("Use the Import tab to load a prepared CSV or Zip file, then press the 'Import Data' button to begin.",
                                style = "font-family: 'arial'; font-si30pt"),
                              p("A data table will generated; this is the processed data created from the cleaned data. For a reference to the cleaning and processing steps, look in the 'Further Information' tab.",
                                style = "font-family: 'arial'; font-si30pt"),
@@ -16,22 +15,45 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              p("The Data Integrity check gives various details on the completeness and cleanliness of the inputted data.",
                                style = "font-family: 'arial'; font-si30pt"),
                              p("Final note: depending on the power of your computer, various features may take a few seconds to load or render. In general, press a button and wait a few seconds before proceeding.",
-                               style = "font-family: 'arial'; font-si30pt"),
+                               style = "font-family: 'arial'; font-si30pt")
+                        )
+                         ),
+                tabPanel("Import",
+                         sidebarPanel(
+                             fileInput("inputFile", "Import Zip or CSV file", accept = c(".zip",".csv")),
+                             actionButton("confirmUpload", "Import Data"),
+                             p(""),
+                             p("Press the 'Import Data' button after selecting your file of interest."),
+                             p(""),
+                             p("Note: the progress spinner will continually run until you press the 'Import Data' button and the cleaning pipeline has run to completion. If you do not press 'Import Data', the pipeline will not start and the progress spinner will run indefinitely.")
                          ),
                          mainPanel(
                              tabsetPanel(type = "tabs",
-                                         tabPanel("Table",dataTableOutput("processedTableToView")),
+                                         tabPanel("Table",dataTableOutput("cleanedTableToView")),
                                          tabPanel("Data Integrity",verbatimTextOutput("integrityTest_TextResults"),
                                                   p("Below is a table showing the Image and Object ID's of records that have NA in the Channel",
                                                    style = "font-family: 'arial'; font-si30pt"),
                                                   dataTableOutput("integrityTest_NAChannelTable"))
                                         )
                          )
+                        ),
+                tabPanel("Process (Optional)",
+                         sidebarPanel(
+                             actionButton("processButton", "Process Data")
                          ),
-                tabPanel("Data Filtering",
+                         mainPanel(
+                             tabPanel("Table",dataTableOutput("processedTableToView"))
+                         )
+                        ),
+                tabPanel("Select",
                          sidebarPanel(
                              style = "position: fixed; height: 90vh; overflow-y: auto;",
                              actionButton("filterButton", "Filter Data"),
+                             radioButtons(inputId = "dataToSelect",
+                                          "Dataset for Selection",
+                                          c("Raw Data"="rawData"),
+                                          selected = "rawData"
+                                         ),
                              p(""),
                              p("Select the options for filtering then press \"Filter Data\".",
                               style = "font-family: 'arial'; font-si30pt"),

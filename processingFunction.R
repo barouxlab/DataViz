@@ -9,7 +9,7 @@ processingFunction = function(importedData){
     # Moreover, the names of variables (e.g., "Nucleus center of mass") are unified.
     importedData$`Surpass Object`[importedData$`Surpass Object`=="Nucleus_centre_of_mass"] = "Nucleus center of mass"
     importedData$`Surpass Object`[importedData$`Surpass Object`=="Nucleus Center of Mass"] = "Nucleus center of mass"
-    importedData$`Shortest Distance to Surfaces`[importedData$`Surpass Object`=="Nucleus center of mass"] = 0.05
+    importedData$`Shortest Distance to Nucleus`[importedData$`Surpass Object`=="Nucleus center of mass"] = 0.05
     
     # Filter out any group that doesn't have a nucleus center of mass object or where Channel is NA
     dataToProcess = importedData %>% group_by(`Image File`) %>% filter(any(`Surpass Object`=="Nucleus center of mass")) %>%
@@ -28,8 +28,10 @@ processingFunction = function(importedData){
         mutate("Normalized Intensity StdDev" = `Intensity StdDev`/`Intensity Mean`) %>% ungroup()
     
     # The "Normalized Shortest Distance to Surfaces" variable is added here, using the data from each "Nucleus Center of Mass observation"
+    # !! This is an area of development as there are, potentially, multiple types of surfaces that 
+    # !! can be handled by this computation
     dataWithNormedSumMeanStdDevSDtS = dataWithNormedSumMeanStdDev %>% group_by(`Image File`,Channel) %>%
-        mutate("Normalized Shortest Distance to Surfaces" = `Shortest Distance to Surfaces`/`Shortest Distance to Surfaces`[which(`Surpass Object`=="Nucleus center of mass")])  %>% ungroup()
+        mutate("Normalized Shortest Distance to Nucleus" = `Shortest Distance to Nucleus`/`Shortest Distance to Nucleus`[which(`Surpass Object`=="Nucleus center of mass")])  %>% ungroup()
     
     # The "Normalized Intensity Sum Ratio Ch2:Ch1" and "Normalized Intensity Mean Ratio Ch2:Ch1" variables are
     # added here.
@@ -37,8 +39,7 @@ processingFunction = function(importedData){
     # to use any number of channels.
     dataWithRatios = dataWithNormedSumMeanStdDevSDtS  %>% group_by(`Image File`,
                                                                       `Object ID`,
-                                                                      `Surpass Object`,
-                                                                      `Shortest Distance to Surfaces`) %>%
+                                                                      `Surpass Object`) %>%
                         mutate("Normalized Intensity Sum Ratio Ch2:Ch1" = (`Normalized Intensity Sum`[which(`Channel`==2)])/(`Normalized Intensity Sum`[which(`Channel`==1)])) %>%
                         mutate("Normalized Intensity Mean Ratio Ch2:Ch1" = (`Normalized Intensity Mean`[which(`Channel`==2)])/(`Normalized Intensity Mean`[which(`Channel`==1)])) %>% ungroup()
     
@@ -46,10 +47,12 @@ processingFunction = function(importedData){
     postProcessedData = dataWithRatios %>% group_by(`Image File`,
                                                     `Object ID`,
                                                     `Surpass Object`,
-                                                    `Channel`,
-                                                    `Shortest Distance to Surfaces`) %>%
+                                                    `Channel`) %>%
                                             mutate("Signal Density" = `Normalized Intensity Sum`/`Volume`)
     
-    return(postProcessedData)
+    # Relocate the Image Subset and Time variables
+    finalDataToReturn = postProcessedData %>% relocate(c("Image Subset","Time"),.after=last_col())
+    
+    return(finalDataToReturn)
 }
 

@@ -1,6 +1,6 @@
 # Load the libraries that are used
 if(!'pacman' %in% rownames(installed.packages())) install.packages('pacman')
-pacman::p_load(shiny,tictoc,DT,data.table,tidyverse,shinythemes,skimr,htmlTable,RColorBrewer,tools,ggpubr)
+pacman::p_load(shiny,tictoc,DT,data.table,tidyverse,shinythemes,skimr,htmlTable,RColorBrewer,tools,ggpubr,shinybusy)
 
 # Adjust other options and load processing data functions
 options(shiny.maxRequestSize=500*1024^2)

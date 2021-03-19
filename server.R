@@ -1,23 +1,6 @@
 # Instantiate the server side function
 server = function(input, output, session) {
     
-    # Open an upload window for the zip file when the application initiates
-    observeEvent(input$uploadFile,{
-        showModal(
-            modalDialog(
-                fileInput("inputFile", "Upload Zip or CSV file", accept = c(".zip",".csv")),
-                title = 'Upload the zipped collection of files',
-                easyClose = TRUE,
-                footer = NULL,
-                fade = FALSE)
-        )
-    })
-    
-    # Remove the window when the file upload is selected
-    observeEvent(input$inputFile, {
-        removeModal(session)
-    })
-    
     # Clean the data after uploading
     cleanedData = reactive({
         if(is.null(input$inputFile)){
@@ -35,6 +18,7 @@ server = function(input, output, session) {
                 importedData$`Object ID` = as.character(importedData$`Object ID`)
                 importedData$`Channel` = as.character(importedData$`Channel`)
                 importedData$`Time` = as.numeric(importedData$`Time`)
+                importedData[["Channel"]][is.na(importedData[["Channel"]])] = "NA"
                 cleanedData = as_tibble(importedData)
                 return(cleanedData)
             }
@@ -42,9 +26,14 @@ server = function(input, output, session) {
     })
     
     # Run a data integrity test
-    integData = eventReactive(input$processButton,{
+    integData = eventReactive(input$confirmUpload,{
         dataToCheck = cleanedData()
         return(dataToCheck)
+    })
+    
+    # Output the processed data table as a function of the inputs given in the user interface above
+    output$cleanedTableToView = renderDataTable({
+        DT::datatable(integData(), extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
     })
     
     output$integrityTest_TextResults = renderPrint({
@@ -94,20 +83,21 @@ server = function(input, output, session) {
         req(cleanedData())
         dataToProcess = cleanedData()
         processedData = processingFunction(dataToProcess)
+        updateRadioButtons(session,"dataToSelect",choices=c("Raw Data"="rawData","Processed Data"="processedData"))
         return(processedData)
     })
     
     
     # Create an observe() call to complete the checkbox items once the data is uploaded, unzipped, cleaned, and processed
     observe({
-        subsettableData = processedData()
+        subsettableData = cleanedData()
         updateCheckboxGroupInput(session, "cOI", choices = levels(as.factor(subsettableData[["Category"]])), selected = levels(as.factor(subsettableData[["Category"]])))
         updateCheckboxGroupInput(session, "sOOI", choices = levels(as.factor(subsettableData[["Surpass Object"]])), selected = levels(as.factor(subsettableData[["Surpass Object"]])))
         imageLevelsForFiltering <<- levels(as.factor(subsettableData[["Image File"]]))
         updateCheckboxGroupInput(session, "nROI", choices = levels(as.factor(subsettableData[["Image File"]])), selected = levels(as.factor(subsettableData[["Image File"]])))
         updateCheckboxGroupInput(session, "lDOI", choices = levels(as.factor(subsettableData[["Treatment"]])), selected = levels(as.factor(subsettableData[["Treatment"]])))
         updateCheckboxGroupInput(session, "eOI", choices = levels(as.factor(subsettableData[["Genotype"]])), selected = levels(as.factor(subsettableData[["Genotype"]])))
-        updateCheckboxGroupInput(session, "chOI", choices = unique(subsettableData[["Channel"]]), selected = unique(subsettableData[["Channel"]]))
+        updateCheckboxGroupInput(session, "chOI", choices = levels(as.factor(subsettableData[["Channel"]])), selected = levels(as.factor(subsettableData[["Channel"]])))
     })
     
     # Create an observe() call for the select/clear all option in the image filtering area
@@ -127,26 +117,31 @@ server = function(input, output, session) {
     # Instantiate the reactive variable
     filteredDataset = eventReactive(input$filterButton,{
         # Turn the imported data into a format that can be filtered and subsetted
-        subsettableData = processedData()
+        if (input$dataToSelect == "rawData"){
+            subsettableData = cleanedData()
+        }
+        else if (input$dataToSelect == "processedData"){
+            subsettableData = processedData()
+        }
          # Apply the filters to the data (from the checkbox)
-        subsettableData %>% dplyr::filter(`Category` %in% input$cOI) %>%
-        dplyr::filter(`Surpass Object` %in% input$sOOI) %>%
-        dplyr::filter(`Image File` %in% input$nROI) %>%
-        dplyr::filter(`Treatment` %in% input$lDOI) %>%
-        dplyr::filter(`Genotype` %in% input$eOI) %>%
-        dplyr::filter(`Channel` %in% input$chOI)
+        filteredData = subsettableData %>% dplyr::filter(`Category` %in% input$cOI) %>% dplyr::filter(`Surpass Object` %in% input$sOOI) %>% dplyr::filter(`Image File` %in% input$nROI) %>% dplyr::filter(`Treatment` %in% input$lDOI) %>% dplyr::filter(`Genotype` %in% input$eOI) %>% dplyr::filter(`Channel` %in% input$chOI)
+        
+        return(filteredData)
     },ignoreNULL=TRUE)
     
     # Create an observe() call to complete the select input items for plotting
     observe({
-        subsettableData = processedData()
-        updateSelectInput(session, "catVariableForFill", choices = colnames(subsettableData), selected = NULL)
-        updateSelectInput(session, "singleConVariable", choices = colnames(subsettableData), selected = NULL)
-        updateSelectInput(session, "catVariableForSplitting", choices = colnames(subsettableData), selected = NULL)
-        updateSelectInput(session, "scatterX", choices = colnames(subsettableData), selected = NULL)
-        updateSelectInput(session, "scatterY", choices = colnames(subsettableData), selected = NULL)
-        updateSelectInput(session, "scatterCatColor", choices = colnames(subsettableData), selected = NULL)
-        updateSelectInput(session, "scatterCatFacet", choices = colnames(subsettableData), selected = NULL)
+        subsettableData = filteredDataset()
+        l = sapply(subsettableData, class)
+        categoricalVars = names(l[str_which(l,pattern="character")])
+        continuousVars = names(l[str_which(l,pattern="numeric")])
+        updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = NULL)
+        updateSelectInput(session, "singleConVariable", choices = continuousVars, selected = NULL)
+        updateSelectInput(session, "catVariableForSplitting", choices = categoricalVars, selected = NULL)
+        updateSelectInput(session, "scatterX", choices = continuousVars, selected = NULL)
+        updateSelectInput(session, "scatterY", choices = continuousVars, selected = NULL)
+        updateSelectInput(session, "scatterCatColor", choices = categoricalVars, selected = NULL)
+        updateSelectInput(session, "scatterCatFacet", choices = categoricalVars, selected = NULL)
     })
     
     # Output the filtered data table as a function of the inputs given in the user interface above
@@ -286,7 +281,12 @@ server = function(input, output, session) {
     observe({
         dataForPlotParams = densityDataToHistoBox()
         
-        kde = ggplot(dataForPlotParams,aes(x=!!sym(input$singleConVariable),color=!!sym(input$catVariableForFill))) + geom_density(adjust=0.9) + ylab("Density")
+        # Isolate the inputs so that only pressing the Reset Parameters button will trigger the changes
+        singleConVariable = isolate(input$singleConVariable)
+        catVariableForFill = isolate(input$catVariableForFill)
+        numOfBinsRefined = isolate(input$numOfBinsRefined)
+        
+        kde = ggplot(dataForPlotParams,aes(x=!!sym(singleConVariable),color=!!sym(catVariableForFill))) + geom_density(adjust=0.9) + ylab("Density")
         xRangeKDE <<- ggplot_build(kde)$layout$panel_params[[1]]$x.range
         yRangeKDE <<- ggplot_build(kde)$layout$panel_params[[1]]$y.range
         updateNumericInput(session,"xLLKDE",value=xRangeKDE[1])
@@ -294,14 +294,14 @@ server = function(input, output, session) {
         updateNumericInput(session,"yLLKDE",value=yRangeKDE[1])
         updateNumericInput(session,"yULKDE",value=yRangeKDE[2])
         
-        histogram = ggplot(dataForPlotParams,aes(x=!!sym(input$singleConVariable),color=!!sym(input$catVariableForFill))) + 
-        geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + facet_wrap(as.formula(paste("~", paste("`",input$catVariableForFill,"`",sep=""))))
+        histogram = ggplot(dataForPlotParams,aes(x=!!sym(singleConVariable),color=!!sym(catVariableForFill))) + 
+        geom_histogram(bins=as.numeric(numOfBinsRefined)) + facet_wrap(as.formula(paste("~", paste("`",catVariableForFill,"`",sep=""))))
         xRangeHistogram <<- ggplot_build(histogram)$layout$panel_params[[1]]$x.range
         updateNumericInput(session,"xLLHistogram",value=xRangeHistogram[1])
         updateNumericInput(session,"xULHistogram",value=xRangeHistogram[2])
         
         dataForPlotParams = densityDataToHistoBox()
-        boxplot = ggplot(dataForPlotParams,aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),color=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = TRUE)
+        boxplot = ggplot(dataForPlotParams,aes(y=!!sym(singleConVariable),x=!!sym(catVariableForFill),color=!!sym(catVariableForFill))) + geom_boxplot(varwidth = FALSE)
         yRangeBoxplot <<- ggplot_build(boxplot)$layout$panel_params[[1]]$y.range
         updateNumericInput(session,"yLLBoxplot",value=yRangeBoxplot[1])
         updateNumericInput(session,"yULBoxplot",value=yRangeBoxplot[2])
@@ -378,7 +378,7 @@ server = function(input, output, session) {
     boxplotRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         data = densityDataToHistoBoxRefined()
-        boxplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = TRUE) +
+        boxplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = FALSE) +
         ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE)
         boxplot
     })

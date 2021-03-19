@@ -17,7 +17,7 @@ DataViz has two principal parts:
 DataViz can thus be used to clean, harmonize, subset/filter data as well as produce publication quality plots and graphics with state-of-the-art plotting packages.
 
 ### Data Cleaning
-The data cleaning part uses a custom written R script that can accept either a Zip or CSV file input. The inputted files must include Imaris data, and both input formats require a specific structure/schema. See the example files (exampleCSV.csv and example_data_S3IT.zip) to ascertain the required structure and schema.
+The data cleaning part uses a custom written R script that can accept either a Zip or CSV file input. The inputted files must include Imaris data, and both input formats require a specific structure/schema. See the example files to ascertain the required structure and schema.
 
 ### Graphical User Interface (GUI)
 The graphical user interface allows a user to produce 1-D and 2-D plots (e.g., boxplots and scatterplots, respectively) from the image segmentation data. The GUI also guides users into data subsetting and filtering for custom analyses.
