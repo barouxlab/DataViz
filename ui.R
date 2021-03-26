@@ -37,7 +37,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                         )
                          )
                         ),
-                tabPanel("Process (Optional)",
+                tabPanel("Process",
                          sidebarPanel(
                              actionButton("processButton", "Process Data")
                          ),
@@ -48,9 +48,9 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                 tabPanel("Select",
                          sidebarPanel(
                              style = "position: fixed; height: 90vh; overflow-y: auto;",
-                             actionButton("filterButton", "Filter Data"),
+                             actionButton("filterButton", "Select Data"),
                              radioButtons(inputId = "dataToSelect",
-                                          "Dataset for Selection",
+                                          h3("Dataset for Selection"),
                                           c("Raw Data"="rawData"),
                                           selected = "rawData"
                                          ),

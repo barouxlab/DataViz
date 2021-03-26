@@ -134,6 +134,7 @@ server = function(input, output, session) {
         subsettableData = filteredDataset()
         l = sapply(subsettableData, class)
         categoricalVars = names(l[str_which(l,pattern="character")])
+        categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
         continuousVars = names(l[str_which(l,pattern="numeric")])
         updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = NULL)
         updateSelectInput(session, "singleConVariable", choices = continuousVars, selected = NULL)
