@@ -2,42 +2,44 @@
 server = function(input, output, session) {
     
     # Clean the data after uploading
-    cleanedData = reactive({
+    inputtedData = reactive({
         if(is.null(input$inputFile)){
-            cleanedData = NULL
+            inputtedData = NULL
         } else{
-            if(file_ext(input$inputFile$name)=="zip"){
-                # Unzip the file once it's selected to a sub-directory (to be created) inside the working directory
-                tmpDirName = paste("TMP_",toString(abs(rnorm(1))*1e15),sep="")
-                unzip(input$inputFile$datapath, overwrite = TRUE, exdir = paste(getwd(),tmpDirName,sep="/"))
-                cleanedData = cleaningFunction(tmpDirName)
-                unlink(tmpDirName, recursive = TRUE)
-                return(cleanedData)
-            } else if(file_ext(input$inputFile$name)=="csv"){
-                importedData = read.csv(input$inputFile$datapath,check.names = FALSE)
-                importedData$`Object ID` = as.character(importedData$`Object ID`)
-                importedData$`Channel` = as.character(importedData$`Channel`)
-                importedData$`Time` = as.numeric(importedData$`Time`)
-                importedData[["Channel"]][is.na(importedData[["Channel"]])] = "NA"
-                cleanedData = as_tibble(importedData)
-                return(cleanedData)
-            }
+            inputtedData = input$inputFile
         }
     })
     
-    # Run a data integrity test
-    integData = eventReactive(input$confirmUpload,{
-        dataToCheck = cleanedData()
+    # Import the data
+    importedData = eventReactive(input$confirmUpload,{
+        dataToImport = inputtedData()
+        if(file_ext(dataToImport$name)=="zip"){
+            # Unzip the file once it's selected to a sub-directory (to be created) inside the working directory
+            tmpDirName = paste("TMP_",toString(abs(rnorm(1))*1e15),sep="")
+            unzip(dataToImport$datapath, overwrite = TRUE, exdir = paste(getwd(),tmpDirName,sep="/"))
+            inputtedDataToReturn = cleaningFunction(tmpDirName)
+            unlink(tmpDirName, recursive = TRUE)
+            return(inputtedDataToReturn)
+        } else if(file_ext(dataToImport$name)=="csv"){
+            importedData = read.csv(dataToImport$datapath,check.names = FALSE)
+            importedData$`Object ID` = as.character(importedData$`Object ID`)
+            importedData$`Channel` = as.character(importedData$`Channel`)
+            importedData$`Time` = as.numeric(importedData$`Time`)
+            importedData[["Channel"]][is.na(importedData[["Channel"]])] = "NA"
+            inputtedDataToReturn = as_tibble(importedData)
+            return(inputtedDataToReturn)
+        }
+            dataToCheck = inputtedDataToReturn
         return(dataToCheck)
     })
     
-    # Output the processed data table as a function of the inputs given in the user interface above
+    # Output the data table as a function of the inputs given in the user interface above
     output$cleanedTableToView = renderDataTable({
-        DT::datatable(integData(), extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
+        DT::datatable(importedData(), extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
     })
     
     output$integrityTest_TextResults = renderPrint({
-        dataToIntegrityCheck = integData()
+        dataToIntegrityCheck = importedData()
         
         # Determine which images have Surpass object values that are unexpected
         # Acceptable Surpass Object Levels are hard-coded here
@@ -71,26 +73,16 @@ server = function(input, output, session) {
     })
     
     output$integrityTest_NAChannelTable = renderDataTable({
-        dataToIntegrityCheck = integData()
+        dataToIntegrityCheck = importedData()
         # Find the Image and Object ID's with NA's in the channel
         findRecordsWithNAInChannel = dataToIntegrityCheck %>% filter(is.na(Channel))
         recordsWithNAChannel = findRecordsWithNAInChannel[,c("Image File","Object ID")]
         DT::datatable(recordsWithNAChannel, options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE))
     })
     
-    # Process the data
-    processedData = eventReactive(input$processButton,{
-        req(cleanedData())
-        dataToProcess = cleanedData()
-        processedData = processingFunction(dataToProcess)
-        updateRadioButtons(session,"dataToSelect",choices=c("Raw Data"="rawData","Processed Data"="processedData"))
-        return(processedData)
-    })
-    
-    
     # Create an observe() call to complete the checkbox items once the data is uploaded, unzipped, cleaned, and processed
     observe({
-        subsettableData = cleanedData()
+        subsettableData = importedData()
         updateCheckboxGroupInput(session, "cOI", choices = levels(as.factor(subsettableData[["Category"]])), selected = levels(as.factor(subsettableData[["Category"]])))
         updateCheckboxGroupInput(session, "sOOI", choices = levels(as.factor(subsettableData[["Surpass Object"]])), selected = levels(as.factor(subsettableData[["Surpass Object"]])))
         imageLevelsForFiltering <<- levels(as.factor(subsettableData[["Image File"]]))
@@ -108,17 +100,26 @@ server = function(input, output, session) {
         else
         {updateCheckboxGroupInput(session,"nROI",choices=imageLevelsForFiltering,selected=imageLevelsForFiltering)}
     })
-
+    
+    # Process the data
+    processedData = eventReactive(input$processButton,{
+        req(importedData())
+        dataToProcess = importedData()
+        processedDataToReturn = processingFunction(dataToProcess)
+        updateRadioButtons(session,"dataToSelect",choices=c("Raw Data"="rawData","Processed Data"="processedData"))
+        return(processedDataToReturn)
+    })
+    
     # Output the processed data table as a function of the inputs given in the user interface above
     output$processedTableToView = renderDataTable({
         DT::datatable(processedData(), extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
     })
     
-    # Instantiate the reactive variable
+    # Instantiate the reactive variable for filtering
     filteredDataset = eventReactive(input$filterButton,{
-        # Turn the imported data into a format that can be filtered and subsetted
+        # Turn the imported/processed data into a format that can be filtered and subsetted
         if (input$dataToSelect == "rawData"){
-            subsettableData = cleanedData()
+            subsettableData = importedData()
         }
         else if (input$dataToSelect == "processedData"){
             subsettableData = processedData()
