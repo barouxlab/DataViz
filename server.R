@@ -12,12 +12,17 @@ server = function(input, output, session) {
     
     # Import the data
     importedData = eventReactive(input$confirmUpload,{
+        req(inputtedData())
         dataToImport = inputtedData()
         if(file_ext(dataToImport$name)=="zip"){
             # Unzip the file once it's selected to a sub-directory (to be created) inside the working directory
             tmpDirName = paste("TMP_",toString(abs(rnorm(1))*1e15),sep="")
             unzip(dataToImport$datapath, overwrite = TRUE, exdir = paste(getwd(),tmpDirName,sep="/"))
             inputtedDataToReturn = cleaningFunction(tmpDirName)
+            inputtedDataToReturn$`Object ID` = as.character(inputtedDataToReturn$`Object ID`)
+            inputtedDataToReturn$`Channel` = as.character(inputtedDataToReturn$`Channel`)
+            inputtedDataToReturn$`Time` = as.numeric(inputtedDataToReturn$`Time`)
+            inputtedDataToReturn[["Channel"]][is.na(inputtedDataToReturn[["Channel"]])] = "NA"
             unlink(tmpDirName, recursive = TRUE)
             return(inputtedDataToReturn)
         } else if(file_ext(dataToImport$name)=="csv"){
@@ -33,6 +38,16 @@ server = function(input, output, session) {
         return(dataToCheck)
     })
     
+    # Create an option for a quick download of the raw data from a Zip upload
+    output$quickDownload = downloadHandler(
+        filename = function() {
+            paste(format(Sys.time(), "RawData_Date_%Y_%m_%d_Time_%H%M%S"), ".csv", sep = "")
+        },
+        content = function(file) {
+            write.csv(importedData(), file, row.names = FALSE)
+        }
+    )
+    
     # Output the data table as a function of the inputs given in the user interface above
     output$cleanedTableToView = renderDataTable({
         DT::datatable(importedData(), extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
@@ -41,25 +56,25 @@ server = function(input, output, session) {
     output$integrityTest_TextResults = renderPrint({
         dataToIntegrityCheck = importedData()
         
-        # Determine which images have Surpass object values that are unexpected
-        # Acceptable Surpass Object Levels are hard-coded here
+        # Determine which images have Object values that are unexpected
+        # Acceptable Object Levels are hard-coded here
         acceptableSOLevels = c('Nucleus','Nucleus center of mass','S2P')
-        extantSOLevels = unique(dataToIntegrityCheck$'Surpass Object')
+        extantSOLevels = unique(dataToIntegrityCheck$'Object')
         differenceSO = setdiff(extantSOLevels,acceptableSOLevels)
-        differenceDF_SO = as.data.frame(unique(dataToIntegrityCheck[dataToIntegrityCheck$`Surpass Object` %in% differenceSO,"Image File"]))[,1]
-        cat("Images with unexpected Surpass Objects: ",paste(differenceDF_SO,collapse=", "),"\n")
+        differenceDF_SO = as.data.frame(unique(dataToIntegrityCheck[dataToIntegrityCheck$`Object` %in% differenceSO,"Image File"]))[,1]
+        cat("Images with unexpected Objects: ",paste(differenceDF_SO,collapse=", "),"\n")
         cat("\n")
-        cat("Unexpected Surpass Object string: ",paste(differenceSO,collapse=", "),"\n")
+        cat("Unexpected Object string: ",paste(differenceSO,collapse=", "),"\n")
         cat("\n")
         
         # Find images lacking a nucleus center of mass object
-        findUniqueImagesWoNCoM = dataToIntegrityCheck %>% group_by(`Image File`) %>% filter(!any(`Surpass Object`=="Nucleus center of mass")) %>% ungroup()
+        findUniqueImagesWoNCoM = dataToIntegrityCheck %>% group_by(`Image File`) %>% filter(!any(`Object`=="Nucleus center of mass")) %>% ungroup()
         imagesWithOutNCoM = unique(findUniqueImagesWoNCoM$`Image File`)
         cat("Images without a Nucleus center of mass: ",paste(imagesWithOutNCoM,collapse=", "),"\n")
         cat("\n")
         
         # Find images lacking a nucleus object
-        findUniqueImagesWoNucleus = dataToIntegrityCheck %>% group_by(`Image File`) %>% filter(!any(`Surpass Object`=="Nucleus")) %>% ungroup()
+        findUniqueImagesWoNucleus = dataToIntegrityCheck %>% group_by(`Image File`) %>% filter(!any(`Object`=="Nucleus")) %>% ungroup()
         imagesWithOutNucleus = unique(findUniqueImagesWoNucleus$`Image File`)
         cat("Images without a Nucleus: ",paste(imagesWithOutNucleus,collapse=", "),"\n")
         cat("\n")
@@ -83,8 +98,7 @@ server = function(input, output, session) {
     # Create an observe() call to complete the checkbox items once the data is uploaded, unzipped, cleaned, and processed
     observe({
         subsettableData = importedData()
-        updateCheckboxGroupInput(session, "cOI", choices = levels(as.factor(subsettableData[["Category"]])), selected = levels(as.factor(subsettableData[["Category"]])))
-        updateCheckboxGroupInput(session, "sOOI", choices = levels(as.factor(subsettableData[["Surpass Object"]])), selected = levels(as.factor(subsettableData[["Surpass Object"]])))
+        updateCheckboxGroupInput(session, "sOOI", choices = levels(as.factor(subsettableData[["Object"]])), selected = levels(as.factor(subsettableData[["Object"]])))
         imageLevelsForFiltering <<- levels(as.factor(subsettableData[["Image File"]]))
         updateCheckboxGroupInput(session, "nROI", choices = levels(as.factor(subsettableData[["Image File"]])), selected = levels(as.factor(subsettableData[["Image File"]])))
         updateCheckboxGroupInput(session, "lDOI", choices = levels(as.factor(subsettableData[["Treatment"]])), selected = levels(as.factor(subsettableData[["Treatment"]])))
@@ -105,10 +119,27 @@ server = function(input, output, session) {
     processedData = eventReactive(input$processButton,{
         req(importedData())
         dataToProcess = importedData()
-        processedDataToReturn = processingFunction(dataToProcess)
+        processedData = processingFunction(dataToProcess)
+        processedDataToReturn = processedData
         updateRadioButtons(session,"dataToSelect",choices=c("Raw Data"="rawData","Processed Data"="processedData"))
         return(processedDataToReturn)
     })
+    
+    processedDataCheckpoint = reactive({
+        req(processedData())
+        processedDataCheckpoint = processedData()
+        return(processedDataCheckpoint)
+    })
+    
+    # Create an option for a quick download of the processed data
+    output$quickProcDownload = downloadHandler(
+        filename = function() {
+            paste(format(Sys.time(), "ProcessedData_Date_%Y_%m_%d_Time_%H%M%S"), ".csv", sep = "")
+        },
+        content = function(file) {
+            write.csv(processedDataCheckpoint(), file, row.names = FALSE)
+        }
+    )
     
     # Output the processed data table as a function of the inputs given in the user interface above
     output$processedTableToView = renderDataTable({
@@ -125,7 +156,7 @@ server = function(input, output, session) {
             subsettableData = processedData()
         }
          # Apply the filters to the data (from the checkbox)
-        filteredData = subsettableData %>% dplyr::filter(`Category` %in% input$cOI) %>% dplyr::filter(`Surpass Object` %in% input$sOOI) %>% dplyr::filter(`Image File` %in% input$nROI) %>% dplyr::filter(`Treatment` %in% input$lDOI) %>% dplyr::filter(`Genotype` %in% input$eOI) %>% dplyr::filter(`Channel` %in% input$chOI)
+        filteredData = subsettableData %>% dplyr::filter(`Object` %in% input$sOOI) %>% dplyr::filter(`Image File` %in% input$nROI) %>% dplyr::filter(`Treatment` %in% input$lDOI) %>% dplyr::filter(`Genotype` %in% input$eOI) %>% dplyr::filter(`Channel` %in% input$chOI)
         
         return(filteredData)
     },ignoreNULL=TRUE)
@@ -328,7 +359,9 @@ server = function(input, output, session) {
         data = densityDataToHistoBoxRefined()
         histogramCount = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) +
         geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Count") +
-        xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE)
+        xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
+        theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         histogramCount
     })
     
@@ -342,7 +375,9 @@ server = function(input, output, session) {
         data = densityDataToHistoBoxRefined()
         histogramPercentage = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) +
         geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
-        xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE)
+        xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
+        theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         histogramPercentage
     })
     
@@ -355,7 +390,9 @@ server = function(input, output, session) {
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         data = densityDataToHistoBoxRefined()
         kdeSplit = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) + geom_density() + ylab("Density") +
-        xlim(input$xLLKDE,input$xULKDE) + ylim(input$yLLKDE,input$yULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE)
+        xlim(input$xLLKDE,input$xULKDE) + ylim(input$yLLKDE,input$yULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
+        theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         kdeSplit
     })
     
@@ -368,7 +405,9 @@ server = function(input, output, session) {
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         data = densityDataToHistoBoxRefined()
         kdeSplitPercentage = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) + geom_density(stat='bin',bins=as.numeric(input$numOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
-        xlim(input$xLLKDE,input$xULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE)
+        xlim(input$xLLKDE,input$xULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
+        theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         kdeSplitPercentage
     })
     
@@ -381,7 +420,9 @@ server = function(input, output, session) {
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         data = densityDataToHistoBoxRefined()
         boxplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = FALSE) +
-        ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE)
+        ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
+        theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         boxplot
     })
     
@@ -440,7 +481,7 @@ server = function(input, output, session) {
     # Once the category is selected for histograms, boxplots, and KDE's, update the selection of levels based on that variable
     observe({
         subsettableData = filteredDataset()
-        updateSelectInput(session, "outlierLevel",choices = levels(as.factor(subsettableData[[input$catVariableForFill]])), selected = NULL)
+        updateCheckboxGroupInput(session, "outlierLevel",choices = levels(as.factor(subsettableData[[input$catVariableForFill]])), selected = NULL)
     })
     
     generatedOutliers = eventReactive(input$generateOutliers,{
@@ -494,9 +535,15 @@ server = function(input, output, session) {
     },ignoreNULL=TRUE)
     
     scatterPlot = reactive({
+        req(densityDataToScatter())
         listOfColors = as.list(strsplit(input$scatterplotHexStrings, ",")[[1]])
-        ggplot(densityDataToScatter(),aes(y=!!sym(input$scatterY),x=!!sym(input$scatterX),color=!!sym(input$scatterCatColor))) + geom_point() + facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE) +
-        xlim(input$xLLScatter,input$xULScatter) + ylim(input$yLLScatter,input$yULScatter) + scatterplotTheme() + scale_color_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")}))
+        ggplot(densityDataToScatter(),aes(y=!!sym(input$scatterY),x=!!sym(input$scatterX),color=!!sym(input$scatterCatColor))) +
+        geom_point(alpha=input$scatterplotTransparency) +
+        facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE) +
+        xlim(input$xLLScatter,input$xULScatter) + ylim(input$yLLScatter,input$yULScatter) + scatterplotTheme() +
+        scale_color_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) +
+        theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
     })
     
     output$scatter = renderPlot({

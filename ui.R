@@ -25,12 +25,15 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                          sidebarPanel(
                              fileInput("inputFile", "Upload a Zip or CSV file", accept = c(".zip",".csv")),
                              actionButton("confirmUpload", "Import Data"),
+                             downloadButton("quickDownload", "Download Data"),
                              p(""),
-                             p("Press the 'Import Data' button after selecting/uploading your file of interest."),
+                             p("Press the \"Import Data\" button after selecting/uploading your file of interest."),
                              p(""),
                              p("Either a zipped file of raw Imaris tables can be selected or a CSV of pre-processed data."),
                              p(""),
-                             p("Note: because ZIP files are cleaned upon import, and thus they will take longer to appear. CSV file imports will be much faster.")
+                             p("Note: because Zip files are cleaned upon import they will take longer to appear. CSV file imports will be much faster."),
+                             p(""),
+                             p("Recommended workflow: upload your Zip file and allow it to be cleaned during the import process, then immediately download the data using the \"Download Data\" button. You can then re-upload the CSV very quickly (bypassing the cleaning pipeline).")
                          ),
                          mainPanel(
                              tabsetPanel(type = "tabs",
@@ -45,10 +48,11 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                 tabPanel("Process",
                          sidebarPanel(
                              actionButton("processButton", "Process Data"),
+                             downloadButton("quickProcDownload", "Download Data"),
                              p(""),
-                             p("Press the 'Process Data' button if you would like to add normalized variables to your dataset."),
-                             p("The data will appear in a table when the processing pipeline has finished. You will then be able to select the processed version of the data within the 'Filtering' tab."),
-           p("See the FAQ page for more details about this processing pipeline.")                  
+                             p("Data processing is an optional step that adds normalized variables such as: Normalized intensity sum, mean, and stdev; Normalized shortest distance to nucleus; Normalised intensity ratio (ch2:ch1); Group intensity sum, mean, and stdev; Signal density (normalized intensity sum: volume)."),
+                             p("After pressing the \"Process Data\" button, the data will appear in a table when the processing pipeline has finished. You will then be able to select the processed version of the data within the \"Filtering\" tab."),
+           p("See the FAQ section for more details.")                  
                          ),
                          mainPanel(
                              tabPanel("Table",dataTableOutput("processedTableToView"))
@@ -56,19 +60,18 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                         ),
                 tabPanel("Select",
                          sidebarPanel(
-                             style = "position: fixed; height: 90vh; overflow-y: auto;",
                              actionButton("filterButton", "Select Data"),
+                             p(""),
+                             p("Select the options for filtering then press \"Select Data\"."),
+                             p("Note: there is the possibility to plot data per treatment separately."),
+                             p(""),
                              radioButtons(inputId = "dataToSelect",
                                           h3("Dataset for Selection"),
                                           c("Raw Data"="rawData"),
                                           selected = "rawData"
                                          ),
-                             p(""),
-                             p("Select the options for filtering then press \"Filter Data\".",
-                              style = "font-family: 'arial'; font-si30pt"),
-                             checkboxGroupInput(inputId = "cOI",h3("Categories")),
                              checkboxGroupInput(inputId = "chOI",h3("Channel")),
-                             checkboxGroupInput(inputId = "sOOI",h3("Surpass Objects")),
+                             checkboxGroupInput(inputId = "sOOI",h3("Object (Type)")),
                              checkboxGroupInput(inputId = "lDOI",h3("Treatment")),
                              checkboxGroupInput(inputId = "eOI",h3("Genotypes")),
                              checkboxGroupInput(inputId = "nROI",h3("Image File")),
@@ -182,9 +185,11 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   plotOutput("boxplotRefined")),
                                          tabPanel("Outliers",
                                                   h3("Outliers for Selected Level"),
-                                                  selectInput(inputId="outlierLevel",h4("Category Level"),choices = list("Generate Plots First"="Genotype"),selected = "Genotype"),
+                                                  checkboxGroupInput(inputId="outlierLevel",h4("Category / Color by Level")),
                                                   actionButton("generateOutliers","Generate Outliers for Selected Variable"),
+                                                  p(""),
                                                   verbatimTextOutput("outlierText"),
+                                                  p(""),
                                                   dataTableOutput("outlierTable")
                                                  )
                                         )
@@ -238,7 +243,10 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                          tabPanel("Colors",
                                                   selectInput("scatterplotChosenPalette",label=h4("Select color palette"),choices=row.names(colorDF),selected="Custom"),
                                                   textInput("scatterplotHexStrings",label="Optionally edit the colors",value=toString(colorDF["Custom","hexcodes"][[1]]))
-                                                 )
+                                                 ),
+                                         tabPanel("Transparency",
+                                                  numericInput("scatterplotTransparency",label="Alpha",value=0.9,min=0,max=1,step=0.05)
+                                         )
                                          
                              )
                          ),
@@ -247,10 +255,10 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                          tabPanel("Directions",
                                                   p("1. Choose x and y variables."),
                                                   p("2. Choose categorical variables for color and splitting."),
-                                                  p("3. Press 'Generate Scatterplot'."),
+                                                  p("3. Press 'Update Parameters' then 'Generate Scatterplot'."),
                                                   p("4. Customize the x and y axis limits in the 'Parameters' tab."),
-                                                  p("5. Customize the number of plots of lane and size of plots via the 'Layout' tab."),
-                                                  p("6. Customize the color palette and background color via the 'color' and 'Themes' tabs."),
+                                                  p("5. Customize the number, layout, and size of plots via the 'Layout' tab."),
+                                                  p("6. Customize the color palette and background color via the 'Colors' and 'Themes' tabs."),
                                                   p("7.  Explore your data by choosing different x and y variables, select 'Update Parameters' and 'Generate plots' each time a new variable is chosen, this will update the plotting parameters.
 "),
                                                   p("Note: the 'Update Parameters' button will provide you with plotting parameters that are updated for your current data selection. Use this to guide your initial parameter set (e.g., x and y axes limits.)"),
@@ -298,7 +306,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              h4("What is involved in the 'Processing' step?"),
                              p("The data processing step refers to taking the inputted CSV/table (either the result of the cleaning function or a CSV table formatted to the same schema) and adding new variables of interest to the dataset; e.g., the normalized variables. The processingFunction.R script shows all processing steps in code with paired annotations. The processing step is cued by the 'Process Data' button on the Landing Page."),
                              h4("What is the 'Data Integrity' check on the Landing Page?"),
-                                 p("The 'Data Integrity' check on the landing page refers to a specific set of tests performed on the processed data. It is currently coded within the 'server.R' script. Currenty, the test includes checking for images that have miscoded Surpass Object values (e.g., mispelle strings), checking if images are missing nucleus center of mass and nucleus objects, and identifying columns with values that are totally missing. The accepted spelling of Surpass Object types are hard-coded within the server.R script."),
+                                 p("The 'Data Integrity' check on the landing page refers to a specific set of tests performed on the processed data. It is currently coded within the 'server.R' script. Currenty, the test includes checking for images that have miscoded Object values (e.g., mispelle strings), checking if images are missing nucleus center of mass and nucleus objects, and identifying columns with values that are totally missing. The accepted spelling of Object types are hard-coded within the server.R script."),
 #                              h4("Acknowledgements"),
 #                              p("This tool was made possible by funding and support from Dr. Célia Baroux. Conceptual development involved Dr. Célia Baroux, Devin Routh, and Dr. Philip Shemella. Principal Software Development involved Devin Routh and Dr. Philip Shemella."),
 #                              h4("Affiliations"),

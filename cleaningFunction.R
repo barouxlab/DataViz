@@ -39,7 +39,7 @@ cleaningFunction = function(inputTopLevelDirectory){
         # These strings determine which columns of the raw data will be kept. If a column from the 
         # original / unzipped data contains one of these strings, it will be included as a column
         # in the cleaned data.
-        stringIndicators = "Intensity|Category|Channel|Image|Surpass|Time|ID|Overall|Position|Shortest|Surfaces|Sphericity|Volume|Area|Average|Diameter|Distance|Ellipticity"
+        stringIndicators = "Intensity|Category|Channel|Image|Surpass|Time|ID|Overall|Position|Shortest|Surfaces|Sphericity|Volume|Area|Average|Diameter|Distance|Ellipticity|Spots"
     
         # Join each of the data frames together.
         # !! Optionally: don't suppress the messages for the read.csv function.
@@ -81,8 +81,7 @@ cleaningFunction = function(inputTopLevelDirectory){
     dataToPivot = suppressMessages(dataToCat %>% reduce(full_join)) %>% relocate(c("ImageID","Treatment","Genotype")) %>%
                                rename(`Image File`=ImageID, `Object ID`=ID, `Image Subset`=Image)
     
-    # Pivot the data from long to wide format, coalesce the data frame to merge jagged rows, and
-    # relocate the data as necessary with final data type casts
+    # Augment the Shortest Distance to Surfaces Columns via a pivot then a coalesce to merge jagged rows
     
     # Make a coalesce by column function for the coalesce step
     coalesce_by_column = function(df) {
@@ -90,15 +89,36 @@ cleaningFunction = function(inputTopLevelDirectory){
     }
     
     dataToCoalesce = dataToPivot %>% distinct() %>%
-                    pivot_wider(names_from="Surfaces",values_from="Shortest Distance to Surfaces",names_prefix="Shortest Distance to ")
+                               pivot_wider(names_from="Surfaces",values_from="Shortest Distance to Surfaces",names_prefix="Distance to ")
     
     finalData = dataToCoalesce %>%
                                group_by(`Image File`,`Treatment`,`Object ID`,`Category`,`Channel`,`Surpass Object`) %>% 
-                               summarise_all(coalesce_by_column) %>% dplyr::select(-c(`Shortest Distance to NA`)) %>%
-                               relocate(c("Image Subset","Time"),.after=last_col()) %>% ungroup()
+                               summarise_all(coalesce_by_column) %>% dplyr::select(-c(`Distance to NA`)) %>% ungroup()
     
+    # Augment the Shortest Distance to Spots Columns in the same way, except without a coalesce
+    if("Shortest Distance to Spots" %in% colnames(finalData)){
+        finalData = finalData %>% 
+                    pivot_wider(names_from="Spots",values_from="Shortest Distance to Spots",names_prefix="Distance to ") %>% dplyr::select(-c(`Distance to NA`))
+    }
+    
+    # Perform final data type changes, column movements, and column name changes
+    finalData = finalData %>% relocate(c("Image Subset","Time"),.after=last_col())
     finalData$Channel = as.character(finalData$Channel)
     finalData$`Object ID` = as.character(finalData$`Object ID`)
+    finalData$`Time` = as.character(finalData$`Time`)
+    finalData = finalData %>% rename(`Object`= "Surpass Object")
+    
+    if("Average Distance To 3 Nearest Neighbours" %in% colnames(finalData)){
+        finalData = finalData %>% rename(`Distance To 3 Nearest Neighbours`= "Average Distance To 3 Nearest Neighbours")
+    }
+                               
+    if("Average Distance To 5 Nearest Neighbours" %in% colnames(finalData)){
+        finalData = finalData %>% rename(`Distance To 5 Nearest Neighbours`= "Average Distance To 5 Nearest Neighbours")
+    }
+    
+    if("Average Distance To 9 Nearest Neighbours" %in% colnames(finalData)){
+        finalData = finalData %>% rename(`Distance To 9 Nearest Neighbours`= "Average Distance To 9 Nearest Neighbours")
+    }
     
     # Return the final dataset
     return(finalData)   
