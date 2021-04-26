@@ -153,7 +153,7 @@ server = function(input, output, session) {
             subsettableData = importedData()
         }
         else if (input$dataToSelect == "processedData"){
-            subsettableData = processedData()
+            subsettableData = processedDataCheckpoint()
         }
          # Apply the filters to the data (from the checkbox)
         filteredData = subsettableData %>% dplyr::filter(`Object` %in% input$sOOI) %>% dplyr::filter(`Image File` %in% input$nROI) %>% dplyr::filter(`Treatment` %in% input$lDOI) %>% dplyr::filter(`Genotype` %in% input$eOI) %>% dplyr::filter(`Channel` %in% input$chOI)
@@ -481,7 +481,7 @@ server = function(input, output, session) {
     # Once the category is selected for histograms, boxplots, and KDE's, update the selection of levels based on that variable
     observe({
         subsettableData = filteredDataset()
-        updateCheckboxGroupInput(session, "outlierLevel",choices = levels(as.factor(subsettableData[[input$catVariableForFill]])), selected = NULL)
+        updateSelectInput(session, "outlierLevel",choices = levels(as.factor(subsettableData[[input$catVariableForFill]])), selected = NULL)
     })
     
     generatedOutliers = eventReactive(input$generateOutliers,{
