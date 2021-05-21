@@ -79,7 +79,22 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                          ),
                          mainPanel(
                              tabsetPanel(type = "tabs",
-                                         tabPanel("Table",dataTableOutput("filteredTableToView"))
+                                         tabPanel("Table",
+                                                  dataTableOutput("filteredTableToView")),
+                                         tabPanel("Outliers",
+                                                  h3("Outliers for Selected Level"),
+                                                  selectInput(inputId="outlierVariable",h4("Category Level"),choices = list("Filter Data First"="Genotype"),selected = "Genotype"),
+                                                  radioButtons(inputId = "removeOutliersRadio",
+                                                               h3("Remove outliers on next filter?"),
+                                                               c("Yes"="yes","No"="no"),
+                                                               selected = "no"
+                                                              ),
+                                                  actionButton("generateOutliers","Generate Outliers for Selected Variable"),
+                                                  p(""),
+                                                  verbatimTextOutput("outlierText"),
+                                                  p(""),
+                                                  dataTableOutput("outlierTable")
+                                                 )
                                         )
                          )
                         ),
@@ -182,16 +197,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   plotOutput("kdeRefined"),
                                                   plotOutput("kdeRefinedPercentage")),
                                          tabPanel("Boxplots",
-                                                  plotOutput("boxplotRefined")),
-                                         tabPanel("Outliers",
-                                                  h3("Outliers for Selected Level"),
-                                                  selectInput(inputId="outlierLevel",h4("Category Level"),choices = list("Generate Plots First"="Genotype"),selected = "Genotype"),
-                                                  actionButton("generateOutliers","Generate Outliers for Selected Variable"),
-                                                  p(""),
-                                                  verbatimTextOutput("outlierText"),
-                                                  p(""),
-                                                  dataTableOutput("outlierTable")
-                                                 )
+                                                  plotOutput("boxplotRefined"))
                                         )
                          )
                         ),

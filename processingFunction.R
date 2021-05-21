@@ -14,7 +14,7 @@ processingFunction = function(importedData){
     # Moreover, the names of variables (e.g., "Nucleus center of mass") are unified.
     importedData$`Object`[importedData$`Object`=="Nucleus_centre_of_mass"] = "Nucleus center of mass"
     importedData$`Object`[importedData$`Object`=="Nucleus Center of Mass"] = "Nucleus center of mass"
-    importedData$`Shortest Distance to Nucleus`[importedData$`Object`=="Nucleus center of mass"] = 0.05
+    importedData$`Distance to Nucleus`[importedData$`Object`=="Nucleus center of mass"] = 0.05
     
     # Filter out any group that doesn't have a nucleus center of mass object or where Channel is NA
     dataToProcess = importedData %>% group_by(`Image File`) %>% filter(any(`Object`=="Nucleus center of mass")) %>%
@@ -32,11 +32,11 @@ processingFunction = function(importedData){
     dataWithNormedSumMeanStdDev = dataWithSumAndMeanNormed %>% group_by(`Object ID`,`Image File`,Channel) %>%
         mutate("Normalized Intensity StdDev" = `Intensity StdDev`/`Intensity Mean`) %>% ungroup()
     
-    # The "Normalized Shortest Distance to Surfaces" variable is added here, using the data from each "Nucleus Center of Mass observation"
+    # The "Normalized Distance to Surfaces" variable is added here, using the data from each "Nucleus Center of Mass observation"
     # !! This is an area of development as there are, potentially, multiple types of surfaces that 
     # !! can be handled by this computation
     dataWithNormedSumMeanStdDevSDtS = dataWithNormedSumMeanStdDev %>% group_by(`Image File`,Channel) %>%
-        mutate("Normalized Shortest Distance to Nucleus" = `Shortest Distance to Nucleus`/`Shortest Distance to Nucleus`[which(`Object`=="Nucleus center of mass")])  %>% ungroup()
+        mutate("Normalized Distance to Nucleus" = `Distance to Nucleus`/`Distance to Nucleus`[which(`Object`=="Nucleus center of mass")])  %>% ungroup()
     
     # The "Normalized Intensity Sum Ratio Ch2:Ch1" and "Normalized Intensity Mean Ratio Ch2:Ch1" variables are
     # added here.

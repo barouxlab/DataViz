@@ -120,15 +120,30 @@ server = function(input, output, session) {
         req(importedData())
         dataToProcess = importedData()
         processedData = processingFunction(dataToProcess)
-        processedDataToReturn = processedData
+        processedDataToWrite = processedData
+        write.csv(processedDataToWrite, "__ProcessedData.csv", row.names = FALSE)
+        processedDataToReturn = read.csv("__ProcessedData.csv",check.names = FALSE)
         updateRadioButtons(session,"dataToSelect",choices=c("Raw Data"="rawData","Processed Data"="processedData"))
-        return(processedDataToReturn)
+        processedDataToReturn$`Object ID` = as.character(processedDataToReturn$`Object ID`)
+        processedDataToReturn$`Channel` = as.character(processedDataToReturn$`Channel`)
+        processedDataToReturn$`Time` = as.numeric(processedDataToReturn$`Time`)
+        processedDataToReturn[["Channel"]][is.na(processedDataToReturn[["Channel"]])] = "NA"
+        finalProcessedDataToReturn = as_tibble(processedDataToReturn)
+        return(finalProcessedDataToReturn)
     })
     
-    processedDataCheckpoint = reactive({
-        req(processedData())
-        processedDataCheckpoint = processedData()
-        return(processedDataCheckpoint)
+    # Create observe calls to update the outlier selection dropdown after the intial data is uploaded or processed
+    observe({
+        subsettableData = importedData()
+        l = sapply(subsettableData, class)
+        continuousVars = names(l[str_which(l,pattern="numeric")])
+        updateSelectInput(session, "outlierVariable", choices = continuousVars, selected = NULL)
+    })
+    observe({
+        subsettableData = processedData()
+        l = sapply(subsettableData, class)
+        continuousVars = names(l[str_which(l,pattern="numeric")])
+        updateSelectInput(session, "outlierVariable", choices = continuousVars, selected = NULL)
     })
     
     # Create an option for a quick download of the processed data
@@ -137,7 +152,7 @@ server = function(input, output, session) {
             paste(format(Sys.time(), "ProcessedData_Date_%Y_%m_%d_Time_%H%M%S"), ".csv", sep = "")
         },
         content = function(file) {
-            write.csv(processedDataCheckpoint(), file, row.names = FALSE)
+            write.csv(processedData(), file, row.names = FALSE)
         }
     )
     
@@ -146,6 +161,24 @@ server = function(input, output, session) {
         DT::datatable(processedData(), extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
     })
     
+    # Create options for generating outliers based on variable input
+    generatedOutliers = eventReactive(input$generateOutliers,{
+        subsettableData = filteredDataset()
+        req(input$outlierVariable)
+        outlierVariableString = input$outlierVariable
+        dataToBoxplot = subsettableData %>%
+                        select(!!sym(outlierVariableString)) %>%
+                        pull(!!sym(outlierVariableString))
+        outliersToRemove = boxplot.stats(dataToBoxplot)$out
+        outlierIndicesToRemove = which(dataToBoxplot %in% c(outliersToRemove))
+        outlierTibble = subsettableData[outlierIndicesToRemove,]
+        return(outlierTibble)
+    },ignoreNULL=TRUE)
+    
+    output$outlierTable = renderDataTable({
+            DT::datatable(generatedOutliers(), options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE))
+        })
+    
     # Instantiate the reactive variable for filtering
     filteredDataset = eventReactive(input$filterButton,{
         # Turn the imported/processed data into a format that can be filtered and subsetted
@@ -153,10 +186,31 @@ server = function(input, output, session) {
             subsettableData = importedData()
         }
         else if (input$dataToSelect == "processedData"){
-            subsettableData = processedDataCheckpoint()
+            subsettableData = processedData()
         }
          # Apply the filters to the data (from the checkbox)
-        filteredData = subsettableData %>% dplyr::filter(`Object` %in% input$sOOI) %>% dplyr::filter(`Image File` %in% input$nROI) %>% dplyr::filter(`Treatment` %in% input$lDOI) %>% dplyr::filter(`Genotype` %in% input$eOI) %>% dplyr::filter(`Channel` %in% input$chOI)
+        filteredDataToOutlier = subsettableData %>% dplyr::filter(`Object` %in% input$sOOI) %>% dplyr::filter(`Image File` %in% input$nROI) %>% dplyr::filter(`Treatment` %in% input$lDOI) %>% dplyr::filter(`Genotype` %in% input$eOI) %>% dplyr::filter(`Channel` %in% input$chOI)
+        
+        # Optionally: remove outliers
+        if (input$removeOutliersRadio == "no"){
+            filteredData = filteredDataToOutlier
+        }
+        else if (input$removeOutliersRadio == "yes"){
+            if (input$outlierVariable %in% colnames(filteredDataToOutlier)){
+                subsettableData = filteredDataToOutlier
+                req(input$outlierVariable)
+                outlierVariableString = input$outlierVariable
+                dataToBoxplot = subsettableData %>%
+                                select(!!sym(outlierVariableString)) %>%
+                                pull(!!sym(outlierVariableString))
+                outliersToRemove = boxplot.stats(dataToBoxplot)$out
+                outlierIndicesToRemove = which(dataToBoxplot %in% c(outliersToRemove))
+                outlierTibble = subsettableData[outlierIndicesToRemove,]
+                filteredData = anti_join(filteredDataToOutlier,outlierTibble)
+            } else {
+                filteredData = filteredDataToOutlier
+            }
+        }
         
         return(filteredData)
     },ignoreNULL=TRUE)
@@ -475,31 +529,6 @@ server = function(input, output, session) {
             ggsave(file,plot=boxplotRefined(),device='png',width=input$plotWidthForDownload,height=input$plotHeightForDownload,units="cm",dpi=input$plotResolution)
         }
     )
-    
-    
-    
-    # Once the category is selected for histograms, boxplots, and KDE's, update the selection of levels based on that variable
-    observe({
-        subsettableData = filteredDataset()
-        updateSelectInput(session, "outlierLevel",choices = levels(as.factor(subsettableData[[input$catVariableForFill]])), selected = NULL)
-    })
-    
-    generatedOutliers = eventReactive(input$generateOutliers,{
-        req(input$outlierLevel)
-        req(input$catVariableForFill)
-        req(input$singleConVariable)
-        subsettableData = filteredDataset()
-        filteredData = subsettableData %>% select(`Image File`,`Object ID`,!!sym(input$singleConVariable),!!sym(input$catVariableForFill)) %>% dplyr::filter(!!sym(input$catVariableForFill) == input$outlierLevel) %>% na.omit()
-        indexDF = filteredData %>% select(!!sym(input$singleConVariable))
-        outliers = boxplot.stats(indexDF[[input$singleConVariable]])$out
-        outlierTable = filteredData[indexDF[[input$singleConVariable]] %in% outliers,]
-        return(outlierTable)
-    },ignoreNULL=TRUE)
-    
-    output$outlierTable = renderDataTable({
-            DT::datatable(generatedOutliers(), options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE))
-        })
-    
     
     # Output scatterplot parameters
     densityDataToScatterParams = eventReactive(input$scatterParams,{
