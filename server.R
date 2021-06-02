@@ -129,6 +129,7 @@ server = function(input, output, session) {
         processedDataToReturn$`Time` = as.numeric(processedDataToReturn$`Time`)
         processedDataToReturn[["Channel"]][is.na(processedDataToReturn[["Channel"]])] = "NA"
         finalProcessedDataToReturn = as_tibble(processedDataToReturn)
+        unlink("__ProcessedData.csv")
         return(finalProcessedDataToReturn)
     })
     
