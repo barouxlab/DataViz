@@ -18,6 +18,12 @@ server = function(input, output, session) {
             # Unzip the file once it's selected to a sub-directory (to be created) inside the working directory
             tmpDirName = paste("TMP_",toString(abs(rnorm(1))*1e15),sep="")
             unzip(dataToImport$datapath, overwrite = TRUE, exdir = paste(getwd(),tmpDirName,sep="/"))
+            # Mark and delete the problematic files (i.e., specifically: files <100 bytes)
+            listOfFilesToCheck = list.files(path=tmpDirName,full.names=TRUE,recursive=TRUE)
+            listOfProblematicFiles = listOfFilesToCheck[sapply(listOfFilesToCheck, file.size) < 100]
+            output$problematicFilesList = renderPrint({print(listOfProblematicFiles)})
+            sapply(listOfProblematicFiles,unlink)
+            # Applyg the cleaning function and change the types of certain variables
             inputtedDataToReturn = cleaningFunction(tmpDirName)
             inputtedDataToReturn$`Object ID` = as.character(inputtedDataToReturn$`Object ID`)
             inputtedDataToReturn$`Channel` = as.character(inputtedDataToReturn$`Channel`)

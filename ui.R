@@ -38,10 +38,13 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                          mainPanel(
                              tabsetPanel(type = "tabs",
                                          tabPanel("Table",dataTableOutput("cleanedTableToView")),
-                                         tabPanel("Data Integrity",verbatimTextOutput("integrityTest_TextResults"),
+                                         tabPanel("Data Integrity",
+                                                  verbatimTextOutput("integrityTest_TextResults"),
                                                   p("Below is a table showing the Image and Object ID's of records that have NA in the Channel",
                                                    style = "font-family: 'arial'; font-si30pt"),
-                                                  dataTableOutput("integrityTest_NAChannelTable"))
+                                                  dataTableOutput("integrityTest_NAChannelTable"),
+                                                 p("These files showed no data (or little data)"),
+                                                 verbatimTextOutput("problematicFilesList"))
                                         )
                          )
                         ),
