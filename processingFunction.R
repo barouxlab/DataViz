@@ -14,7 +14,7 @@ processingFunction = function(importedData){
     # Moreover, the names of variables (e.g., "Nucleus center of mass") are unified.
     importedData$`Object`[importedData$`Object`=="Nucleus_centre_of_mass"] = "Nucleus Center of Mass"
     importedData$`Object`[importedData$`Object`=="Nucleus center of mass"] = "Nucleus Center of Mass"
-    importedData$`Distance to Nucleus`[importedData$`Object`=="Nucleus Center of Mass"] = 1
+    importedData$`Distance to Nucleus`[is.na(importedData$`Object`=="Nucleus Center of Mass" & importedData$`Distance to Nucleus`=="NA")] = 1
     
     # Filter out any group that doesn't have a nucleus center of mass object or where Channel is NA
     dataToProcess = importedData %>% group_by(`Image File`) %>%
@@ -24,22 +24,19 @@ processingFunction = function(importedData){
     # Perform the variable normalizations in a "cascading fashion".
     # I.e., perform one normalization, add the column to the data frame, then perform the next, add it to
     # the data frame as well, then so on and so forth.
-    # "Normalized Intensity Sum" and "Normalized Intensity Mean" are added as variables.
+    # "Normalized Intensity Sum", "Normalized Intensity Mean", and "Normalized Intensity StdDev" are added as variables.
     dataWithSumAndMeanNormed = dataToProcess %>% group_by(`Image File`,Channel) %>% 
         mutate("Normalized Intensity Sum" = `Intensity Sum`/`Intensity Sum`[which(`Object`=="Nucleus")]) %>% 
         mutate("Normalized Intensity Mean" = `Intensity Mean`/`Intensity Mean`[which(`Object`=="Nucleus")]) %>%
+        mutate("Normalized Intensity StdDev" = `Intensity StdDev`/`Intensity StdDev`[which(`Object`=="Nucleus")]) %>%
         ungroup()
     
     # Add the group intensity variables
-    dataWithNormedAndGroup = dataWithSumAndMeanNormed %>% group_by(Category,`Image File`,Channel,`Object`) %>%
+    dataWithNormedAndGroup = dataWithSumAndMeanNormed %>% group_by(`Image File`,Channel,Category,`Object`) %>%
                                 mutate("Group Intensity Sum" = sum(`Intensity Sum`)) %>%
                                 mutate("Group Intensity Mean" = sum(`Intensity Mean`)) %>%
                                 ungroup()
-    
-    # Add the "Normalized Intensity StdDev"
-    dataWithNormedSumMeanStdDev = dataWithNormedAndGroup %>% group_by(`Object ID`,`Image File`,Channel) %>%
-        mutate("Normalized Intensity StdDev" = `Intensity StdDev`/`Intensity Mean`) %>% ungroup()
-    
+
     # The "Normalized Distance to Surfaces" variable is added here, using the data from each "Nucleus Center of Mass observation"
     # !! This is an area of development as there are, potentially, multiple types of surfaces that 
     # !! can be handled by this computation
