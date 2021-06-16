@@ -14,6 +14,7 @@ processingFunction = function(importedData){
     # Moreover, the names of variables (e.g., "Nucleus center of mass") are unified.
     importedData$`Object`[importedData$`Object`=="Nucleus_centre_of_mass"] = "Nucleus Center of Mass"
     importedData$`Object`[importedData$`Object`=="Nucleus center of mass"] = "Nucleus Center of Mass"
+    importedData$`Object`[importedData$`Object`=="Nucleus Center Of Mass"] = "Nucleus Center of Mass"
     importedData$`Distance to Nucleus`[is.na(importedData$`Object`=="Nucleus Center of Mass" & importedData$`Distance to Nucleus`=="NA")] = 1
     
     # Filter out any group that doesn't have a nucleus center of mass object or where Channel is NA

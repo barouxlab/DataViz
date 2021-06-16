@@ -64,7 +64,7 @@ server = function(input, output, session) {
         
         # Determine which images have Object values that are unexpected
         # Acceptable Object Levels are hard-coded here
-        acceptableSOLevels = c('Nucleus','Nucleus center of mass','S2P')
+        acceptableSOLevels = c('Nucleus','Nucleus Center of Mass','S2P')
         extantSOLevels = unique(dataToIntegrityCheck$'Object')
         differenceSO = setdiff(extantSOLevels,acceptableSOLevels)
         differenceDF_SO = as.data.frame(unique(dataToIntegrityCheck[dataToIntegrityCheck$`Object` %in% differenceSO,"Image File"]))[,1]
@@ -74,9 +74,9 @@ server = function(input, output, session) {
         cat("\n")
         
         # Find images lacking a nucleus center of mass object
-        findUniqueImagesWoNCoM = dataToIntegrityCheck %>% group_by(`Image File`) %>% filter(!any(`Object`=="Nucleus center of mass")) %>% ungroup()
+        findUniqueImagesWoNCoM = dataToIntegrityCheck %>% group_by(`Image File`) %>% filter(!any(`Object`=="Nucleus Center of Mass")) %>% ungroup()
         imagesWithOutNCoM = unique(findUniqueImagesWoNCoM$`Image File`)
-        cat("Images without a Nucleus center of mass: ",paste(imagesWithOutNCoM,collapse=", "),"\n")
+        cat("Images without a Nucleus Center of Mass: ",paste(imagesWithOutNCoM,collapse=", "),"\n")
         cat("\n")
         
         # Find images lacking a nucleus object
