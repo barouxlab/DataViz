@@ -18,12 +18,20 @@ server = function(input, output, session) {
             # Unzip the file once it's selected to a sub-directory (to be created) inside the working directory
             tmpDirName = paste("TMP_",toString(abs(rnorm(1))*1e15),sep="")
             unzip(dataToImport$datapath, overwrite = TRUE, exdir = paste(getwd(),tmpDirName,sep="/"))
-            # Mark and delete the problematic files (i.e., specifically: files <100 bytes)
+           # Mark and delete the problematic empty files (i.e., specifically: files <100 bytes)
             listOfFilesToCheck = list.files(path=tmpDirName,full.names=TRUE,recursive=TRUE)
             listOfProblematicFiles = listOfFilesToCheck[sapply(listOfFilesToCheck, file.size) < 100]
-            output$problematicFilesList = renderPrint({print(listOfProblematicFiles)})
             sapply(listOfProblematicFiles,unlink)
-            # Applyg the cleaning function and change the types of certain variables
+            # Mark and delete files that are flagged for deletion in the global.r script
+            listOfFilesToCheck = list.files(path=tmpDirName,full.names=TRUE,recursive=TRUE)
+            fileKeepList = listOfFilesToCheck
+            for(fileName in fileNamestoSkip){
+                listOfFilesToCheck = listOfFilesToCheck[!str_detect(listOfFilesToCheck,pattern=fileName)]
+            }
+            filesToDelete = setdiff(fileKeepList,listOfFilesToCheck)
+            sapply(filesToDelete,unlink)
+            # Clean the remaining files
+            # Apply the cleaning function and change the types of certain variables
             inputtedDataToReturn = cleaningFunction(tmpDirName)
             inputtedDataToReturn$`Object ID` = as.character(inputtedDataToReturn$`Object ID`)
             inputtedDataToReturn$`Channel` = as.character(inputtedDataToReturn$`Channel`)
@@ -127,15 +135,15 @@ server = function(input, output, session) {
         dataToProcess = importedData()
         processedData = processingFunction(dataToProcess)
         processedDataToWrite = processedData
-        write.csv(processedDataToWrite, "__ProcessedData.csv", row.names = FALSE)
-        processedDataToReturn = read.csv("__ProcessedData.csv",check.names = FALSE)
+        write.csv(processedDataToWrite, "TMP__ProcessedData.csv", row.names = FALSE)
+        processedDataToReturn = read.csv("TMP__ProcessedData.csv",check.names = FALSE)
         updateRadioButtons(session,"dataToSelect",choices=c("Raw Data"="rawData","Processed Data"="processedData"))
         processedDataToReturn$`Object ID` = as.character(processedDataToReturn$`Object ID`)
         processedDataToReturn$`Channel` = as.character(processedDataToReturn$`Channel`)
         processedDataToReturn$`Time` = as.numeric(processedDataToReturn$`Time`)
         processedDataToReturn[["Channel"]][is.na(processedDataToReturn[["Channel"]])] = "NA"
         finalProcessedDataToReturn = as_tibble(processedDataToReturn)
-        unlink("__ProcessedData.csv")
+        unlink("TMP__ProcessedData.csv")
         return(finalProcessedDataToReturn)
     })
     

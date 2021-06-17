@@ -6,6 +6,7 @@ pacman::p_load(shiny,tictoc,DT,data.table,tidyverse,shinythemes,skimr,htmlTable,
 options(shiny.maxRequestSize=500*1024^2)
 source("cleaningFunction.R")
 source("processingFunction.R")
+
 # Instantiate a plot theme variable
 themesForPlotting = list("Light" = theme_light(),
                          "Minimal" = theme_minimal(),
@@ -16,6 +17,7 @@ themesForPlotting = list("Light" = theme_light(),
                              panel.grid.minor = element_blank(), 
                              axis.line = element_line(colour = "black")
                          ))
+
 # Instantiate a color brewer list of palettes
 colorBrewerPalettes = rownames(brewer.pal.info)
 colorDF = brewer.pal.info
@@ -24,3 +26,34 @@ customColors = list("#0C2B7B","#F09636","#A92357","#3B8AF0","#2E6B1C","#53B7AB",
 customLength = length(customColors)
 colorDF = colorDF %>% add_row(maxcolors=customLength,category="custom",colorblind=FALSE,hexcodes=list(customColors))
 row.names(colorDF)[36] = "Custom"
+
+# Instantiate a list of files to skip when cleaning a ZIP of the data
+fileNamestoSkip = c("Diameter.csv",
+                   "Diameter_X.csv",
+                   "Diameter_Y.csv",
+                   "Diameter_Z.csv",
+                   "Distance_from_Origin.csv",
+                   "Distance_to_Image_Border_XY_Img=1.csv",
+                   "Generation.csv",
+                   "Intensity_Center_Ch=1_Img=1.csv",
+                   "Intensity_Center_Ch=2_Img=1.csv",
+                   "Intensity_Max_Ch=1_Img=1.csv",
+                   "Intensity_Max_Ch=2_Img=1.csv",
+                   "Intensity_Median_Ch=1_Img=1.csv",
+                   "Intensity_Median_Ch=2_Img=1.csv",
+                   "Intensity_Min_Ch=1_Img=1.csv",
+                   "Intensity_Min_Ch=2_Img=1.csv",
+                   "Overlapped_Volume_Ratio_to_Surfaces_Surfaces=CC.csv",
+                   "Overlapped_Volume_Ratio_to_Surfaces_Surfaces=NanoCC.csv",
+                   "Overlapped_Volume_Ratio_to_Surfaces_Surfaces=Nucleolus.csv",
+                   "Overlapped_Volume_Ratio_to_Surfaces_Surfaces=Nucleus.csv",
+                   "Overlapped_Volume_to_Surfaces_Surfaces=CC.csv",
+                   "Overlapped_Volume_ to_Surfaces_Surfaces=NanoCC.csv",
+                   "Overlapped_Volume_ to_Surfaces_Surfaces=Nucleolus.csv",
+                   "Overlapped_Volume_ to_Surfaces_Surfaces=Nucleus.csv",
+                   "Position_X.csv",
+                   "Position_Y.csv",
+                   "Position_Z.csv",
+                   "Position.csv",
+                   "Time.csv",
+                   "Time_Index.csv")
