@@ -27,6 +27,9 @@ customLength = length(customColors)
 colorDF = colorDF %>% add_row(maxcolors=customLength,category="custom",colorblind=FALSE,hexcodes=list(customColors))
 row.names(colorDF)[36] = "Custom"
 
+# Instantiate a list of acceptable surpass object types/strings
+acceptableSOLevels = c('Nucleus','Nucleus Center of Mass','S2P','Nucleus Center Of Mass')
+
 # Instantiate a list of files to skip when cleaning a ZIP of the data
 fileNamestoSkip = c("Diameter.csv",
                    "Diameter_X.csv",

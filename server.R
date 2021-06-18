@@ -71,8 +71,7 @@ server = function(input, output, session) {
         dataToIntegrityCheck = importedData()
         
         # Determine which images have Object values that are unexpected
-        # Acceptable Object Levels are hard-coded here
-        acceptableSOLevels = c('Nucleus','Nucleus Center of Mass','S2P')
+        # Acceptable Object Levels are hard-coded in the global.R file
         extantSOLevels = unique(dataToIntegrityCheck$'Object')
         differenceSO = setdiff(extantSOLevels,acceptableSOLevels)
         differenceDF_SO = as.data.frame(unique(dataToIntegrityCheck[dataToIntegrityCheck$`Object` %in% differenceSO,"Image File"]))[,1]

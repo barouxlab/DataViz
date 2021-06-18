@@ -120,6 +120,11 @@ cleaningFunction = function(inputTopLevelDirectory){
         finalData = finalData %>% rename(`Distance To 9 Nearest Neighbours`= "Average Distance To 9 Nearest Neighbours")
     }
     
+    # Perform column specific edits on strings for data unification
+    finalData$`Object`[finalData$`Object`=="Nucleus_centre_of_mass"] = "Nucleus Center of Mass"
+    finalData$`Object`[finalData$`Object`=="Nucleus center of mass"] = "Nucleus Center of Mass"
+    finalData$`Object`[finalData$`Object`=="Nucleus Center Of Mass"] = "Nucleus Center of Mass"
+    
     # Return the final dataset
     return(finalData)   
 }
