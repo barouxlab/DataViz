@@ -153,6 +153,22 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                   numericInput("yULKDE",label="Y Max",value=1)
                                                                  ),
                                                              ))),
+                                                  fluidRow(
+                                                      column(
+                                                          width = 6,
+                                                          div(style = "white-space: nowrap;", 
+                                                              div(style="display: inline-block; width: 100%;",
+                                                                  numericInput("kdeAdjust",label="KDE Smoothing Adjust",value=1,min=0,step=0.02)
+                                                                 )
+                                                             ))),
+                                                  fluidRow(
+                                                      column(
+                                                          width = 6,
+                                                          div(style = "white-space: nowrap;", 
+                                                              div(style="display: inline-block; width: 100%;",
+                                                                  numericInput("kdeNumOfBinsRefined",label="# of Bins for % KDE",value=30)
+                                                                 )
+                                                             )))
                                                  ),
                                          tabPanel("Boxplots",
                                                   fluidRow(
@@ -167,6 +183,14 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                   numericInput("yULBoxplot",label="Y Max",value=1)
                                                                  ),
                                                              ))),
+                                                  fluidRow(
+                                                      column(
+                                                          width = 6,
+                                                          div(style = "white-space: nowrap;", 
+                                                              div(style="display: inline-block; width: 100%;",
+                                                                  numericInput("boxplotBoxWidth",label="Box Width",value=0.5,step=0.02)
+                                                                 )
+                                                             )))
                                          ),
                                          tabPanel("Layout",
                                                   numericInput("numColumns","# of Plot Columns in Layout",value=2,min=1,max=100,step=1),
@@ -185,7 +209,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              tabsetPanel(type = "tabs",
                                          tabPanel("Directions",
                                                   p(""),
-                                                  p("1. Select variables."),
+                                                  p("1. After filtering your data using the Select tab, choose the variables you want to color/split by."),
                                                   p("2. Press 'Update Parameters'"),
                                                   p("3. Press 'Generate Plots'."),
                                                   p("4. Customize the axes limits in the sub-tabs for each plot type."),

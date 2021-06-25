@@ -110,14 +110,17 @@ cleaningFunction = function(inputTopLevelDirectory){
     
     if("Average Distance To 3 Nearest Neighbours" %in% colnames(finalData)){
         finalData = finalData %>% rename(`Distance To 3 Nearest Neighbours`= "Average Distance To 3 Nearest Neighbours")
+        finalData$`Distance To 3 Nearest Neighbours` = as.numeric(finalData$`Distance To 3 Nearest Neighbours`)
     }
                                
     if("Average Distance To 5 Nearest Neighbours" %in% colnames(finalData)){
         finalData = finalData %>% rename(`Distance To 5 Nearest Neighbours`= "Average Distance To 5 Nearest Neighbours")
+        finalData$`Distance To 5 Nearest Neighbours` = as.numeric(finalData$`Distance To 5 Nearest Neighbours`)
     }
     
     if("Average Distance To 9 Nearest Neighbours" %in% colnames(finalData)){
         finalData = finalData %>% rename(`Distance To 9 Nearest Neighbours`= "Average Distance To 9 Nearest Neighbours")
+        finalData$`Distance To 9 Nearest Neighbours` = as.numeric(finalData$`Distance To 9 Nearest Neighbours`)
     }
     
     # Perform column specific edits on strings for data unification

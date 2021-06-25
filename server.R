@@ -35,7 +35,7 @@ server = function(input, output, session) {
             inputtedDataToReturn = cleaningFunction(tmpDirName)
             inputtedDataToReturn$`Object ID` = as.character(inputtedDataToReturn$`Object ID`)
             inputtedDataToReturn$`Channel` = as.character(inputtedDataToReturn$`Channel`)
-            inputtedDataToReturn$`Time` = as.numeric(inputtedDataToReturn$`Time`)
+            inputtedDataToReturn$`Time` = as.character(inputtedDataToReturn$`Time`)
             inputtedDataToReturn[["Channel"]][is.na(inputtedDataToReturn[["Channel"]])] = "NA"
             unlink(tmpDirName, recursive = TRUE)
             return(inputtedDataToReturn)
@@ -43,7 +43,7 @@ server = function(input, output, session) {
             importedData = read.csv(dataToImport$datapath,check.names = FALSE)
             importedData$`Object ID` = as.character(importedData$`Object ID`)
             importedData$`Channel` = as.character(importedData$`Channel`)
-            importedData$`Time` = as.numeric(importedData$`Time`)
+            importedData$`Time` = as.character(importedData$`Time`)
             importedData[["Channel"]][is.na(importedData[["Channel"]])] = "NA"
             inputtedDataToReturn = as_tibble(importedData)
             return(inputtedDataToReturn)
@@ -229,9 +229,24 @@ server = function(input, output, session) {
         return(filteredData)
     },ignoreNULL=TRUE)
     
-    # Create an observe() call to complete the select input items for plotting
+    # Create two observe() calls to complete the select input items for plotting (one for when the data
+    # is originally imported, and a second for when/if it is processed)
     observe({
-        subsettableData = filteredDataset()
+        subsettableData = importedData()
+        l = sapply(subsettableData, class)
+        categoricalVars = names(l[str_which(l,pattern="character")])
+        categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
+        continuousVars = names(l[str_which(l,pattern="numeric")])
+        updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = NULL)
+        updateSelectInput(session, "singleConVariable", choices = continuousVars, selected = NULL)
+        updateSelectInput(session, "catVariableForSplitting", choices = categoricalVars, selected = NULL)
+        updateSelectInput(session, "scatterX", choices = continuousVars, selected = NULL)
+        updateSelectInput(session, "scatterY", choices = continuousVars, selected = NULL)
+        updateSelectInput(session, "scatterCatColor", choices = categoricalVars, selected = NULL)
+        updateSelectInput(session, "scatterCatFacet", choices = categoricalVars, selected = NULL)
+    })
+    observe({
+        subsettableData = processedData()
         l = sapply(subsettableData, class)
         categoricalVars = names(l[str_which(l,pattern="character")])
         categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
@@ -387,7 +402,7 @@ server = function(input, output, session) {
         catVariableForFill = isolate(input$catVariableForFill)
         numOfBinsRefined = isolate(input$numOfBinsRefined)
         
-        kde = ggplot(dataForPlotParams,aes(x=!!sym(singleConVariable),color=!!sym(catVariableForFill))) + geom_density(adjust=0.9) + ylab("Density")
+        kde = ggplot(dataForPlotParams,aes(x=!!sym(singleConVariable),color=!!sym(catVariableForFill))) + geom_density() + ylab("Density")
         xRangeKDE <<- ggplot_build(kde)$layout$panel_params[[1]]$x.range
         yRangeKDE <<- ggplot_build(kde)$layout$panel_params[[1]]$y.range
         updateNumericInput(session,"xLLKDE",value=xRangeKDE[1])
@@ -457,7 +472,7 @@ server = function(input, output, session) {
     kdeRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         data = densityDataToHistoBoxRefined()
-        kdeSplit = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) + geom_density() + ylab("Density") +
+        kdeSplit = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) + geom_density(adjust=input$kdeAdjust) + ylab("Density") +
         xlim(input$xLLKDE,input$xULKDE) + ylim(input$yLLKDE,input$yULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
@@ -472,7 +487,7 @@ server = function(input, output, session) {
         kdeRefinedPercentage = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         data = densityDataToHistoBoxRefined()
-        kdeSplitPercentage = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) + geom_density(stat='bin',bins=as.numeric(input$numOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
+        kdeSplitPercentage = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) + geom_density(stat='bin',bins=as.numeric(input$kdeNumOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
         xlim(input$xLLKDE,input$xULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
@@ -487,7 +502,7 @@ server = function(input, output, session) {
     boxplotRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         data = densityDataToHistoBoxRefined()
-        boxplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = FALSE) +
+        boxplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = FALSE, width = input$boxplotBoxWidth) +
         ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
