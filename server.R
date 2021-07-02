@@ -514,6 +514,13 @@ server = function(input, output, session) {
         boxplotRefined()
         },height=plotHeight)
     
+    # Create a summary table of values from the boxplot
+    output$summaryTableFromBoxplot = renderDataTable({
+        summaryTable = layer_data(boxplotRefined()) %>% relocate(outliers, .after = last_col())
+        DT::datatable(summaryTable, options = list(dom = 't', scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE))
+    })
+    
+    
     # Create a pop up that allows for the download of the refined plots
     observeEvent(input$downloadRefinedPlots,{
         showModal(

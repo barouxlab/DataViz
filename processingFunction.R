@@ -50,11 +50,22 @@ processingFunction = function(importedData){
                         mutate("Normalized Intensity Mean Ratio Ch2:Ch1" = (`Normalized Intensity Mean`[which(`Channel`==2)])/(`Normalized Intensity Mean`[which(`Channel`==1)])) %>% ungroup()
     
     # Add a "Signal Density" variable
-    postProcessedData = dataWithRatios %>% group_by(`Image File`,
+    dataWithRatiosAndSD = dataWithRatios %>% group_by(`Image File`,
                                                     `Object ID`,
                                                     `Object`,
                                                     `Channel`) %>%
-                                            mutate("Signal Density" = `Normalized Intensity Sum`/`Volume`)
+                                            mutate("Signal Density" = `Normalized Intensity Sum`/`Volume`) %>%
+                                            ungroup()
+    
+    # Add "Relative" variables
+    dataWithRatiosSDRelative = dataWithRatiosAndSD %>% group_by(`Image File`,Channel) %>%
+                        mutate("Relative Intensity Sum" = `Normalized Intensity Sum`/sum(`Normalized Intensity Sum`)) %>%
+                        mutate("Relatve Intensity Mean" = `Normalized Intensity Mean`/sum(`Normalized Intensity Mean`)) %>%
+                        ungroup()
+    
+    # Add counts on groups split by image file, and object type
+    postProcessedData = dataWithRatiosSDRelative %>% group_by(`Image File`,`Object`) %>%
+                        mutate("Object Count" = n()) %>% ungroup()
     
     # Relocate the Image Subset and Time variables and make final data type casts
     finalDataToReturn = postProcessedData %>% relocate(c("Image Subset","Time"),.after=last_col())
