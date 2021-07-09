@@ -107,9 +107,9 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              actionButton("downloadRefinedPlots", "Download Plots"),
                              p(""),
                              actionButton("generatePlotParams", "Update Parameters"),
-                             selectInput(inputId = "catVariableForFill","Color by",choices = list("Filter Data First"="Image File"),selected = "Image File"),
-                             selectInput(inputId = "catVariableForSplitting","Split by",choices = list("Filter Data First"="Genotype"),selected = "Genotype"),
-                             selectInput(inputId = "singleConVariable","Continuous Variable",choices = list("Filter Data First"="NormSum"),selected = "NormSum"),
+                             selectInput(inputId = "catVariableForFill","Color by",choices = list("Select Data First"="Image File"),selected = "Image File"),
+                             selectInput(inputId = "catVariableForSplitting","Split by",choices = list("Select Data First"="Genotype"),selected = "Genotype"),
+                             selectInput(inputId = "singleConVariable","Continuous Variable",choices = list("Select Data First"="NormSum"),selected = "NormSum"),
                              p(""),
                              h4("Parameters and Formatting"),
                              tabsetPanel(type = "tabs",
@@ -202,6 +202,23 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                          tabPanel("Colors",
                                                   selectInput("chosenPalette",label=h4("Select color palette"),choices=row.names(colorDF),selected="Custom"),
                                                   textInput("hexStrings",label="Optionally edit the colors",value=toString(colorDF["Custom","hexcodes"][[1]]))
+                                                 ),
+                                         tabPanel("Filtering",
+                                                  selectInput(inputId = "additionalVarForFiltering","Filter by",choices = list("Select Data First"="Genotype"),selected = "Genotype"),
+                                                  fluidRow(
+                                                      column(
+                                                          width = 6,
+                                                          div(style = "white-space: nowrap;", 
+                                                              div(style="display: inline-block; width: 100%;",
+                                                                  numericInput("additionalFilterLower",label="Lower Limit (Inclusive)",value=0)
+                                                                 ),
+                                                              h3("-",style="display:inline-block"),
+                                                              div(style="display: inline-block; width: 100%;",
+                                                                  numericInput("additionalFilterUpper",label="Upper Limit (Inclusive)",value=1)
+                                                                 ),
+                                                             ))),
+                                                  actionButton("additionalFilter", "Apply Filter"),
+                                                  actionButton("cancelFilter", "Cancel Filter")
                                                  )
                                         )
                          ),
@@ -209,7 +226,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              tabsetPanel(type = "tabs",
                                          tabPanel("Directions",
                                                   p(""),
-                                                  p("1. After filtering your data using the Select tab, choose the variables you want to color/split by."),
+                                                  p("1. After selecting your data using the Select tab, choose the variables you want to color/split by."),
                                                   p("2. Press 'Update Parameters'"),
                                                   p("3. Press 'Generate Plots'."),
                                                   p("4. Customize the axes limits in the sub-tabs for each plot type."),
@@ -225,9 +242,9 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   plotOutput("kdeRefinedPercentage")),
                                          tabPanel("Boxplots",
                                                   plotOutput("boxplotRefined")),
-                                         tabPanel("Summary Table",
+                                         tabPanel("Boxplot statistics",
                                                   dataTableOutput("summaryTableFromBoxplot"),
-                                                  h4("Summary statistics"),
+                                                  h4("Boxplot statistics"),
                                                   p("The lower and upper hinges correspond to the first and third quartiles (the 25th and 75th percentiles). This differs slightly from the method used by the boxplot() function, and may be apparent with small samples. See boxplot.stats() for for more information on how hinge positions are calculated for boxplot()."),
                                                   p('The upper whisker extends from the hinge to the largest value no further than 1.5 * IQR from the hinge (where IQR is the inter-quartile range, or distance between the first and third quartiles). The lower whisker extends from the hinge to the smallest value at most 1.5 * IQR of the hinge. Data beyond the end of the whiskers are called "outlying" points and are plotted individually.'),
                                                   p("In a notched box plot, the notches extend 1.58 * IQR / sqrt(n). This gives a roughly 95% confidence interval for comparing medians. See McGill et al. (1978) for more details."),
@@ -241,6 +258,10 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   HTML("<p><b>upper</b>: upper hinge, 75% quantile</p>"),
                                                   HTML("<p><b>ymax</b>: upper whisker = largest observation less than or equal to upper hinge + 1.5 * IQR</p>"),
                                                   HTML("<p>(All information above is copied directly from <code>?stat_boxplot</code>)</p>"),
+                                                 ),
+                                         tabPanel("Filtered Data Table",
+                                                  dataTableOutput("additionalFilteredDataTable"),
+                                                  downloadButton("downloadAdditionalFilteredData", "Download Filtered Data"),
                                                  )
                                         )
                          )
@@ -296,8 +317,36 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                  ),
                                          tabPanel("Transparency",
                                                   numericInput("scatterplotTransparency",label="Alpha",value=0.9,min=0,max=1,step=0.05)
+                                         ),
+                                         tabPanel("Contours?",
+                                                 checkboxInput("contourCheckbox",label="Add contours?",value = TRUE)
+                                                 ),
+                                         tabPanel("Contour Params",
+                                             fluidRow(
+                                                 column(
+                                                     width = 6,
+                                                     div(style = "white-space: nowrap;", 
+                                                         div(style="display: inline-block; width: 100%;",
+                                                             numericInput("xLLContourScatter",label="X Min",value=0)
+                                                            ),
+                                                         h3("-",style="display:inline-block"),
+                                                         div(style="display: inline-block; width: 100%;",
+                                                             numericInput("xULContourScatter",label="X Max",value=1)
+                                                            ),
+                                                        ))),
+                                             fluidRow(
+                                                 column(
+                                                     width = 6,
+                                                     div(style = "white-space: nowrap;", 
+                                                         div(style="display: inline-block; width: 100%;",
+                                                             numericInput("yLLContourScatter",label="Y Min",value=0)
+                                                            ),
+                                                         h3("-",style="display:inline-block"),
+                                                         div(style="display: inline-block; width: 100%;",
+                                                             numericInput("yULContourScatter",label="Y Max",value=1)
+                                                            ),
+                                                        )))
                                          )
-                                         
                              )
                          ),
                          mainPanel(

@@ -177,7 +177,7 @@ server = function(input, output, session) {
     
     # Create options for generating outliers based on variable input
     generatedOutliers = eventReactive(input$generateOutliers,{
-        subsettableData = filteredDataset()
+        subsettableData = reactiveDF$filteredDataset
         req(input$outlierVariable)
         outlierVariableString = input$outlierVariable
         dataToBoxplot = subsettableData %>%
@@ -194,7 +194,9 @@ server = function(input, output, session) {
         })
     
     # Instantiate the reactive variable for filtering
-    filteredDataset = eventReactive(input$filterButton,{
+    reactiveDF = reactiveValues() 
+    
+    observeEvent(input$filterButton,{
         # Turn the imported/processed data into a format that can be filtered and subsetted
         if (input$dataToSelect == "rawData"){
             subsettableData = importedData()
@@ -226,7 +228,8 @@ server = function(input, output, session) {
             }
         }
         
-        return(filteredData)
+        reactiveDF$filteredDataset = filteredData
+        reactiveDF$filteredDatasetRef = filteredData
     },ignoreNULL=TRUE)
     
     # Create two observe() calls to complete the select input items for plotting (one for when the data
@@ -240,6 +243,7 @@ server = function(input, output, session) {
         updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = NULL)
         updateSelectInput(session, "singleConVariable", choices = continuousVars, selected = NULL)
         updateSelectInput(session, "catVariableForSplitting", choices = categoricalVars, selected = NULL)
+        updateSelectInput(session, "additionalVarForFiltering", choices = continuousVars, selected = NULL)
         updateSelectInput(session, "scatterX", choices = continuousVars, selected = NULL)
         updateSelectInput(session, "scatterY", choices = continuousVars, selected = NULL)
         updateSelectInput(session, "scatterCatColor", choices = categoricalVars, selected = NULL)
@@ -254,6 +258,7 @@ server = function(input, output, session) {
         updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = NULL)
         updateSelectInput(session, "singleConVariable", choices = continuousVars, selected = NULL)
         updateSelectInput(session, "catVariableForSplitting", choices = categoricalVars, selected = NULL)
+        updateSelectInput(session, "additionalVarForFiltering", choices = continuousVars, selected = NULL)
         updateSelectInput(session, "scatterX", choices = continuousVars, selected = NULL)
         updateSelectInput(session, "scatterY", choices = continuousVars, selected = NULL)
         updateSelectInput(session, "scatterCatColor", choices = categoricalVars, selected = NULL)
@@ -262,7 +267,7 @@ server = function(input, output, session) {
     
     # Output the filtered data table as a function of the inputs given in the user interface above
     filteredTableToRender = eventReactive(input$filterButton,{
-        table = filteredDataset()
+        table = reactiveDF$filteredDataset
         return(table)
     })
     output$filteredTableToView = renderDataTable({
@@ -271,7 +276,7 @@ server = function(input, output, session) {
     
     # Once the dataset is filtered, then update the options for column selection / exporting
     observe({
-        subsettableData = filteredDataset()
+        subsettableData = reactiveDF$filteredDataset
         updateCheckboxGroupInput(session,"exportColumns",choices=colnames(subsettableData),selected=NULL)
         columnExportOptions <<- colnames(subsettableData)
     })
@@ -287,7 +292,7 @@ server = function(input, output, session) {
     
     # Use the inputted column selection for data exporting/download
     dataToExport = eventReactive(input$selectColumnsButton,{
-        subsettableData = filteredDataset()
+        subsettableData = reactiveDF$filteredDataset
         dataToExport = subsettableData %>% select(input$exportColumns)
         return(dataToExport)
     },ignoreNULL=TRUE)
@@ -387,7 +392,7 @@ server = function(input, output, session) {
     
     # Subset the filtered data for plotting histograms, boxplots, and KDE's
     densityDataToHistoBox = eventReactive(input$generatePlotParams,{
-        return(filteredDataset())
+        return(reactiveDF$filteredDataset)
     },ignoreNULL=TRUE)
     
     # Instantiate a themes reactive variable
@@ -423,12 +428,43 @@ server = function(input, output, session) {
         updateNumericInput(session,"yULBoxplot",value=yRangeBoxplot[2])
         })
     
+    # Create the option for an additional filter based on a user defined unidemionsal set of lower and upper bounds
+    # and render the data to a table in the 1-D plot area
+    observeEvent(input$additionalFilter,{
+        req(reactiveDF$filteredDataset)
+        dataToFilter = reactiveDF$filteredDataset
+        additionalFilteredDataset = dataToFilter %>% filter(!!sym(input$additionalVarForFiltering) >= input$additionalFilterLower,
+                                                            !!sym(input$additionalVarForFiltering) <= input$additionalFilterUpper)
+        reactiveDF$filteredDataset = additionalFilteredDataset
+        
+        output$additionalFilteredDataTable = renderDataTable({
+        DT::datatable(reactiveDF$filteredDataset, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
+        })
+    },ignoreNULL=TRUE)
+    
+    # Create the option to reset the data / cancel the filter and return to the originally selected data
+    observeEvent(input$cancelFilter,{
+        req(reactiveDF$filteredDataset)
+        req(reactiveDF$filteredDatasetRef)
+        reactiveDF$filteredDataset = reactiveDF$filteredDatasetRef
+    },ignoreNULL=TRUE)
+    
+    # Create the option to download the filtered data
+    output$downloadAdditionalFilteredData = downloadHandler(
+        filename = function() {
+            paste(format(Sys.time(), "FilteredData_Date_%Y_%m_%d_Time_%H%M%S"), ".csv", sep = "")
+        },
+        content = function(file) {
+            write.csv(reactiveDF$filteredDataset, file, row.names = FALSE)
+        }
+    )
+    
     # Generate the data for the histograms and boxplots
     densityDataToHistoBoxRefined = eventReactive(input$plotRefined,{
         req(input$singleConVariable)
         req(input$catVariableForFill)
         req(input$catVariableForSplitting)
-        subsettableDataForHistoBoxKDE = filteredDataset()
+        subsettableDataForHistoBoxKDE = reactiveDF$filteredDataset
         filteredDataForHistoBoxKDE = subsettableDataForHistoBoxKDE %>% select(`Image File`,`Object ID`,!!sym(input$catVariableForFill),!!sym(input$singleConVariable),!!sym(input$catVariableForSplitting))
         return(filteredDataForHistoBoxKDE)
     },ignoreNULL=TRUE)
@@ -517,7 +553,7 @@ server = function(input, output, session) {
     # Create a summary table of values from the boxplot
     output$summaryTableFromBoxplot = renderDataTable({
         summaryTable = layer_data(boxplotRefined()) %>% relocate(outliers, .after = last_col())
-        DT::datatable(summaryTable, options = list(dom = 't', scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE))
+        DT::datatable(summaryTable, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
     })
     
     
@@ -568,19 +604,35 @@ server = function(input, output, session) {
     
     # Output scatterplot parameters
     densityDataToScatterParams = eventReactive(input$scatterParams,{
-        return(filteredDataset())
+        return(reactiveDF$filteredDataset)
     },ignoreNULL=TRUE)
     
     # Generate data for the scatterplot
     observe({
         dataForPlotParams = densityDataToScatterParams()
-        scatterForParams = ggplot(dataForPlotParams,aes(y=!!sym(input$scatterY),x=!!sym(input$scatterX),color=!!sym(input$scatterCatColor))) + geom_point() + facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$numColumns,drop=FALSE)
+        scatterForParams = ggplot(dataForPlotParams,aes(y=!!sym(input$scatterY),
+                                                        x=!!sym(input$scatterX)
+                                                        ,color=!!sym(input$scatterCatColor))) + geom_point() + facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$numColumns,drop=FALSE)
         xRangeScatter <<- ggplot_build(scatterForParams)$layout$panel_params[[1]]$x.range
         yRangeScatter <<- ggplot_build(scatterForParams)$layout$panel_params[[1]]$y.range
         updateNumericInput(session,"xLLScatter",value=xRangeScatter[1])
         updateNumericInput(session,"xULScatter",value=xRangeScatter[2])
         updateNumericInput(session,"yLLScatter",value=yRangeScatter[1])
         updateNumericInput(session,"yULScatter",value=yRangeScatter[2])
+    })
+        observe({
+        dataForPlotParams = densityDataToScatterParams()
+        scatterForParams = ggplot(densityDataToScatter(),
+                   aes(y=!!sym(input$scatterY),
+                       x=!!sym(input$scatterX),
+                       color=!!sym(input$scatterCatColor))) +
+            stat_density_2d(aes(fill = ..level..), geom = "polygon", colour="white")
+        xRangeScatter <<- ggplot_build(scatterForParams)$layout$panel_params[[1]]$x.range
+        yRangeScatter <<- ggplot_build(scatterForParams)$layout$panel_params[[1]]$y.range
+        updateNumericInput(session,"xLLContourScatter",value=xRangeScatter[1])
+        updateNumericInput(session,"xULContourScatter",value=xRangeScatter[2])
+        updateNumericInput(session,"yLLContourScatter",value=yRangeScatter[1])
+        updateNumericInput(session,"yULContourScatter",value=yRangeScatter[2])
     })
     
     # Output scatterplots
@@ -594,7 +646,7 @@ server = function(input, output, session) {
         req(input$scatterX)
         req(input$scatterCatColor)
         req(input$scatterCatFacet)
-        subsettableDataForScatter = filteredDataset()
+        subsettableDataForScatter = reactiveDF$filteredDataset
         filteredDataForScatter = subsettableDataForScatter %>% select(`Image File`,`Object ID`,!!sym(input$scatterY),!!sym(input$scatterX),!!sym(input$scatterCatColor),!!sym(input$scatterCatFacet))
         return(filteredDataForScatter)
     },ignoreNULL=TRUE)
@@ -602,13 +654,29 @@ server = function(input, output, session) {
     scatterPlot = reactive({
         req(densityDataToScatter())
         listOfColors = as.list(strsplit(input$scatterplotHexStrings, ",")[[1]])
-        ggplot(densityDataToScatter(),aes(y=!!sym(input$scatterY),x=!!sym(input$scatterX),color=!!sym(input$scatterCatColor))) +
-        geom_point(alpha=input$scatterplotTransparency) +
-        facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE) +
-        xlim(input$xLLScatter,input$xULScatter) + ylim(input$yLLScatter,input$yULScatter) + scatterplotTheme() +
-        scale_color_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) +
-        theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
-        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        
+        if(input$contourCheckbox==FALSE){
+            ggplot(densityDataToScatter(),
+                   aes(y=!!sym(input$scatterY),
+                       x=!!sym(input$scatterX),
+                       color=!!sym(input$scatterCatColor))) +
+            geom_point(alpha=input$scatterplotTransparency) +
+            facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE) +
+            xlim(input$xLLScatter,input$xULScatter) + ylim(input$yLLScatter,input$yULScatter) + scatterplotTheme() +
+            scale_color_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) +
+            theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
+            theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        } else {
+            ggplot(densityDataToScatter(),
+                   aes(y=!!sym(input$scatterY),
+                       x=!!sym(input$scatterX))) +
+            stat_density_2d(aes(fill = ..level..), geom = "polygon", colour="white") +
+            facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE) +
+            xlim(input$xLLContourScatter,input$xULContourScatter) + ylim(input$yLLContourScatter,input$yULContourScatter) + scatterplotTheme() +
+            scale_fill_continuous(type = "viridis") +
+            theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
+            theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        }
     })
     
     output$scatter = renderPlot({
