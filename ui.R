@@ -55,7 +55,20 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              p(""),
                              p("Data processing is an optional step that adds normalized variables such as: Normalized intensity sum, mean, and stdev; Normalized shortest distance to nucleus; Normalised intensity ratio (ch2:ch1); Group intensity sum, mean, and stdev; Signal density (normalized intensity sum: volume)."),
                              p("After pressing the \"Process Data\" button, the data will appear in a table when the processing pipeline has finished. You will then be able to select the processed version of the data within the \"Filtering\" tab."),
-           p("See the FAQ section for more details.")                  
+           p("See the FAQ section for more details."),
+                             checkboxGroupInput(inputId = "varsToCreate",h3("Optional Variables"),
+                                               choices=c("Normalized Intensity Sum",
+                                                         "Normalized Intensity Mean",
+                                                         "Normalized Intensity StdDev",
+                                                         "Normalized Distance to Nucleus",
+                                                         "Group Intensity Sum",
+                                                         "Group Intensity Mean",
+                                                         "Normalized Intensity Sum Ratio Ch2:Ch1",
+                                                         "Normalized Intensity Mean Ratio Ch2:Ch1",
+                                                         "Signal Density",
+                                                         "Relative Intensity Sum",
+                                                         "Relative Intensity Mean",
+                                                         "Object Count"))
                          ),
                          mainPanel(
                              tabPanel("Table",dataTableOutput("processedTableToView"))

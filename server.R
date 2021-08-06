@@ -128,11 +128,47 @@ server = function(input, output, session) {
         {updateCheckboxGroupInput(session,"nROI",choices=imageLevelsForFiltering,selected=imageLevelsForFiltering)}
     })
     
+    # Handle the selection of variables to create when processing
+    observeEvent(input$varsToCreate, {
+        if("Normalized Intensity Sum Ratio Ch2:Ch1" %in% input$varsToCreate){
+            updateCheckboxGroupInput(session,"varsToCreate",
+                                     selected=append(input$varsToCreate,"Normalized Intensity Sum"))
+        }
+    })
+    
+    observeEvent(input$varsToCreate, {
+        if("Normalized Intensity Mean Ratio Ch2:Ch1" %in% input$varsToCreate){
+            updateCheckboxGroupInput(session,"varsToCreate",
+                                     selected=append(input$varsToCreate,"Normalized Intensity Mean"))
+        }
+    })
+    
+    observeEvent(input$varsToCreate, {
+        if("Signal Density" %in% input$varsToCreate){
+            updateCheckboxGroupInput(session,"varsToCreate",
+                                     selected=append(input$varsToCreate,"Normalized Intensity Sum"))
+        }
+    })
+    
+    observeEvent(input$varsToCreate, {
+        if("Relative Intensity Sum" %in% input$varsToCreate){
+            updateCheckboxGroupInput(session,"varsToCreate",
+                                     selected=append(input$varsToCreate,"Normalized Intensity Sum"))
+        }
+    })
+    
+    observeEvent(input$varsToCreate, {
+        if("Relative Intensity Mean" %in% input$varsToCreate){
+            updateCheckboxGroupInput(session,"varsToCreate",
+                                     selected=append(input$varsToCreate,"Normalized Intensity Mean"))
+        }
+    })
+    
     # Process the data
     processedData = eventReactive(input$processButton,{
         req(importedData())
         dataToProcess = importedData()
-        processedData = processingFunction(dataToProcess)
+        processedData = processingFunction(dataToProcess,input$varsToCreate)
         processedDataToWrite = processedData
         write.csv(processedDataToWrite, "TMP__ProcessedData.csv", row.names = FALSE)
         processedDataToReturn = read.csv("TMP__ProcessedData.csv",check.names = FALSE)
