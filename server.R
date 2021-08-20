@@ -644,31 +644,20 @@ server = function(input, output, session) {
     },ignoreNULL=TRUE)
     
     # Generate data for the scatterplot
-    observe({
+        observe({
         dataForPlotParams = densityDataToScatterParams()
-        scatterForParams = ggplot(dataForPlotParams,aes(y=!!sym(input$scatterY),
-                                                        x=!!sym(input$scatterX)
-                                                        ,color=!!sym(input$scatterCatColor))) + geom_point() + facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$numColumns,drop=FALSE)
+        scatterForParams = ggplot(dataForPlotParams,
+                   aes(y=!!sym(input$scatterY),
+                       x=!!sym(input$scatterX),
+                       color=!!sym(input$scatterCatColor))) +
+            stat_density_2d(aes(fill = ..level..), geom = "polygon", colour="white") +
+            facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE)
         xRangeScatter <<- ggplot_build(scatterForParams)$layout$panel_params[[1]]$x.range
         yRangeScatter <<- ggplot_build(scatterForParams)$layout$panel_params[[1]]$y.range
         updateNumericInput(session,"xLLScatter",value=xRangeScatter[1])
         updateNumericInput(session,"xULScatter",value=xRangeScatter[2])
         updateNumericInput(session,"yLLScatter",value=yRangeScatter[1])
         updateNumericInput(session,"yULScatter",value=yRangeScatter[2])
-    })
-        observe({
-        dataForPlotParams = densityDataToScatterParams()
-        scatterForParams = ggplot(densityDataToScatter(),
-                   aes(y=!!sym(input$scatterY),
-                       x=!!sym(input$scatterX),
-                       color=!!sym(input$scatterCatColor))) +
-            stat_density_2d(aes(fill = ..level..), geom = "polygon", colour="white")
-        xRangeScatter <<- ggplot_build(scatterForParams)$layout$panel_params[[1]]$x.range
-        yRangeScatter <<- ggplot_build(scatterForParams)$layout$panel_params[[1]]$y.range
-        updateNumericInput(session,"xLLContourScatter",value=xRangeScatter[1])
-        updateNumericInput(session,"xULContourScatter",value=xRangeScatter[2])
-        updateNumericInput(session,"yLLContourScatter",value=yRangeScatter[1])
-        updateNumericInput(session,"yULContourScatter",value=yRangeScatter[2])
     })
     
     # Output scatterplots
@@ -683,7 +672,8 @@ server = function(input, output, session) {
         req(input$scatterCatColor)
         req(input$scatterCatFacet)
         subsettableDataForScatter = reactiveDF$filteredDataset
-        filteredDataForScatter = subsettableDataForScatter %>% select(`Image File`,`Object ID`,!!sym(input$scatterY),!!sym(input$scatterX),!!sym(input$scatterCatColor),!!sym(input$scatterCatFacet))
+        # !! Do we need to filter for only the columns of interest first before creating the plots?
+        filteredDataForScatter = subsettableDataForScatter ## %>% select(`Image File`,`Object ID`,!!sym(input$scatterY),!!sym(input$scatterX),!!sym(input$scatterCatColor),!!sym(input$scatterCatFacet))
         return(filteredDataForScatter)
     },ignoreNULL=TRUE)
     
@@ -708,8 +698,8 @@ server = function(input, output, session) {
                        x=!!sym(input$scatterX))) +
             stat_density_2d(aes(fill = ..level..), geom = "polygon", colour="white") +
             facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE) +
-            xlim(input$xLLContourScatter,input$xULContourScatter) + ylim(input$yLLContourScatter,input$yULContourScatter) + scatterplotTheme() +
-            scale_fill_continuous(type = "viridis") +
+            xlim(input$xLLScatter,input$xULScatter) + ylim(input$yLLScatter,input$yULScatter) + scatterplotTheme() +
+            scale_fill_continuous(type = input$contourColor) +
             theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
             theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         }
@@ -721,8 +711,18 @@ server = function(input, output, session) {
         },height=scatterplotHeight)
     
     # Create a table of the scatterplot data for viewing
+    scatterplotDataTable = eventReactive(input$plotScatter,{
+        req(densityDataToScatter())
+        scatterDataTableDataPreFilter = densityDataToScatter()
+        scatterDataTableDataPostFilter = scatterDataTableDataPreFilter %>%
+                                            filter(!!sym(input$scatterY) >= input$yLLScatter) %>%
+                                            filter(!!sym(input$scatterY) <= input$yULScatter) %>%
+                                            filter(!!sym(input$scatterX) >= input$xLLScatter) %>%
+                                            filter(!!sym(input$scatterX) <= input$xULScatter)
+        return(as.data.frame(scatterDataTableDataPostFilter))
+    },ignoreNULL=TRUE)
     output$scatterplotTable = renderDataTable({
-        DT::datatable(densityDataToScatter(), options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE))
+        DT::datatable(scatterplotDataTable(), options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE))
         })
     
     # Create a pop up that allows for the download of the scatterplots

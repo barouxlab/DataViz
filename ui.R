@@ -291,7 +291,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              selectInput(inputId = "scatterCatColor","Categorical Variable for Color",choices = list("Filter Data First"="Treatment"),selected = "Treatment"),
                              selectInput(inputId = "scatterCatFacet","Categorical Variable for Splitting",choices = list("Filter Data First"="Treatment"),selected = "Image File"),
                              tabsetPanel(type = "tabs",
-                                         tabPanel("Parameters",
+                                         tabPanel("X-Y Parameters",
                                              fluidRow(
                                                  column(
                                                      width = 6,
@@ -325,41 +325,16 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   selectInput("scatterplotTheme",label=h4("Select theme for plots"),choices=names(themesForPlotting),selected=names(themesForPlotting)[4])
                                          ),
                                          tabPanel("Colors",
-                                                  selectInput("scatterplotChosenPalette",label=h4("Select color palette"),choices=row.names(colorDF),selected="Custom"),
-                                                  textInput("scatterplotHexStrings",label="Optionally edit the colors",value=toString(colorDF["Custom","hexcodes"][[1]]))
+                                                  selectInput("contourColor",label="Contour color",choices=c("viridis","gradient"),selected="viridis"),
+                                                  selectInput("scatterplotChosenPalette",label="Colors for non-contour scatter",choices=row.names(colorDF),selected="Custom"),
+                                                  textInput("scatterplotHexStrings",label="Optionally edit the non-contour colors",value=toString(colorDF["Custom","hexcodes"][[1]]))
                                                  ),
                                          tabPanel("Transparency",
                                                   numericInput("scatterplotTransparency",label="Alpha",value=0.9,min=0,max=1,step=0.05)
                                          ),
                                          tabPanel("Contours?",
                                                  checkboxInput("contourCheckbox",label="Add contours?",value = TRUE)
-                                                 ),
-                                         tabPanel("Contour Params",
-                                             fluidRow(
-                                                 column(
-                                                     width = 6,
-                                                     div(style = "white-space: nowrap;", 
-                                                         div(style="display: inline-block; width: 100%;",
-                                                             numericInput("xLLContourScatter",label="X Min",value=0)
-                                                            ),
-                                                         h3("-",style="display:inline-block"),
-                                                         div(style="display: inline-block; width: 100%;",
-                                                             numericInput("xULContourScatter",label="X Max",value=1)
-                                                            ),
-                                                        ))),
-                                             fluidRow(
-                                                 column(
-                                                     width = 6,
-                                                     div(style = "white-space: nowrap;", 
-                                                         div(style="display: inline-block; width: 100%;",
-                                                             numericInput("yLLContourScatter",label="Y Min",value=0)
-                                                            ),
-                                                         h3("-",style="display:inline-block"),
-                                                         div(style="display: inline-block; width: 100%;",
-                                                             numericInput("yULContourScatter",label="Y Max",value=1)
-                                                            ),
-                                                        )))
-                                         )
+                                                 )
                              )
                          ),
                          mainPanel(
