@@ -109,14 +109,14 @@ processingFunction = function(importedData,varsToInclude){
     
     # Relative Intensity Sum
     if ("Relative Intensity Sum" %in% varsToInclude){
-        dataToProcess = dataToProcess %>% group_by(`Image File`,Channel) %>% 
+        dataToProcess = dataToProcess %>% group_by(`Image File`,`Object`,Channel) %>% 
                         mutate("Relative Intensity Sum" = `Normalized Intensity Sum`/sum(`Normalized Intensity Sum`)) %>% 
                         ungroup()
         }
     
     # Relative Intensity Mean
     if ("Relative Intensity Mean" %in% varsToInclude){
-        dataToProcess = dataToProcess %>% group_by(`Image File`,Channel) %>% 
+        dataToProcess = dataToProcess %>% group_by(`Image File`,`Object`,Channel) %>% 
                         mutate("Relative Intensity Mean" = `Normalized Intensity Mean`/sum(`Normalized Intensity Mean`)) %>% 
                         ungroup()
         }
@@ -126,7 +126,7 @@ processingFunction = function(importedData,varsToInclude){
     
     # Object Count
     if ("Object Count" %in% varsToInclude){
-        dataToProcess = dataToProcess %>% group_by(`Image File`,`Object`) %>% 
+        dataToProcess = dataToProcess %>% group_by(`Image File`,`Object`,`Channel`) %>% 
                         mutate("Object Count" = n()) %>% 
                         ungroup()
         }

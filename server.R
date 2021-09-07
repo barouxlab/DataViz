@@ -503,8 +503,9 @@ server = function(input, output, session) {
         req(input$catVariableForFill)
         req(input$catVariableForSplitting)
         subsettableDataForHistoBoxKDE = reactiveDF$filteredDataset
-        filteredDataForHistoBoxKDE = subsettableDataForHistoBoxKDE %>% select(`Image File`,`Object ID`,!!sym(input$catVariableForFill),!!sym(input$singleConVariable),!!sym(input$catVariableForSplitting))
-        return(filteredDataForHistoBoxKDE)
+#         Filter the data first?
+#         filteredDataForHistoBoxKDE = subsettableDataForHistoBoxKDE %>% select(`Image File`,`Object ID`,!!sym(input$catVariableForFill),!!sym(input$singleConVariable),!!sym(input$catVariableForSplitting))
+        return(subsettableDataForHistoBoxKDE)
     },ignoreNULL=TRUE)
     
     # Input the plot height variable
@@ -605,7 +606,7 @@ server = function(input, output, session) {
     
     # Create a summary table of values from the boxplot
     output$summaryTableFromBoxplot = renderDataTable({
-        summaryTable = layer_data(boxplotRefined()) %>% select(lower,middle,upper)
+        summaryTable = layer_data(boxplotRefined()) #%>% select(lower,middle,upper)
         DT::datatable(summaryTable, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 2)))
     })
     
@@ -630,10 +631,10 @@ server = function(input, output, session) {
         l = sapply(subsettableData, class)
         categoricalVars = names(l[str_which(l,pattern="character")])
         categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
-        updateSelectInput(session, "catVariableForFill", choices = c(categoricalVars,"Bins"), selected = NULL)
-        updateSelectInput(session, "catVariableForSplitting", choices = c(categoricalVars,"Bins"), selected = NULL)
-        updateSelectInput(session, "scatterCatColor", choices = c(categoricalVars,"Bins"), selected = NULL)
-        updateSelectInput(session, "scatterCatFacet", choices = c(categoricalVars,"Bins"), selected = NULL)
+        updateSelectInput(session, "catVariableForFill", choices = c(categoricalVars,"Bin"), selected = NULL)
+        updateSelectInput(session, "catVariableForSplitting", choices = c(categoricalVars,"Bin"), selected = NULL)
+        updateSelectInput(session, "scatterCatColor", choices = c(categoricalVars,"Bin"), selected = NULL)
+        updateSelectInput(session, "scatterCatFacet", choices = c(categoricalVars,"Bin"), selected = NULL)
         
     },ignoreNULL=TRUE)
     
@@ -706,8 +707,7 @@ server = function(input, output, session) {
         dataForPlotParams = densityDataToScatterParams()
         scatterForParams = ggplot(dataForPlotParams,
                    aes(y=!!sym(input$scatterY),
-                       x=!!sym(input$scatterX),
-                       color=!!sym(input$scatterCatColor))) +
+                       x=!!sym(input$scatterX))) +
             stat_density_2d(aes(fill = ..level..), geom = "polygon", colour="white") +
             facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE)
         xRangeScatter <<- ggplot_build(scatterForParams)$layout$panel_params[[1]]$x.range
