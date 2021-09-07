@@ -183,7 +183,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                  )
                                                              )))
                                                  ),
-                                         tabPanel("Boxplots",
+                                         tabPanel("Box/Vio",
                                                   fluidRow(
                                                       column(
                                                           width = 6,
@@ -231,8 +231,14 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                  ),
                                                              ))),
                                                   actionButton("additionalFilter", "Apply Filter"),
-                                                  actionButton("cancelFilter", "Cancel Filter")
-                                                 )
+                                                  actionButton("cancelFilter", "Cancel Filter (and Bins)")
+                                                 ),
+                                         tabPanel("Binning",
+                                                  textInput("binCuts","Break Points",value="0,1"),
+                                                  selectInput(inputId = "binningVariable","Variable for Binning",choices = list("Select Data First"="NormSum"),selected = "NormSum"),
+                                                  actionButton("addBins", "Add Bins"),
+                                                  actionButton("removeBins","Remove Bins")
+                                         )
                                         )
                          ),
                          mainPanel(style = "overflow-y: auto;",
@@ -255,7 +261,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   plotOutput("kdeRefinedPercentage")),
                                          tabPanel("Boxplots",
                                                   plotOutput("boxplotRefined")),
-                                         tabPanel("Boxplot statistics",
+                                         tabPanel("Boxplot Stats",
                                                   dataTableOutput("summaryTableFromBoxplot"),
                                                   h4("Boxplot statistics"),
                                                   p("The lower and upper hinges correspond to the first and third quartiles (the 25th and 75th percentiles). This differs slightly from the method used by the boxplot() function, and may be apparent with small samples. See boxplot.stats() for for more information on how hinge positions are calculated for boxplot()."),
@@ -272,9 +278,12 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   HTML("<p><b>ymax</b>: upper whisker = largest observation less than or equal to upper hinge + 1.5 * IQR</p>"),
                                                   HTML("<p>(All information above is copied directly from <code>?stat_boxplot</code>)</p>"),
                                                  ),
-                                         tabPanel("Filtered Data Table",
-                                                  dataTableOutput("additionalFilteredDataTable"),
-                                                  downloadButton("downloadAdditionalFilteredData", "Download Filtered Data"),
+                                         tabPanel("Violin Plots",
+                                                  plotOutput("violinplotRefined")
+                                                  ),
+                                         tabPanel("Data Table",
+                                                  dataTableOutput("oneDTableView"),
+                                                  downloadButton("downloadAdditionalFilteredData", "Download Filtered/Binned Data"),
                                                  )
                                         )
                          )
@@ -288,8 +297,9 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              # Input the X and Y variables of interest plus the categorical variables of interest
                              selectInput(inputId = "scatterX","X Variable",choices = list("Filter Data First"="NormMean"),selected = "NormMean"),
                              selectInput(inputId = "scatterY","Y Variable",choices = list("Filter Data First"="NormStDev"),selected = "NormStDev"),
-                             selectInput(inputId = "scatterCatColor","Categorical Variable for Color",choices = list("Filter Data First"="Treatment"),selected = "Treatment"),
                              selectInput(inputId = "scatterCatFacet","Categorical Variable for Splitting",choices = list("Filter Data First"="Treatment"),selected = "Image File"),
+                             checkboxInput("contourCheckbox",label="Add contours?",value = TRUE),
+                             uiOutput("scatterColorSelect"),
                              tabsetPanel(type = "tabs",
                                          tabPanel("X-Y Parameters",
                                              fluidRow(
@@ -331,10 +341,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                  ),
                                          tabPanel("Transparency",
                                                   numericInput("scatterplotTransparency",label="Alpha",value=0.9,min=0,max=1,step=0.05)
-                                         ),
-                                         tabPanel("Contours?",
-                                                 checkboxInput("contourCheckbox",label="Add contours?",value = TRUE)
-                                                 )
+                                         )
                              )
                          ),
                          mainPanel(

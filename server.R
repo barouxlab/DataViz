@@ -278,6 +278,7 @@ server = function(input, output, session) {
         continuousVars = names(l[str_which(l,pattern="numeric")])
         updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = NULL)
         updateSelectInput(session, "singleConVariable", choices = continuousVars, selected = NULL)
+        updateSelectInput(session, "binningVariable", choices = continuousVars, selected = NULL)
         updateSelectInput(session, "catVariableForSplitting", choices = categoricalVars, selected = NULL)
         updateSelectInput(session, "additionalVarForFiltering", choices = continuousVars, selected = NULL)
         updateSelectInput(session, "scatterX", choices = continuousVars, selected = NULL)
@@ -293,6 +294,7 @@ server = function(input, output, session) {
         continuousVars = names(l[str_which(l,pattern="numeric")])
         updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = NULL)
         updateSelectInput(session, "singleConVariable", choices = continuousVars, selected = NULL)
+        updateSelectInput(session, "binningVariable", choices = continuousVars, selected = NULL)
         updateSelectInput(session, "catVariableForSplitting", choices = categoricalVars, selected = NULL)
         updateSelectInput(session, "additionalVarForFiltering", choices = continuousVars, selected = NULL)
         updateSelectInput(session, "scatterX", choices = continuousVars, selected = NULL)
@@ -473,7 +475,7 @@ server = function(input, output, session) {
                                                             !!sym(input$additionalVarForFiltering) <= input$additionalFilterUpper)
         reactiveDF$filteredDataset = additionalFilteredDataset
         
-        output$additionalFilteredDataTable = renderDataTable({
+        output$oneDTableView = renderDataTable({
         DT::datatable(reactiveDF$filteredDataset, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
         })
     },ignoreNULL=TRUE)
@@ -508,7 +510,7 @@ server = function(input, output, session) {
     # Input the plot height variable
     plotHeight = reactive(as.numeric(input$plotHeight))
     
-    # Output histograms, kde's, and boxplots based on categorical and numeric variable selection for refined plotting
+    # Output histograms, kde's, boxplots, and violin plots based on categorical and numeric variable selection for refined plotting
     histoRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         data = densityDataToHistoBoxRefined()
@@ -586,11 +588,67 @@ server = function(input, output, session) {
         boxplotRefined()
         },height=plotHeight)
     
+    violinplotRefined = reactive({
+        listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
+        data = densityDataToHistoBoxRefined()
+        violinplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_violin() +
+        ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
+        theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        violinplot
+    })
+    
+    output$violinplotRefined = renderPlot({
+        req(violinplotRefined())
+        violinplotRefined()
+        },height=plotHeight)
+    
     # Create a summary table of values from the boxplot
     output$summaryTableFromBoxplot = renderDataTable({
-        summaryTable = layer_data(boxplotRefined()) %>% relocate(outliers, .after = last_col())
-        DT::datatable(summaryTable, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
+        summaryTable = layer_data(boxplotRefined()) %>% select(lower,middle,upper)
+        DT::datatable(summaryTable, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 2)))
     })
+    
+    # Create the option to apply bins to the data then remove them if desired
+    observeEvent(input$addBins,{
+        req(reactiveDF$filteredDataset)
+        
+        # Retrieve the breaks
+        breaksForBinning = as.list(strsplit(input$binCuts, ",")[[1]])
+        
+        # Apply the breaks
+        dataToBin = reactiveDF$filteredDataset
+        binnedDataset = dataToBin %>% mutate(Bin=cut(!!sym(input$binningVariable),breaks=breaksForBinning))
+        reactiveDF$filteredDataset = binnedDataset
+        
+        output$oneDTableView = renderDataTable({
+        DT::datatable(reactiveDF$filteredDataset, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
+        })
+        
+        # Update the categorical variable selection to include bins
+        subsettableData = reactiveDF$filteredDataset
+        l = sapply(subsettableData, class)
+        categoricalVars = names(l[str_which(l,pattern="character")])
+        categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
+        updateSelectInput(session, "catVariableForFill", choices = c(categoricalVars,"Bins"), selected = NULL)
+        updateSelectInput(session, "catVariableForSplitting", choices = c(categoricalVars,"Bins"), selected = NULL)
+        updateSelectInput(session, "scatterCatColor", choices = c(categoricalVars,"Bins"), selected = NULL)
+        updateSelectInput(session, "scatterCatFacet", choices = c(categoricalVars,"Bins"), selected = NULL)
+        
+    },ignoreNULL=TRUE)
+    
+    observeEvent(input$removeBins,{
+        req(reactiveDF$filteredDataset)
+        reactiveDF$filteredDataset = reactiveDF$filteredDataset %>% select(-Bin)
+        subsettableData = reactiveDF$filteredDataset
+        l = sapply(subsettableData, class)
+        categoricalVars = names(l[str_which(l,pattern="character")])
+        categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
+        updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = NULL)
+        updateSelectInput(session, "catVariableForSplitting", choices = categoricalVars, selected = NULL)
+        updateSelectInput(session, "scatterCatColor", choices = categoricalVars, selected = NULL)
+        updateSelectInput(session, "scatterCatFacet", choices = categoricalVars, selected = NULL)
+    },ignoreNULL=TRUE)
     
     
     # Create a pop up that allows for the download of the refined plots
@@ -669,7 +727,6 @@ server = function(input, output, session) {
     densityDataToScatter = eventReactive(input$plotScatter,{
         req(input$scatterY)
         req(input$scatterX)
-        req(input$scatterCatColor)
         req(input$scatterCatFacet)
         subsettableDataForScatter = reactiveDF$filteredDataset
         # !! Do we need to filter for only the columns of interest first before creating the plots?
@@ -677,6 +734,19 @@ server = function(input, output, session) {
         return(filteredDataForScatter)
     },ignoreNULL=TRUE)
     
+    # Make an option to choose whether the scatterplot is contoured or not
+    output$scatterColorSelect = renderUI({
+        req(input$contourCheckbox==FALSE)
+        req(reactiveDF$filteredDataset)
+        subsettableData = reactiveDF$filteredDataset
+        l = sapply(subsettableData, class)
+        categoricalVars = names(l[str_which(l,pattern="character")])
+        categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
+        continuousVars = names(l[str_which(l,pattern="numeric")])
+        selectInput(inputId = "scatterCatColor","Categorical Variable for Color",choices = categoricalVars)
+    })
+    
+    # Create the scatterplot so that it is either contoured or standard
     scatterPlot = reactive({
         req(densityDataToScatter())
         listOfColors = as.list(strsplit(input$scatterplotHexStrings, ",")[[1]])
