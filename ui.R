@@ -281,7 +281,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                          tabPanel("Violin Plots",
                                                   plotOutput("violinplotRefined")
                                                   ),
-                                         tabPanel("Data Table",
+                                         tabPanel("Filtered/Binned Data",
                                                   dataTableOutput("oneDTableView"),
                                                   downloadButton("downloadAdditionalFilteredData", "Download Filtered/Binned Data"),
                                                  )

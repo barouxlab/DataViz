@@ -15,7 +15,8 @@ themesForPlotting = list("Light" = theme_light(),
                              panel.border = element_blank(), 
                              panel.grid.major = element_blank(),
                              panel.grid.minor = element_blank(), 
-                             axis.line = element_line(colour = "black")
+                             axis.line = element_line(colour = "black"),
+                             axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)
                          ))
 
 # Instantiate a color brewer list of palettes

@@ -606,8 +606,35 @@ server = function(input, output, session) {
     
     # Create a summary table of values from the boxplot
     output$summaryTableFromBoxplot = renderDataTable({
-        summaryTable = layer_data(boxplotRefined()) #%>% select(lower,middle,upper)
-        DT::datatable(summaryTable, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 2)))
+        
+        layerData = layer_data(boxplotRefined()) %>% select(lower,middle,upper,PANEL,group)
+        dataToSubset = densityDataToHistoBoxRefined()
+        
+        # Panel Assignments
+        panelColumn = dataToSubset %>% select(!!sym(input$catVariableForSplitting))
+        panelLabels = sort(unique(as.data.frame(panelColumn)[,1]))
+        panelLabelNums = as.character(c(1:length(panelLabels)))
+        names(panelLabelNums) <- panelLabels
+        layerData$PANEL_labels <- fct_recode(factor(layerData$PANEL), !!!panelLabelNums)
+        layerData$PANEL_labels <- factor(layerData$PANEL_labels, ordered = TRUE, levels = panelLabels)
+        
+        # X-Label Assignments
+        groupColumn = dataToSubset %>% select(!!sym(input$catVariableForFill))
+        xLabels = sort(unique(as.data.frame(groupColumn)[,1]))
+        xLabelNums = as.character(c(1:length(xLabels)))
+        names(xLabelNums) <- xLabels
+        layerData$group_labels <- fct_recode(factor(layerData$group), !!!xLabelNums)
+        layerData$group_labels <- factor(layerData$group_labels, ordered = TRUE, levels = xLabels)
+        
+        # Select then rename the columns
+        boxDataToDisplay = layerData %>% select(lower,middle,upper,PANEL_labels,group_labels)
+        names(boxDataToDisplay)[names(boxDataToDisplay) == "lower"] <- "Lower"
+        names(boxDataToDisplay)[names(boxDataToDisplay) == "middle"] <- "Middle"
+        names(boxDataToDisplay)[names(boxDataToDisplay) == "upper"] <- "Upper"
+        names(boxDataToDisplay)[names(boxDataToDisplay) == "PANEL_labels"] <- input$catVariableForSplitting
+        names(boxDataToDisplay)[names(boxDataToDisplay) == "group_labels"] <- input$catVariableForFill
+        
+        DT::datatable(boxDataToDisplay, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 2)))
     })
     
     # Create the option to apply bins to the data then remove them if desired
