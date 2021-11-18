@@ -164,6 +164,15 @@ server = function(input, output, session) {
         }
     })
     
+    # Create an observe() call for the select/clear all option in the processing area
+    observe({
+        if(input$selectallvars == 0) return(NULL) 
+        else if (input$selectallvars%%2 == 0)
+        {updateCheckboxGroupInput(session,"varsToCreate",choices=processVarsOptions)}
+        else
+        {updateCheckboxGroupInput(session,"varsToCreate",choices=processVarsOptions,selected=processVarsOptions)}
+    })
+    
     # Process the data
     processedData = eventReactive(input$processButton,{
         req(importedData())

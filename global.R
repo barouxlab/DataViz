@@ -61,3 +61,17 @@ fileNamestoSkip = c("Diameter.csv",
                    "Position.csv",
                    "Time.csv",
                    "Time_Index.csv")
+
+# Instantiate the names of the processed variables that can be created
+processVarsOptions = c("Normalized Intensity Sum",
+                       "Normalized Intensity Mean",
+                       "Normalized Intensity StdDev",
+                       "Normalized Distance to Nucleus",
+                       "Group Intensity Sum",
+                       "Group Intensity Mean",
+                       "Normalized Intensity Sum Ratio Ch2:Ch1",
+                       "Normalized Intensity Mean Ratio Ch2:Ch1",
+                       "Signal Density",
+                       "Relative Intensity Sum",
+                       "Relative Intensity Mean",
+                       "Object Count")
