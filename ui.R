@@ -207,7 +207,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   textInput("hexStrings",label="Optionally edit the colors",value=toString(colorDF["Custom","hexcodes"][[1]]))
                                                  ),
                                          tabPanel("Filtering",
-                                                  selectInput(inputId = "additionalVarForFiltering","Filter by",choices = list("Select Data First"="Genotype"),selected = "Genotype"),
+                                                  selectInput(inputId = "additionalVarForFiltering","Filter by",choices = list("Select Variable"="Genotype"),selected = "Genotype"),
                                                   fluidRow(
                                                       column(
                                                           width = 6,
@@ -221,7 +221,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                  ),
                                                              ))),
                                                   actionButton("additionalFilter", "Apply Filter"),
-                                                  actionButton("cancelFilter", "Cancel Filter (and Bins)")
+                                                  actionButton("cancelFilter", "Cancel Filter and Bins")
                                                  ),
                                          tabPanel("Binning",
                                                   textInput("binCuts","Break Points",value="0,1"),
@@ -241,7 +241,8 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   p("4. Customize the axes limits in the sub-tabs for each plot type."),
                                                   p("6. Customize the colors and background via the 'Plot Themes and Colors' tabs."),
                                                   p("7. Investigate Outliers in the relevant tab."),
-                                                  p("8. If you refilter the data, follow the same steps 1-7.")
+                                                  p("Optional: you can apply a filter to the data using the Filtering tab. Choose a variable that you would like to use for filtering the data, then define the range of data that you would like to keep using the numeric units of this variable. You can then follow steps 1-7 again. You can also cancel the filter with the Cancel Filter and Bins button."),
+                                                  p("Optional: you can add a Bins variable to the data using the Binning tab. Choose a variable that you would like to use for binning the data, then input a list of numeric break points that you will use to define these bins. (Insert commas between the numbers as shown.) You can then follow steps 1-7 again. You can also remove the Bins variable with the Remove Bins button.")
                                                  ),
                                          tabPanel("Histograms",
                                                   plotOutput("histoRefined"),
