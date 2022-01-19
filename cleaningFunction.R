@@ -34,6 +34,9 @@ cleaningFunction = function(inputTopLevelDirectory){
         # of DF's that need to be joined initially.
         # In other words, all data is prepared as a list of data frames that will be joined.
         listOfLists = lapply(statFileNames,function(s)(str_subset(listOfFiles,pattern=s)))
+        # If one of the principal 3 statistics is missing from the dataset, remove its placeholder
+        # so as to avoid bugs
+        listOfLists = Filter(length, listOfLists)
     
         # Indicate the string indicators for the columns to keep.
         # These strings determine which columns of the raw data will be kept. If a column from the 
