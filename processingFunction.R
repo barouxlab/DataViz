@@ -12,12 +12,18 @@ processingFunction = function(importedData,varsToInclude){
     # 1 was chosen arbitrarily, and can be changed in future iterations of the code as necessary.
     # These values are filled because the data itself should not be missing for subsequent operations.
     # Moreover, the names of variables (e.g., "Nucleus center of mass") are unified.
-    importedData$`Distance to Nucleus`[is.na(importedData$`Object`=="Nucleus Center of Mass" & importedData$`Distance to Nucleus`=="NA")] = 1
+    if("Nucleus Center of Mass" %in% unique(importedData$`Object`)){
+        importedData$`Distance to Nucleus`[is.na(importedData$`Object`=="Nucleus Center of Mass" & importedData$`Distance to Nucleus`=="NA")] = 1
+}
     
-    # Filter out any group that doesn't have a nucleus center of mass object or where Channel is NA
-    dataToProcess = importedData %>% group_by(`Image File`) %>%
-                    filter(any(`Object`=="Nucleus Center of Mass")) %>%
-                    filter(`Channel`!="NA") %>% ungroup()
+    # Filter out any group that doesn't have a nucleus center of mass object or where Channel is NA (provided
+    # that a nucleus center of mass is included in the dataset)
+    if("Nucleus Center of Mass" %in% unique(importedData$`Object`)){
+        dataToProcess = importedData %>% group_by(`Image File`) %>% filter(any(`Object`=="Nucleus Center of Mass")) %>% 
+                        filter(`Channel`!="NA") %>% ungroup()
+    } else {
+        dataToProcess = importedData
+    }
     
     # Perform the variable normalizations in a "cascading fashion".
     # I.e., perform one normalization, add the column to the data frame, then perform the next, add it to
@@ -44,14 +50,14 @@ processingFunction = function(importedData,varsToInclude){
         }
     
     # Normalized Intensity StdDev
-    if ("Normalized Intensity StdDev" %in% varsToInclude){
+    if ("Normalized Intensity StdDev" %in% varsToInclude & ("Intensity StdDev" %in% names(dataToProcess))){
         dataToProcess = dataToProcess %>% group_by(`Image File`,Channel) %>% 
                         mutate("Normalized Intensity StdDev" = `Intensity StdDev`/`Intensity StdDev`[which(`Object`=="Nucleus")]) %>% 
                         ungroup()
         }
     
     # Normalized Distance to Nucleus
-    if ("Normalized Distance to Nucleus" %in% varsToInclude){
+    if (("Normalized Distance to Nucleus" %in% varsToInclude) & ("Nucleus Center of Mass" %in% unique(dataToProcess$`Object`))){
         dataToProcess = dataToProcess %>% group_by(`Image File`,Channel) %>% 
                         mutate("Normalized Distance to Nucleus" = `Distance to Nucleus`/`Distance to Nucleus`[which(`Object`=="Nucleus Center of Mass")]) %>% 
                         ungroup()
