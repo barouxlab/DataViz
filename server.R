@@ -181,7 +181,7 @@ server = function(input, output, session) {
         processedDataToWrite = processedData
         write.csv(processedDataToWrite, "TMP__ProcessedData.csv", row.names = FALSE)
         processedDataToReturn = read.csv("TMP__ProcessedData.csv",check.names = FALSE)
-        updateRadioButtons(session,"dataToSelect",choices=c("Raw Data"="rawData","Processed Data"="processedData"))
+        updateRadioButtons(session,"dataToSelect",choices=c("Original Data"="rawData","Processed Data"="processedData"))
         processedDataToReturn$`Object ID` = as.character(processedDataToReturn$`Object ID`)
         processedDataToReturn$`Channel` = as.character(processedDataToReturn$`Channel`)
         processedDataToReturn$`Time` = as.numeric(processedDataToReturn$`Time`)
@@ -282,9 +282,9 @@ server = function(input, output, session) {
     observe({
         subsettableData = importedData()
         l = sapply(subsettableData, class)
-        categoricalVars = names(l[str_which(l,pattern="character")])
-        categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
-        continuousVars = names(l[str_which(l,pattern="numeric")])
+        categoricalVars = sort(names(l[str_which(l,pattern="character")]))
+        categoricalVars = sort(categoricalVars[-which(categoricalVars=="Object ID")])
+        continuousVars = sort(names(l[str_which(l,pattern="numeric")]))
         updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = NULL)
         updateSelectInput(session, "singleConVariable", choices = continuousVars, selected = NULL)
         updateSelectInput(session, "binningVariable", choices = continuousVars, selected = NULL)
@@ -298,9 +298,9 @@ server = function(input, output, session) {
     observe({
         subsettableData = processedData()
         l = sapply(subsettableData, class)
-        categoricalVars = names(l[str_which(l,pattern="character")])
-        categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
-        continuousVars = names(l[str_which(l,pattern="character",negate=TRUE)])
+        categoricalVars = sort(names(l[str_which(l,pattern="character")]))
+        categoricalVars = sort(categoricalVars[-which(categoricalVars=="Object ID")])
+        continuousVars = sort(names(l[str_which(l,pattern="character",negate=TRUE)]))
         updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = NULL)
         updateSelectInput(session, "singleConVariable", choices = continuousVars, selected = NULL)
         updateSelectInput(session, "binningVariable", choices = continuousVars, selected = NULL)
@@ -601,7 +601,7 @@ server = function(input, output, session) {
     violinplotRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         data = densityDataToHistoBoxRefined()
-        violinplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_violin() +
+        violinplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_violin(draw_quantiles = c(0.5)) +
         ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
