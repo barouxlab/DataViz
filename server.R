@@ -244,13 +244,13 @@ server = function(input, output, session) {
     observeEvent(input$filterButton,{
         # Turn the imported/processed data into a format that can be filtered and subsetted
         if (input$dataToSelect == "rawData"){
-            subsettableData = importedData()
+            sData = importedData()
         }
         else if (input$dataToSelect == "processedData"){
-            subsettableData = processedData()
+            sData = processedData()
         }
          # Apply the filters to the data (from the checkbox)
-        filteredDataToOutlier = subsettableData %>% dplyr::filter(`Object` %in% input$sOOI) %>% dplyr::filter(`Image File` %in% input$nROI) %>% dplyr::filter(`Treatment` %in% input$lDOI) %>% dplyr::filter(`Genotype` %in% input$eOI) %>% dplyr::filter(`Channel` %in% input$chOI)
+        filteredDataToOutlier = sData %>% dplyr::filter(`Object` %in% input$sOOI) %>% dplyr::filter(`Image File` %in% input$nROI) %>% dplyr::filter(`Treatment` %in% input$lDOI) %>% dplyr::filter(`Genotype` %in% input$eOI) %>% dplyr::filter(`Channel` %in% input$chOI)
         
         # Optionally: remove outliers
         if (input$removeOutliersRadio == "no"){
@@ -258,15 +258,15 @@ server = function(input, output, session) {
         }
         else if (input$removeOutliersRadio == "yes"){
             if (input$outlierVariable %in% colnames(filteredDataToOutlier)){
-                subsettableData = filteredDataToOutlier
+                sData = filteredDataToOutlier
                 req(input$outlierVariable)
                 outlierVariableString = input$outlierVariable
-                dataToBoxplot = subsettableData %>%
+                dataToBoxplot = sData %>%
                                 select(!!sym(outlierVariableString)) %>%
                                 pull(!!sym(outlierVariableString))
                 outliersToRemove = boxplot.stats(dataToBoxplot)$out
                 outlierIndicesToRemove = which(dataToBoxplot %in% c(outliersToRemove))
-                outlierTibble = subsettableData[outlierIndicesToRemove,]
+                outlierTibble = sData[outlierIndicesToRemove,]
                 filteredData = anti_join(filteredDataToOutlier,outlierTibble)
             } else {
                 filteredData = filteredDataToOutlier
@@ -275,29 +275,10 @@ server = function(input, output, session) {
         
         reactiveDF$filteredDataset = filteredData
         reactiveDF$filteredDatasetRef = filteredData
-    },ignoreNULL=TRUE)
-    
-    # Create two observe() calls to complete the select input items for plotting (one for when the data
-    # is originally imported, and a second for when/if it is processed)
-    observe({
-        subsettableData = importedData()
-        l = sapply(subsettableData, class)
-        categoricalVars = sort(names(l[str_which(l,pattern="character")]))
-        categoricalVars = sort(categoricalVars[-which(categoricalVars=="Object ID")])
-        continuousVars = sort(names(l[str_which(l,pattern="numeric")]))
-        updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = NULL)
-        updateSelectInput(session, "singleConVariable", choices = continuousVars, selected = NULL)
-        updateSelectInput(session, "binningVariable", choices = continuousVars, selected = NULL)
-        updateSelectInput(session, "catVariableForSplitting", choices = categoricalVars, selected = NULL)
-        updateSelectInput(session, "additionalVarForFiltering", choices = continuousVars, selected = NULL)
-        updateSelectInput(session, "scatterX", choices = continuousVars, selected = NULL)
-        updateSelectInput(session, "scatterY", choices = continuousVars, selected = NULL)
-        updateSelectInput(session, "scatterCatColor", choices = categoricalVars, selected = NULL)
-        updateSelectInput(session, "scatterCatFacet", choices = categoricalVars, selected = NULL)
-    })
-    observe({
-        subsettableData = processedData()
-        l = sapply(subsettableData, class)
+        
+        # Update the variables for plotting so that unavailable variables are not offered
+        fData = filteredData
+        l = sapply(fData, class)
         categoricalVars = sort(names(l[str_which(l,pattern="character")]))
         categoricalVars = sort(categoricalVars[-which(categoricalVars=="Object ID")])
         continuousVars = sort(names(l[str_which(l,pattern="character",negate=TRUE)]))
@@ -310,7 +291,17 @@ server = function(input, output, session) {
         updateSelectInput(session, "scatterY", choices = continuousVars, selected = NULL)
         updateSelectInput(session, "scatterCatColor", choices = categoricalVars, selected = NULL)
         updateSelectInput(session, "scatterCatFacet", choices = categoricalVars, selected = NULL)
-    })
+    },ignoreNULL=TRUE)
+    
+    # Finalize the exporting / downloading functionality of the filtered/selected data
+    output$selectedDQD = downloadHandler(
+        filename = function() {
+            paste(format(Sys.time(), "FilteredData_Date_%Y_%m_%d_Time_%H%M%S"), ".csv", sep = "")
+        },
+        content = function(file) {
+            write.csv(reactiveDF$filteredDataset, file, row.names = FALSE)
+        }
+    )
     
     # Output the filtered data table as a function of the inputs given in the user interface above
     filteredTableToRender = eventReactive(input$filterButton,{

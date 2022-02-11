@@ -67,6 +67,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                 tabPanel("Select",
                          sidebarPanel(
                              actionButton("filterButton", "Select Data"),
+                             downloadButton("selectedDQD","Download"),
                              p(""),
                              p("Select the options for filtering then press \"Select Data\"."),
                              p("Note: there is the possibility to plot data per treatment separately."),
@@ -109,6 +110,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              actionButton("generatePlotParams", "Update Parameters"),
                              actionButton("plotRefined", "Generate Plots"),
                              actionButton("downloadRefinedPlots", "Download Plots"),
+                             downloadButton("downloadAdditionalFilteredData", "Download Data"),
                              p(""),
                              selectInput(inputId = "catVariableForFill","Color by",choices = list("Select Data First"="Image File"),selected = "Image File"),
                              selectInput(inputId = "catVariableForSplitting","Split by",choices = list("Select Data First"="Genotype"),selected = "Genotype"),
@@ -242,7 +244,10 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   p("4. Press 'Generate Plots'"),
                                                   p("5. Customize the axes limits in the sub-tabs for each plot type"),
                                                   p("6. Customize the colors and background via the 'Layout', 'Themes' and 'Colors' tabs"),
-                                                  p("7. Download the data")
+                                                  p("7. Download the data."),
+                                                  p("Note: If you filter or bin the data, the download button will provide you with this data."),
+                                                  h4("Filtered / Binned Data will be displayed below:"),
+                                                  dataTableOutput("oneDTableView")
                                                  ),
                                          tabPanel("Histograms",
                                                   plotOutput("histoRefined"),
@@ -271,11 +276,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                  ),
                                          tabPanel("Violin Plots",
                                                   plotOutput("violinplotRefined")
-                                                  ),
-                                         tabPanel("Filtered/Binned Data",
-                                                  dataTableOutput("oneDTableView"),
-                                                  downloadButton("downloadAdditionalFilteredData", "Download Filtered/Binned Data"),
-                                                 )
+                                                  )
                                         )
                          )
                         ),

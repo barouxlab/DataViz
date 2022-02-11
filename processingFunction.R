@@ -36,14 +36,14 @@ processingFunction = function(importedData,varsToInclude){
     # !! Wrap each variable in if/then logic to maintain the ability to select it
     
     # Normalized Intensity Sum
-    if ("Normalized Intensity Sum" %in% varsToInclude){
+    if ("Normalized Intensity Sum" %in% varsToInclude & ("Intensity Sum" %in% names(dataToProcess))){
         dataToProcess = dataToProcess %>% group_by(`Image File`,Channel) %>% 
                         mutate("Normalized Intensity Sum" = `Intensity Sum`/`Intensity Sum`[which(`Object`=="Nucleus")]) %>% 
                         ungroup()
         }
     
     # Normalized Intensity Mean
-    if ("Normalized Intensity Mean" %in% varsToInclude){
+    if ("Normalized Intensity Mean" %in% varsToInclude & ("Intensity Mean" %in% names(dataToProcess))){
         dataToProcess = dataToProcess %>% group_by(`Image File`,Channel) %>% 
                         mutate("Normalized Intensity Mean" = `Intensity Mean`/`Intensity Mean`[which(`Object`=="Nucleus")]) %>% 
                         ungroup()
@@ -57,7 +57,7 @@ processingFunction = function(importedData,varsToInclude){
         }
     
     # Normalized Distance to Nucleus
-    if (("Normalized Distance to Nucleus" %in% varsToInclude) & ("Nucleus Center of Mass" %in% unique(dataToProcess$`Object`))){
+    if (("Normalized Distance to Nucleus" %in% varsToInclude) & ("Nucleus Center of Mass" %in% unique(dataToProcess$`Object`)) & ("Distance to Nucleus" %in% names(dataToProcess))){
         dataToProcess = dataToProcess %>% group_by(`Image File`,Channel) %>% 
                         mutate("Normalized Distance to Nucleus" = `Distance to Nucleus`/`Distance to Nucleus`[which(`Object`=="Nucleus Center of Mass")]) %>% 
                         ungroup()
@@ -67,14 +67,14 @@ processingFunction = function(importedData,varsToInclude){
     # Add the group intensity variables
     
     # Group Intensity Sum
-    if ("Group Intensity Sum" %in% varsToInclude){
+    if ("Group Intensity Sum" %in% varsToInclude & ("Intensity Sum" %in% names(dataToProcess))){
         dataToProcess = dataToProcess %>% group_by(`Image File`,Channel,Category,`Object`) %>% 
                         mutate("Group Intensity Sum" = sum(`Intensity Sum`)) %>% 
                         ungroup()
         }
     
     # Group Intensity Mean
-    if ("Group Intensity Mean" %in% varsToInclude){
+    if ("Group Intensity Mean" %in% varsToInclude & ("Intensity Mean" %in% names(dataToProcess))){
         dataToProcess = dataToProcess %>% group_by(`Image File`,Channel,Category,`Object`) %>% 
                         mutate("Group Intensity Mean" = sum(`Intensity Mean`)) %>% 
                         ungroup()
@@ -87,14 +87,14 @@ processingFunction = function(importedData,varsToInclude){
     # to use any number of channels.
     
     # Normalized Intensity Sum Ratio Ch2:Ch1
-    if ("Normalized Intensity Sum Ratio Ch2:Ch1" %in% varsToInclude){
+    if ("Normalized Intensity Sum Ratio Ch2:Ch1" %in% varsToInclude & ("Normalized Intensity Sum" %in% names(dataToProcess))){
         dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`) %>% 
                         mutate("Normalized Intensity Sum Ratio Ch2:Ch1" = (`Normalized Intensity Sum`[which(`Channel`==2)])/(`Normalized Intensity Sum`[which(`Channel`==1)])) %>% 
                         ungroup()
         }
     
     # Normalized Intensity Mean Ratio Ch2:Ch1
-    if ("Normalized Intensity Mean Ratio Ch2:Ch1" %in% varsToInclude){
+    if ("Normalized Intensity Mean Ratio Ch2:Ch1" %in% varsToInclude & ("Normalized Intensity Mean" %in% names(dataToProcess))){
         dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`) %>% 
                         mutate("Normalized Intensity Mean Ratio Ch2:Ch1" = (`Normalized Intensity Mean`[which(`Channel`==2)])/(`Normalized Intensity Mean`[which(`Channel`==1)])) %>% 
                         ungroup()
@@ -104,7 +104,7 @@ processingFunction = function(importedData,varsToInclude){
     # Add a "Signal Density" variable
     
     # Signal Density
-    if ("Signal Density" %in% varsToInclude){
+    if ("Signal Density" %in% varsToInclude & ("Normalized Intensity Sum" %in% names(dataToProcess)) & ("Volume" %in% names(dataToProcess))){
         dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`,`Channel`) %>% 
                         mutate("Signal Density" = `Normalized Intensity Sum`/`Volume`) %>% 
                         ungroup()
@@ -114,14 +114,14 @@ processingFunction = function(importedData,varsToInclude){
     # Add "Relative" variables
     
     # Relative Intensity Sum
-    if ("Relative Intensity Sum" %in% varsToInclude){
+    if ("Relative Intensity Sum" %in% varsToInclude & ("Normalized Intensity Sum" %in% names(dataToProcess))){
         dataToProcess = dataToProcess %>% group_by(`Image File`,`Object`,Channel) %>% 
                         mutate("Relative Intensity Sum" = `Normalized Intensity Sum`/sum(`Normalized Intensity Sum`)) %>% 
                         ungroup()
         }
     
     # Relative Intensity Mean
-    if ("Relative Intensity Mean" %in% varsToInclude){
+    if ("Relative Intensity Mean" %in% varsToInclude & ("Normalized Intensity Mean" %in% names(dataToProcess))){
         dataToProcess = dataToProcess %>% group_by(`Image File`,`Object`,Channel) %>% 
                         mutate("Relative Intensity Mean" = `Normalized Intensity Mean`/sum(`Normalized Intensity Mean`)) %>% 
                         ungroup()
