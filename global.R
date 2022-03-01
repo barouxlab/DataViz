@@ -29,7 +29,7 @@ colorDF = colorDF %>% add_row(maxcolors=customLength,category="custom",colorblin
 row.names(colorDF)[36] = "Custom"
 
 # Instantiate a list of acceptable surpass object types/strings
-acceptableSOLevels = c('Nucleus','Nucleus Center of Mass','S2P','Nucleus Center Of Mass','Nucleolus','CC','NanoCC')
+acceptableSOLevels = c('Nucleus','Nucleus Center of Mass','Center of Mass','S2P','Nucleus Center Of Mass','Nucleolus','CC','NanoCC')
 
 # Instantiate a list of files to skip when cleaning a ZIP of the data
 fileNamestoSkip = c("Diameter.csv",

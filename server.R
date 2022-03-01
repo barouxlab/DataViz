@@ -645,7 +645,7 @@ server = function(input, output, session) {
         breaksForBinning = as.list(strsplit(input$binCuts, ",")[[1]])
         
         # Make a new group variable name
-        groupVarName = paste("Group - ",toString(input$binningVariable))
+        groupVarName <<- paste("Group - ",toString(input$binningVariable))
         
         # Apply the breaks
         dataToBin = reactiveDF$filteredDataset
@@ -678,7 +678,7 @@ server = function(input, output, session) {
     
     observeEvent(input$removeBins,{
         req(reactiveDF$filteredDataset)
-        reactiveDF$filteredDataset = reactiveDF$filteredDataset %>% select(-Bin)
+        reactiveDF$filteredDataset = reactiveDF$filteredDataset %>% select(-!!groupVarName)
         subsettableData = reactiveDF$filteredDataset
         l = sapply(subsettableData, class)
         categoricalVars = names(l[str_which(l,pattern="character")])
