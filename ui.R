@@ -225,11 +225,12 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   actionButton("additionalFilter", "Apply Filter"),
                                                   actionButton("cancelFilter", "Cancel Filter and Bins")
                                                  ),
-                                         tabPanel("Binning",
-                                                  textInput("binCuts","Break Points",value="0,1"),
-                                                  selectInput(inputId = "binningVariable","Variable for Binning",choices = list("Select Data First"="NormSum"),selected = "NormSum"),
-                                                  actionButton("addBins", "Add Bins"),
-                                                  actionButton("removeBins","Remove Bins")
+                                         tabPanel("Subset",
+                                                  p("Subset the data into groups defined by thresholds"),
+                                                  textInput("binCuts","Thresholds",value="0,1"),
+                                                  selectInput(inputId = "binningVariable","Variable for Group Creation",choices = list("Select Data First"="NormSum"),selected = "NormSum"),
+                                                  actionButton("addBins", "Create Group"),
+                                                  actionButton("removeBins","Clear Group")
                                          )
                                         )
                          ),

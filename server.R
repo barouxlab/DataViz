@@ -646,22 +646,22 @@ server = function(input, output, session) {
         
         # Apply the breaks
         dataToBin = reactiveDF$filteredDataset
-        binnedDataset = dataToBin %>% mutate(Bin=cut(!!sym(input$binningVariable),breaks=breaksForBinning))
+        binnedDataset = dataToBin %>% mutate(Group=cut(!!sym(input$binningVariable),breaks=breaksForBinning))
         reactiveDF$filteredDataset = binnedDataset
         
         output$oneDTableView = renderDataTable({
         DT::datatable(reactiveDF$filteredDataset, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
         })
         
-        # Update the categorical variable selection to include bins
+        # Update the categorical variable selection to include groups (previously called bins)
         subsettableData = reactiveDF$filteredDataset
         l = sapply(subsettableData, class)
         categoricalVars = names(l[str_which(l,pattern="character")])
         categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
-        updateSelectInput(session, "catVariableForFill", choices = c(categoricalVars,"Bin"), selected = NULL)
-        updateSelectInput(session, "catVariableForSplitting", choices = c(categoricalVars,"Bin"), selected = NULL)
-        updateSelectInput(session, "scatterCatColor", choices = c(categoricalVars,"Bin"), selected = NULL)
-        updateSelectInput(session, "scatterCatFacet", choices = c(categoricalVars,"Bin"), selected = NULL)
+        updateSelectInput(session, "catVariableForFill", choices = c(categoricalVars,"Group"), selected = NULL)
+        updateSelectInput(session, "catVariableForSplitting", choices = c(categoricalVars,"Group"), selected = NULL)
+        updateSelectInput(session, "scatterCatColor", choices = c(categoricalVars,"Group"), selected = NULL)
+        updateSelectInput(session, "scatterCatFacet", choices = c(categoricalVars,"Group"), selected = NULL)
         
     },ignoreNULL=TRUE)
     
