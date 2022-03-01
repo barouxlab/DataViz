@@ -229,6 +229,11 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   p("Subset the data into groups defined by thresholds"),
                                                   textInput("binCuts","Thresholds",value="0,1"),
                                                   selectInput(inputId = "binningVariable","Variable for Group Creation",choices = list("Select Data First"="NormSum"),selected = "NormSum"),
+                                                  radioButtons(inputId = "rangeOrGroups",
+                                                               p("Subset by range or group by thresholds?"),
+                                                               c("Thresholds"="threshold","Range"="range"),
+                                                               selected = "threshold"
+                                                              ),
                                                   actionButton("addBins", "Create Group"),
                                                   actionButton("removeBins","Clear Group")
                                          )

@@ -644,10 +644,21 @@ server = function(input, output, session) {
         # Retrieve the breaks
         breaksForBinning = as.list(strsplit(input$binCuts, ",")[[1]])
         
+        # Make a new group variable name
+        groupVarName = paste("Group - ",toString(input$binningVariable))
+        
         # Apply the breaks
         dataToBin = reactiveDF$filteredDataset
-        binnedDataset = dataToBin %>% mutate(Group=cut(!!sym(input$binningVariable),breaks=breaksForBinning))
-        reactiveDF$filteredDataset = binnedDataset
+        binnedDataset = dataToBin %>% mutate(Group=cut(!!sym(input$binningVariable),breaks=breaksForBinning),
+                                            Group=forcats::fct_explicit_na(Group,paste("> ",toString(tail(breaksForBinning, n=1))))) %>% rename(!!groupVarName:=Group)
+        # Turn the imported/processed data into a format that can be filtered and subsetted
+        # Allow the option to have only data within the ranges or as a full series of thresholds / cut points
+        if (input$rangeOrGroups == "threshold"){
+            reactiveDF$filteredDataset = binnedDataset
+        }
+        else if (input$rangeOrGroups == "range"){
+            reactiveDF$filteredDataset = binnedDataset %>% filter(Group != paste("> ",toString(tail(breaksForBinning, n=1))))
+        }
         
         output$oneDTableView = renderDataTable({
         DT::datatable(reactiveDF$filteredDataset, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
@@ -658,10 +669,10 @@ server = function(input, output, session) {
         l = sapply(subsettableData, class)
         categoricalVars = names(l[str_which(l,pattern="character")])
         categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
-        updateSelectInput(session, "catVariableForFill", choices = c(categoricalVars,"Group"), selected = NULL)
-        updateSelectInput(session, "catVariableForSplitting", choices = c(categoricalVars,"Group"), selected = NULL)
-        updateSelectInput(session, "scatterCatColor", choices = c(categoricalVars,"Group"), selected = NULL)
-        updateSelectInput(session, "scatterCatFacet", choices = c(categoricalVars,"Group"), selected = NULL)
+        updateSelectInput(session, "catVariableForFill", choices = c(categoricalVars,groupVarName), selected = NULL)
+        updateSelectInput(session, "catVariableForSplitting", choices = c(categoricalVars,groupVarName), selected = NULL)
+        updateSelectInput(session, "scatterCatColor", choices = c(categoricalVars,groupVarName), selected = NULL)
+        updateSelectInput(session, "scatterCatFacet", choices = c(categoricalVars,groupVarName), selected = NULL)
         
     },ignoreNULL=TRUE)
     
