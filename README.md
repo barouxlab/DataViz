@@ -2,7 +2,7 @@
 
 DataViz is an R-Shiny application that visualizes image segmentation data from [Imaris](https://imaris.oxinst.com/). 
 Originally developed to analyse datasets from segmented 3D nuclei images, it can also be applied to other Imaris data with similar objects and statistics.
-It can be used by anyone with a computer capable of running the [R language for Statistical Computing].(https://www.r-project.org/about.html).
+It can be used by anyone with a computer capable of running the [R language for Statistical Computing](https://www.r-project.org/about.html).
 
 DataViz was conceived by [Dr. Célia Baroux](https://www.botinst.uzh.ch/en/research/development/celiabaroux.html) and developed by [Devin Routh](https://www.zi.uzh.ch/en/teaching-and-research/science-it.html) at the University of Zürich.
 
