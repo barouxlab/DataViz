@@ -638,48 +638,51 @@ server = function(input, output, session) {
     })
     
     # Create the option to apply bins to the data then remove them if desired
+    groupVarName <<- "__reset"
     observeEvent(input$addBins,{
-        req(reactiveDF$filteredDataset)
+        if(groupVarName=="__reset"){
+            req(reactiveDF$filteredDataset)
         
-        # Retrieve the breaks
-        breaksForBinning = as.list(strsplit(input$binCuts, ",")[[1]])
-        
-        # Make a new group variable name
-        groupVarName <<- paste("Group - ",toString(input$binningVariable))
-        
-        # Apply the breaks
-        dataToBin = reactiveDF$filteredDataset
-        binnedDataset = dataToBin %>% mutate(Group=cut(!!sym(input$binningVariable),breaks=breaksForBinning),
-                                            Group=forcats::fct_explicit_na(Group,paste("> ",toString(tail(breaksForBinning, n=1))))) %>% rename(!!groupVarName:=Group)
-        # Turn the imported/processed data into a format that can be filtered and subsetted
-        # Allow the option to have only data within the ranges or as a full series of thresholds / cut points
-        if (input$rangeOrGroups == "threshold"){
-            reactiveDF$filteredDataset = binnedDataset
+            # Retrieve the breaks
+            breaksForBinning = as.list(strsplit(input$binCuts, ",")[[1]])
+            # Make a new group variable name
+            groupVarName <<- paste("Group - ",toString(input$binningVariable))
+            # Apply the breaks
+            dataToBin = reactiveDF$filteredDataset
+            binnedDataset = dataToBin %>% mutate(Group=cut(!!sym(input$binningVariable),breaks=breaksForBinning),
+                                                 Group=forcats::fct_explicit_na(Group,paste("> ",toString(tail(breaksForBinning, n=1)))))
+            # Turn the imported/processed data into a format that can be filtered and subsetted
+            # Allow the option to have only data within the ranges or as a full series of thresholds / cut points
+            if (input$rangeOrGroups == "threshold"){
+                reactiveDF$filteredDataset = binnedDataset %>% rename(!!groupVarName:=Group)
+            }
+            else if (input$rangeOrGroups == "range"){
+                reactiveDF$filteredDataset = binnedDataset %>% filter(Group != paste("> ",toString(tail(breaksForBinning, n=1)))) %>% rename(!!groupVarName:=Group)
+            }
+            output$oneDTableView = renderDataTable({
+                DT::datatable(reactiveDF$filteredDataset,
+                              extensions="FixedColumns",
+                              plugins="natural",
+                              options=list(scrollX=TRUE,scroll ="500px",
+                                             scrollCollapse=TRUE,fixedColumns=list(leftColumns = 4)))
+            })
+            # Update the categorical variable selection to include groups (previously called bins)
+            subsettableData = reactiveDF$filteredDataset
+            l = sapply(subsettableData, class)
+            categoricalVars = names(l[str_which(l,pattern="character")])
+            categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
+            updateSelectInput(session, "catVariableForFill", choices = c(categoricalVars,groupVarName), selected = NULL)
+            updateSelectInput(session, "catVariableForSplitting", choices = c(categoricalVars,groupVarName), selected = NULL)
+            updateSelectInput(session, "scatterCatColor", choices = c(categoricalVars,groupVarName), selected = NULL)
+            updateSelectInput(session, "scatterCatFacet", choices = c(categoricalVars,groupVarName), selected = NULL)
         }
-        else if (input$rangeOrGroups == "range"){
-            reactiveDF$filteredDataset = binnedDataset %>% filter(Group != paste("> ",toString(tail(breaksForBinning, n=1))))
-        }
-        
-        output$oneDTableView = renderDataTable({
-        DT::datatable(reactiveDF$filteredDataset, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
-        })
-        
-        # Update the categorical variable selection to include groups (previously called bins)
-        subsettableData = reactiveDF$filteredDataset
-        l = sapply(subsettableData, class)
-        categoricalVars = names(l[str_which(l,pattern="character")])
-        categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
-        updateSelectInput(session, "catVariableForFill", choices = c(categoricalVars,groupVarName), selected = NULL)
-        updateSelectInput(session, "catVariableForSplitting", choices = c(categoricalVars,groupVarName), selected = NULL)
-        updateSelectInput(session, "scatterCatColor", choices = c(categoricalVars,groupVarName), selected = NULL)
-        updateSelectInput(session, "scatterCatFacet", choices = c(categoricalVars,groupVarName), selected = NULL)
-        
     },ignoreNULL=TRUE)
     
     observeEvent(input$removeBins,{
-        req(reactiveDF$filteredDataset)
-        reactiveDF$filteredDataset = reactiveDF$filteredDataset %>% select(-!!groupVarName)
+        groupVarName <<- "__reset"
+        reactiveDF$filteredDataset = reactiveDF$filteredDatasetRef
         subsettableData = reactiveDF$filteredDataset
+        output$oneDTableView = renderDataTable({NULL})
         l = sapply(subsettableData, class)
         categoricalVars = names(l[str_which(l,pattern="character")])
         categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
