@@ -199,7 +199,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                          ),
                                          tabPanel("Layout",
                                                   numericInput("numColumns","# of Plot Columns in Layout",value=2,min=1,max=100,step=1),
-                                                  sliderInput("plotHeight",label="Plot height",ticks=FALSE,min=50,max=500,value=150,step=5)
+                                                  sliderInput("plotHeight",label="Plot height",ticks=FALSE,min=50,max=1500,value=400,step=5)
                                                  ),
                                          tabPanel("Themes",
                                                   selectInput("theme",label=h4("Select theme for plots"),choices=names(themesForPlotting),selected=names(themesForPlotting)[4])
@@ -256,13 +256,23 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   dataTableOutput("oneDTableView")
                                                  ),
                                          tabPanel("Histograms",
-                                                  plotOutput("histoRefined"),
-                                                  plotOutput("histoRefinedPercentage")),
+                                                  tabsetPanel(type = "tabs",
+                                                              tabPanel("Histogram by Counts",
+                                                                       plotOutput("histoRefined",height="auto")),
+                                                              tabPanel("Histogram by Percent",
+                                                                       plotOutput("histoRefinedPercentage",height="auto"))
+                                                              )
+                                                  ),
                                          tabPanel("Density Plots",
-                                                  plotOutput("kdeRefined"),
-                                                  plotOutput("kdeRefinedPercentage")),
+                                                  tabsetPanel(type = "tabs",
+                                                              tabPanel("KDE by Density",
+                                                                       plotOutput("kdeRefined",height="auto")),
+                                                              tabPanel("KDE by Percent",
+                                                                       plotOutput("kdeRefinedPercentage",height="auto"))
+                                                              )
+                                                  ),
                                          tabPanel("Boxplots",
-                                                  plotOutput("boxplotRefined")),
+                                                  plotOutput("boxplotRefined",height="auto")),
                                          tabPanel("Boxplot Stats",
                                                   dataTableOutput("summaryTableFromBoxplot"),
                                                   h4("Boxplot statistics"),
@@ -281,7 +291,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   HTML("<p>(All information above is copied directly from <code>?stat_boxplot</code>)</p>"),
                                                  ),
                                          tabPanel("Violin Plots",
-                                                  plotOutput("violinplotRefined")
+                                                  plotOutput("violinplotRefined",height="auto")
                                                   )
                                         )
                          )

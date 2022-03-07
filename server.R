@@ -45,7 +45,9 @@ server = function(input, output, session) {
             importedData$`Channel` = as.character(importedData$`Channel`)
             importedData$`Time` = as.character(importedData$`Time`)
             importedData[["Channel"]][is.na(importedData[["Channel"]])] = "NA"
-            inputtedDataToReturn = as_tibble(importedData)
+            inputtedDataToReturn = as_tibble(importedData) %>% relocate(c("Genotype",
+                                                                          "Treatment",
+                                                                          "Image File"))
             return(inputtedDataToReturn)
         }
             dataToCheck = inputtedDataToReturn
@@ -514,7 +516,6 @@ server = function(input, output, session) {
     # Output histograms, kde's, boxplots, and violin plots based on categorical and numeric variable selection for refined plotting
     histoRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        data = densityDataToHistoBoxRefined()
         histogramCount = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) +
         geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Count") +
         xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
@@ -530,7 +531,6 @@ server = function(input, output, session) {
 
     histoRefinedPercentage = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        data = densityDataToHistoBoxRefined()
         histogramPercentage = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) +
         geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
         xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
@@ -546,7 +546,6 @@ server = function(input, output, session) {
     
     kdeRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        data = densityDataToHistoBoxRefined()
         kdeSplit = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) + geom_density(adjust=input$kdeAdjust) + ylab("Density") +
         xlim(input$xLLKDE,input$xULKDE) + ylim(input$yLLKDE,input$yULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
@@ -561,7 +560,6 @@ server = function(input, output, session) {
 
         kdeRefinedPercentage = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        data = densityDataToHistoBoxRefined()
         kdeSplitPercentage = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) + geom_density(stat='bin',bins=as.numeric(input$kdeNumOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
         xlim(input$xLLKDE,input$xULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
@@ -576,7 +574,6 @@ server = function(input, output, session) {
     
     boxplotRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        data = densityDataToHistoBoxRefined()
         boxplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = FALSE, width = input$boxplotBoxWidth) +
         ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
@@ -591,7 +588,6 @@ server = function(input, output, session) {
     
     violinplotRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        data = densityDataToHistoBoxRefined()
         violinplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_violin(draw_quantiles = c(0.5)) +
         ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
@@ -703,6 +699,7 @@ server = function(input, output, session) {
                 downloadButton("downloadHistograms","Download Histograms"),
                 downloadButton("downloadKDEs","Download KDE's"),
                 downloadButton("downloadBoxplots","Download Boxplots"),
+                downloadButton("downloadViolinPlots","Download Violin Plots"),
                 easyClose = TRUE,
             )
         )
@@ -735,6 +732,16 @@ server = function(input, output, session) {
         content = function(file) {
             req(boxplotRefined())
             ggsave(file,plot=boxplotRefined(),device='png',width=input$plotWidthForDownload,height=input$plotHeightForDownload,units="cm",dpi=input$plotResolution)
+        }
+    )
+    
+    output$downloadViolinPlots = downloadHandler(
+        filename = function() {
+            paste(format(Sys.time(), "ViolinPlot_Date_%Y_%m_%d_Time_%H%M%S"), ".png", sep = "")
+        },
+        content = function(file) {
+            req(violinplotRefined())
+            ggsave(file,plot=violinplotRefined(),device='png',width=input$plotWidthForDownload,height=input$plotHeightForDownload,units="cm",dpi=input$plotResolution)
         }
     )
     

@@ -132,6 +132,6 @@ cleaningFunction = function(inputTopLevelDirectory){
     finalData$`Object`[finalData$`Object`=="Nucleus Center Of Mass"] = "Nucleus Center of Mass"
     
     # Return the final dataset
-    return(finalData)   
+    return(finalData %>% relocate(c("Genotype","Treatment","Image File")))
 }
 
