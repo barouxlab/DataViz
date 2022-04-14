@@ -284,15 +284,15 @@ server = function(input, output, session) {
         categoricalVars = sort(names(l[str_which(l,pattern="character")]))
         categoricalVars = sort(categoricalVars[-which(categoricalVars=="Object ID")])
         continuousVars = sort(names(l[str_which(l,pattern="character",negate=TRUE)]))
-        updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = NULL)
-        updateSelectInput(session, "singleConVariable", choices = continuousVars, selected = NULL)
-        updateSelectInput(session, "binningVariable", choices = continuousVars, selected = NULL)
-        updateSelectInput(session, "catVariableForSplitting", choices = categoricalVars, selected = NULL)
-        updateSelectInput(session, "additionalVarForFiltering", choices = continuousVars, selected = NULL)
-        updateSelectInput(session, "scatterX", choices = continuousVars, selected = NULL)
-        updateSelectInput(session, "scatterY", choices = continuousVars, selected = NULL)
-        updateSelectInput(session, "scatterCatColor", choices = categoricalVars, selected = NULL)
-        updateSelectInput(session, "scatterCatFacet", choices = categoricalVars, selected = NULL)
+        updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = catVariableForFill_Reference)
+        updateSelectInput(session, "singleConVariable", choices = continuousVars, selected = singleConVariable_Reference)
+        updateSelectInput(session, "binningVariable", choices = continuousVars, selected = binningVariable_Reference)
+        updateSelectInput(session, "catVariableForSplitting", choices = categoricalVars, selected = catVariableForSplitting_Reference)
+        updateSelectInput(session, "additionalVarForFiltering", choices = continuousVars, selected = additionalVarForFiltering_Reference)
+        updateSelectInput(session, "scatterX", choices = continuousVars, selected = scatterX_Reference)
+        updateSelectInput(session, "scatterY", choices = continuousVars, selected = scatterY_Reference)
+        updateSelectInput(session, "scatterCatColor", choices = categoricalVars, selected = scatterCatColor_Reference)
+        updateSelectInput(session, "scatterCatFacet", choices = categoricalVars, selected = scatterCatFacet_Reference)
     },ignoreNULL=TRUE)
     
     # Finalize the exporting / downloading functionality of the filtered/selected data
@@ -472,21 +472,26 @@ server = function(input, output, session) {
     # and render the data to a table in the 1-D plot area
     observeEvent(input$additionalFilter,{
         req(reactiveDF$filteredDataset)
+        # Make a copy so that it can be canceled
+        reactiveDF$filteredDatasetPreFilterReference = reactiveDF$filteredDataset
+        
         dataToFilter = reactiveDF$filteredDataset
         additionalFilteredDataset = dataToFilter %>% filter(!!sym(input$additionalVarForFiltering) >= input$additionalFilterLower,
                                                             !!sym(input$additionalVarForFiltering) <= input$additionalFilterUpper)
         reactiveDF$filteredDataset = additionalFilteredDataset
         
-        output$oneDTableView = renderDataTable({
+        output$filteredDatasetForFilterTab = renderDataTable({
         DT::datatable(reactiveDF$filteredDataset, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
         })
+        groupVarName <<- "__reset"
     },ignoreNULL=TRUE)
     
     # Create the option to reset the data / cancel the filter and return to the originally selected data
     observeEvent(input$cancelFilter,{
         req(reactiveDF$filteredDataset)
         req(reactiveDF$filteredDatasetRef)
-        reactiveDF$filteredDataset = reactiveDF$filteredDatasetRef
+        reactiveDF$filteredDataset = reactiveDF$filteredDatasetPreFilterReference
+        toggle("filteredDatasetForFilterTab")
     },ignoreNULL=TRUE)
     
     # Create the option to download the filtered data
@@ -507,7 +512,19 @@ server = function(input, output, session) {
         subsettableDataForHistoBoxKDE = reactiveDF$filteredDataset
 #         Filter the data first?
 #         filteredDataForHistoBoxKDE = subsettableDataForHistoBoxKDE %>% select(`Image File`,`Object ID`,!!sym(input$catVariableForFill),!!sym(input$singleConVariable),!!sym(input$catVariableForSplitting))
+        
+        # Store the selected inputs for reference in the future
+        catVariableForFill_Reference <<- input$catVariableForFill
+        singleConVariable_Reference <<- input$singleConVariable
+        binningVariable_Reference <<- input$binningVariable
+        catVariableForSplitting_Reference <<- input$catVariableForSplitting
+        additionalVarForFiltering_Reference <<- input$additionalVarForFiltering
+        scatterX_Reference <<- input$scatterX
+        scatterY_Reference <<- input$scatterY
+        scatterCatColor_Reference <<- input$scatterCatColor
+        scatterCatFacet_Reference <<- input$scatterCatFacet
         return(subsettableDataForHistoBoxKDE)
+        
     },ignoreNULL=TRUE)
     
     # Input the plot height variable
@@ -655,7 +672,7 @@ server = function(input, output, session) {
             else if (input$rangeOrGroups == "range"){
                 reactiveDF$filteredDataset = binnedDataset %>% filter(Group != paste("> ",toString(tail(breaksForBinning, n=1)))) %>% rename(!!groupVarName:=Group)
             }
-            output$oneDTableView = renderDataTable({
+            output$filteredDatasetForFilterTab = renderDataTable({
                 DT::datatable(reactiveDF$filteredDataset,
                               extensions="FixedColumns",
                               plugins="natural",

@@ -1,6 +1,6 @@
 # Load the libraries that are used
 if(!'pacman' %in% rownames(installed.packages())) install.packages('pacman')
-pacman::p_load(shiny,tictoc,DT,data.table,tidyverse,shinythemes,skimr,htmlTable,RColorBrewer,tools,ggpubr,shinybusy)
+pacman::p_load(shiny,tictoc,DT,data.table,tidyverse,shinythemes,skimr,htmlTable,RColorBrewer,tools,ggpubr,shinybusy,shinyjs)
 
 # Adjust other options and load processing data functions
 options(shiny.maxRequestSize=500*1024^2)
@@ -75,3 +75,14 @@ processVarsOptions = c("Normalized Intensity Sum",
                        "Relative Intensity Sum",
                        "Relative Intensity Mean",
                        "Object Count")
+
+# Instantiate the starting nulls for the plot selection options
+catVariableForFill_Reference = NULL
+singleConVariable_Reference = NULL
+binningVariable_Reference = NULL
+catVariableForSplitting_Reference = NULL
+additionalVarForFiltering_Reference = NULL
+scatterX_Reference = NULL
+scatterY_Reference = NULL
+scatterCatColor_Reference = NULL
+scatterCatFacet_Reference = NULL

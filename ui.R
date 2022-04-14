@@ -105,6 +105,43 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                         )
                          )
                         ),
+                                                         tabPanel("Filtering / Binning",
+                                                                  sidebarPanel(
+                                                                      h2("Filtering"),
+                                                  selectInput(inputId = "additionalVarForFiltering","Filter by",choices = list("Select Variable"="Genotype"),selected = "Genotype"),
+                                                  fluidRow(
+                                                      column(
+                                                          width = 6,
+                                                          div(style = "white-space: nowrap;", 
+                                                              div(style="display: inline-block; width: 100%;",
+                                                                  numericInput("additionalFilterLower",label="Lower Limit (Inclusive)",value=0)
+                                                                 ),
+                                                              h3("-",style="display:inline-block"),
+                                                              div(style="display: inline-block; width: 100%;",
+                                                                  numericInput("additionalFilterUpper",label="Upper Limit (Inclusive)",value=1)
+                                                                 ),
+                                                             ))),
+                                                  actionButton("additionalFilter", "Apply Filter"),
+                                                  actionButton("cancelFilter", "Cancel Filter and Bins"),
+                                                                      h2("Binning"),
+                                                                      tabPanel("Subset",
+                                                  p("Subset the data into groups defined by thresholds"),
+                                                  selectInput(inputId = "binningVariable","Variable for Group Creation",choices = list("Select Data First"="NormSum"),selected = "NormSum"),
+                                                  radioButtons(inputId = "rangeOrGroups",
+                                                               p("Create groups by thresholds or subset by a single range"),
+                                                               c("Thresholds (e.g., '0,1,5,10')"="threshold","Range (e.g., '1,5')"="range"),
+                                                               selected = "threshold"
+                                                              ),
+                                                  textInput("binCuts","",value="0,1"),
+                                                  actionButton("addBins", "Create Group"),
+                                                  actionButton("removeBins","Clear Group")
+                                         )
+                                                                      ),
+                                                                  mainPanel(
+                                                                      h4("Filtered / Binned Data will be displayed below:"),
+                                                  dataTableOutput("filteredDatasetForFilterTab")
+                                                                  )
+                                                 ),
                 tabPanel("1-D Plots",
                          sidebarPanel(
                              actionButton("generatePlotParams", "Update Parameters"),
@@ -207,36 +244,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                          tabPanel("Colors",
                                                   selectInput("chosenPalette",label=h4("Select color palette"),choices=row.names(colorDF),selected="Custom"),
                                                   textInput("hexStrings",label="Optionally edit the colors",value=toString(colorDF["Custom","hexcodes"][[1]]))
-                                                 ),
-                                         tabPanel("Filtering",
-                                                  selectInput(inputId = "additionalVarForFiltering","Filter by",choices = list("Select Variable"="Genotype"),selected = "Genotype"),
-                                                  fluidRow(
-                                                      column(
-                                                          width = 6,
-                                                          div(style = "white-space: nowrap;", 
-                                                              div(style="display: inline-block; width: 100%;",
-                                                                  numericInput("additionalFilterLower",label="Lower Limit (Inclusive)",value=0)
-                                                                 ),
-                                                              h3("-",style="display:inline-block"),
-                                                              div(style="display: inline-block; width: 100%;",
-                                                                  numericInput("additionalFilterUpper",label="Upper Limit (Inclusive)",value=1)
-                                                                 ),
-                                                             ))),
-                                                  actionButton("additionalFilter", "Apply Filter"),
-                                                  actionButton("cancelFilter", "Cancel Filter and Bins")
-                                                 ),
-                                         tabPanel("Subset",
-                                                  p("Subset the data into groups defined by thresholds"),
-                                                  selectInput(inputId = "binningVariable","Variable for Group Creation",choices = list("Select Data First"="NormSum"),selected = "NormSum"),
-                                                  radioButtons(inputId = "rangeOrGroups",
-                                                               p("Create groups by thresholds or subset by a single range"),
-                                                               c("Thresholds (e.g., '0,1,5,10')"="threshold","Range (e.g., '1,5')"="range"),
-                                                               selected = "threshold"
-                                                              ),
-                                                  textInput("binCuts","",value="0,1"),
-                                                  actionButton("addBins", "Create Group"),
-                                                  actionButton("removeBins","Clear Group")
-                                         )
+                                                 )
                                         )
                          ),
                          mainPanel(style = "overflow-y: auto;",
@@ -251,9 +259,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   p("5. Customize the axes limits in the sub-tabs for each plot type"),
                                                   p("6. Customize the colors and background via the 'Layout', 'Themes' and 'Colors' tabs"),
                                                   p("7. Download the data."),
-                                                  p("Note: If you filter or bin the data, the download button will provide you with this data."),
-                                                  h4("Filtered / Binned Data will be displayed below:"),
-                                                  dataTableOutput("oneDTableView")
+                                                  p("Note: If you filter or bin the data, the download button will provide you with this data.")
                                                  ),
                                          tabPanel("Histograms",
                                                   tabsetPanel(type = "tabs",
