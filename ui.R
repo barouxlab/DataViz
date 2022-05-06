@@ -5,7 +5,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                          mainPanel(
                              h2("Getting Started"),
                              p(""),
-                             p("1. Begin at the ‘Import’ Tab, select the file to upload and press the 'Import Data' buttong, then wait until the table is displayed.",
+                             p("1. Begin at the ‘Import’ Tab, select the file to upload and press the 'Import Data' button, then wait until the table is displayed.",
                                style = "font-family: 'arial'; font-si30pt"),
                              p("2. There is the possibility to combine and normalize variables, see the ‘Process’ Tab.",
                                style = "font-family: 'arial'; font-si30pt"),
@@ -122,7 +122,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                  ),
                                                              ))),
                                                   actionButton("additionalFilter", "Apply Filter"),
-                                                  actionButton("cancelFilter", "Cancel Filter and Bins"),
+                                                  actionButton("cancelFilter", "Cancel Filter"),
                                                                       h2("Binning"),
                                                                       tabPanel("Subset",
                                                   p("Subset the data into groups defined by thresholds"),
@@ -133,8 +133,8 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                selected = "threshold"
                                                               ),
                                                   textInput("binCuts","",value="0,1"),
-                                                  actionButton("addBins", "Create Group"),
-                                                  actionButton("removeBins","Clear Group")
+                                                  actionButton("addBins", "Create Bins/Groups"),
+                                                  actionButton("removeBins","Clear Bins/Groups")
                                          )
                                                                       ),
                                                                   mainPanel(

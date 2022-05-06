@@ -684,10 +684,10 @@ server = function(input, output, session) {
             l = sapply(subsettableData, class)
             categoricalVars = names(l[str_which(l,pattern="character")])
             categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
-            updateSelectInput(session, "catVariableForFill", choices = c(categoricalVars,groupVarName), selected = NULL)
-            updateSelectInput(session, "catVariableForSplitting", choices = c(categoricalVars,groupVarName), selected = NULL)
-            updateSelectInput(session, "scatterCatColor", choices = c(categoricalVars,groupVarName), selected = NULL)
-            updateSelectInput(session, "scatterCatFacet", choices = c(categoricalVars,groupVarName), selected = NULL)
+            updateSelectInput(session,"catVariableForFill",choices=c(categoricalVars,groupVarName), selected=catVariableForFill)
+            updateSelectInput(session,"catVariableForSplitting",choices=c(categoricalVars,groupVarName), selected=catVariableForSplitting)
+            updateSelectInput(session,"scatterCatColor",choices=c(categoricalVars,groupVarName), selected=scatterCatColor)
+            updateSelectInput(session,"scatterCatFacet",choices=c(categoricalVars,groupVarName), selected=scatterCatFacet)
         }
     },ignoreNULL=TRUE)
     
@@ -699,10 +699,10 @@ server = function(input, output, session) {
         l = sapply(subsettableData, class)
         categoricalVars = names(l[str_which(l,pattern="character")])
         categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
-        updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = NULL)
-        updateSelectInput(session, "catVariableForSplitting", choices = categoricalVars, selected = NULL)
-        updateSelectInput(session, "scatterCatColor", choices = categoricalVars, selected = NULL)
-        updateSelectInput(session, "scatterCatFacet", choices = categoricalVars, selected = NULL)
+        updateSelectInput(session,"catVariableForFill",choices=categoricalVars,selected=catVariableForFill_Reference)
+        updateSelectInput(session,"catVariableForSplitting",choices=categoricalVars,selected=catVariableForSplitting_Reference)
+        updateSelectInput(session,"scatterCatColor",choices=categoricalVars,selected=scatterCatColor_Reference)
+        updateSelectInput(session,"scatterCatFacet",choices=categoricalVars,selected=scatterCatFacet_Reference)
     },ignoreNULL=TRUE)
     
     
@@ -796,6 +796,13 @@ server = function(input, output, session) {
         subsettableDataForScatter = reactiveDF$filteredDataset
         # !! Do we need to filter for only the columns of interest first before creating the plots?
         filteredDataForScatter = subsettableDataForScatter ## %>% select(`Image File`,`Object ID`,!!sym(input$scatterY),!!sym(input$scatterX),!!sym(input$scatterCatColor),!!sym(input$scatterCatFacet))
+        
+        # Save the plotting parameter values that were inputted so they can be referenced in the future
+        scatterX_Reference <<- input$scatterX
+        scatterY_Reference <<- input$scatterY
+        scatterCatColor_Reference <<- input$scatterCatColor
+        scatterCatFacet_Reference <<- input$scatterCatFacet
+        
         return(filteredDataForScatter)
     },ignoreNULL=TRUE)
     
