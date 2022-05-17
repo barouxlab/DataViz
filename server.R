@@ -684,10 +684,20 @@ server = function(input, output, session) {
             l = sapply(subsettableData, class)
             categoricalVars = names(l[str_which(l,pattern="character")])
             categoricalVars = categoricalVars[-which(categoricalVars=="Object ID")]
-            updateSelectInput(session,"catVariableForFill",choices=c(categoricalVars,groupVarName), selected=catVariableForFill)
-            updateSelectInput(session,"catVariableForSplitting",choices=c(categoricalVars,groupVarName), selected=catVariableForSplitting)
-            updateSelectInput(session,"scatterCatColor",choices=c(categoricalVars,groupVarName), selected=scatterCatColor)
-            updateSelectInput(session,"scatterCatFacet",choices=c(categoricalVars,groupVarName), selected=scatterCatFacet)
+            updateSelectInput(session,"catVariableForFill",choices=c(categoricalVars,groupVarName), selected=categoricalVars[1])
+            updateSelectInput(session,"catVariableForSplitting",choices=c(categoricalVars,groupVarName), selected=categoricalVars[2])
+            updateSelectInput(session,"scatterCatColor",choices=c(categoricalVars,groupVarName), selected=categoricalVars[1])
+            updateSelectInput(session,"scatterCatFacet",choices=c(categoricalVars,groupVarName), selected=categoricalVars[2])
+        }
+        else if (groupVarName == paste("Group - ",toString(input$binningVariable))){
+            req(reactiveDF$filteredDataset)
+            output$filteredDatasetForFilterTab = renderDataTable({
+                DT::datatable(reactiveDF$filteredDataset,
+                              extensions="FixedColumns",
+                              plugins="natural",
+                              options=list(scrollX=TRUE,scroll ="500px",
+                                             scrollCollapse=TRUE,fixedColumns=list(leftColumns = 4)))
+            })
         }
     },ignoreNULL=TRUE)
     
