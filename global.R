@@ -86,3 +86,6 @@ scatterX_Reference = NULL
 scatterY_Reference = NULL
 scatterCatColor_Reference = NULL
 scatterCatFacet_Reference = NULL
+
+# Instantiate a list of variables that you know should not be filled (see the cleaningFunction.R)
+fillingVarsToRemove = c('Genotype','Treatment','Image File','Object ID','Category','Channel','Object','Image Subset','Time')

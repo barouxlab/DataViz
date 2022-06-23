@@ -37,6 +37,9 @@ cleaningFunction = function(inputTopLevelDirectory){
         # If one of the principal 3 statistics is missing from the dataset, remove its placeholder
         # so as to avoid bugs
         listOfLists = Filter(length, listOfLists)
+        
+        # If any of these files is empty, remove it
+        listOfLists = lapply(listOfLists,function(l)(discard(l,function(t)(suppressWarnings(suppressMessages(nrow(read_csv(t,skip=3))==0))))))
     
         # Indicate the string indicators for the columns to keep.
         # These strings determine which columns of the raw data will be kept. If a column from the 
@@ -92,16 +95,16 @@ cleaningFunction = function(inputTopLevelDirectory){
     }
     
     dataToCoalesce = dataToPivot %>% distinct() %>%
-                               pivot_wider(names_from="Surfaces",values_from="Shortest Distance to Surfaces",names_prefix="Distance to ")
+                               pivot_wider(names_from="Surfaces",values_from="Shortest Distance to Surfaces",names_prefix="Distance to Surface ")
     
     finalData = dataToCoalesce %>%
                                group_by(`Image File`,`Treatment`,`Object ID`,`Category`,`Channel`,`Surpass Object`) %>% 
-                               summarise_all(coalesce_by_column) %>% dplyr::select(-c(`Distance to NA`)) %>% ungroup()
+                               summarise_all(coalesce_by_column) %>% dplyr::select(-c(`Distance to Surface NA`)) %>% ungroup()
     
     # Augment the Shortest Distance to Spots Columns in the same way, except without a coalesce
     if("Shortest Distance to Spots" %in% colnames(finalData)){
         finalData = finalData %>% 
-                    pivot_wider(names_from="Spots",values_from="Shortest Distance to Spots",names_prefix="Distance to ") %>% dplyr::select(-c(`Distance to NA`))
+                    pivot_wider(names_from="Spots",values_from="Shortest Distance to Spots",names_prefix="Distance to Spot ") %>% dplyr::select(-c(`Distance to Spot NA`))
     }
     
     # Perform final data type changes, column movements, and column name changes
@@ -130,8 +133,18 @@ cleaningFunction = function(inputTopLevelDirectory){
     finalData$`Object`[finalData$`Object`=="Nucleus_centre_of_mass"] = "Nucleus Center of Mass"
     finalData$`Object`[finalData$`Object`=="Nucleus center of mass"] = "Nucleus Center of Mass"
     finalData$`Object`[finalData$`Object`=="Nucleus Center Of Mass"] = "Nucleus Center of Mass"
+                                   
+    # Fill NA's across multiple channel observations
+    finalDataToFill = finalData %>% relocate(c("Genotype","Treatment","Image File"))
+    namesForFilling = colnames(finalDataToFill)
+    colsToFill = namesForFilling [! namesForFilling %in% fillingVarsToRemove]
+    filledDataToNARemove = finalDataToFill %>% group_by(`Image File`,`Treatment`,`Object ID`,`Category`,`Object`) %>% 
+                               fill(all_of(colsToFill),.direction = c("downup")) %>% ungroup()
+    
+    # Remove observations with NA in the Channel column
+    finalDataToReturn = filledDataToNARemove %>% filter(!is.na(Channel))
     
     # Return the final dataset
-    return(finalData %>% relocate(c("Genotype","Treatment","Image File")))
+    return(finalDataToReturn)
 }
 
