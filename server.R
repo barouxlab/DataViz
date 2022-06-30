@@ -124,22 +124,53 @@ server = function(input, output, session) {
     # Create an observe() call for the select/clear all option in the image filtering area
     observe({
         if(input$selectallimages == 0) return(NULL) 
-        else if (input$selectallimages%%2 != 0)
+        else if (input$selectallimages%%2 == 0)
         {updateCheckboxGroupInput(session,"nROI",choices=imageLevelsForFiltering)}
         else
         {updateCheckboxGroupInput(session,"nROI",choices=imageLevelsForFiltering,selected=imageLevelsForFiltering)}
     })
     
+    # Create an observe call the updates the ratio options for the processing step after the data is imported
+    observe({
+        subsettableData = importedData()
+        # Compute the potential channel pairings
+        potentialChannelPairsDF = do.call(expand.grid, rep(list(unique(subsettableData[["Channel"]])), 2)) %>% filter(Var1 != Var2)
+        channelPairsList <<- unname(as.list(as.data.frame(t(potentialChannelPairsDF))))
+        channelPairsStrings <<- lapply(channelPairsList,toString)
+        formatChannelStrings = function(s){return(paste("Ch",toString(strsplit(s[[1]],", ")[[1]][1]),":Ch",toString(strsplit(s[[1]],", ")[[1]][2]),sep=""))}
+        channelPairsStringsFormatted <<- lapply(channelPairsStrings,formatChannelStrings)
+        names(channelPairsStrings) = channelPairsStringsFormatted
+        # Update the relevant areas in the Processing Section
+        updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStrings)
+        updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStrings)
+    })
+    
+    # Create buttons to select/clear ratio options
+    observe({
+        if(input$selectRatioSums == 0) return(NULL) 
+        else if (input$selectRatioSums%%2 == 0)
+        {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStrings)}
+        else
+        {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStrings,selected=channelPairsStrings)}
+    })
+    observe({
+        if(input$selectRatioMeans == 0) return(NULL) 
+        else if (input$selectRatioMeans%%2 == 0)
+        {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStrings)}
+        else
+        {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStrings,selected=channelPairsStrings)}
+    })
+    
     # Handle the selection of variables to create when processing
-    observeEvent(input$varsToCreate, {
-        if("Normalized Intensity Sum Ratio Ch2:Ch1" %in% input$varsToCreate){
+    observeEvent(input$ratioSumsToCreate, {
+        if(length(input$ratioSumsToCreate) > 0){
             updateCheckboxGroupInput(session,"varsToCreate",
                                      selected=append(input$varsToCreate,"Normalized Intensity Sum"))
         }
     })
     
-    observeEvent(input$varsToCreate, {
-        if("Normalized Intensity Mean Ratio Ch2:Ch1" %in% input$varsToCreate){
+    observeEvent(input$ratioMeansToCreate, {
+        if(length(input$ratioMeansToCreate) > 0){
             updateCheckboxGroupInput(session,"varsToCreate",
                                      selected=append(input$varsToCreate,"Normalized Intensity Mean"))
         }
@@ -179,7 +210,7 @@ server = function(input, output, session) {
     processedData = eventReactive(input$processButton,{
         req(importedData())
         dataToProcess = importedData()
-        processedData = processingFunction(dataToProcess,input$varsToCreate)
+        processedData = processingFunction(dataToProcess,input$varsToCreate,input$ratioSumsToCreate,input$ratioMeansToCreate)
         processedDataToWrite = processedData
         write.csv(processedDataToWrite, "TMP__ProcessedData.csv", row.names = FALSE)
         processedDataToReturn = read.csv("TMP__ProcessedData.csv",check.names = FALSE)

@@ -53,12 +53,15 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              actionButton("processButton", "Process Data"),
                              downloadButton("quickProcDownload", "Download Data"),
                              p(""),
-                             p("Data processing is an optional step that adds normalized variables such as: Normalized intensity sum, mean, and stdev; Normalized shortest distance to nucleus; Normalised intensity ratio (ch2:ch1); Group intensity sum, mean, and stdev; Signal density (normalized intensity sum: volume)."),
+                             p("Data processing is an optional step that adds normalized variables such as: Normalized intensity sum, mean, and stdev; Normalized shortest distance to nucleus; Normalised intensity ratios (chX:chY); Group intensity sum, mean, and stdev; Signal density (normalized intensity sum; volume)."),
                              p("After pressing the \"Process Data\" button, the data will appear in a table when the processing pipeline has finished. You will then be able to select the processed version of the data within the \"Filtering\" tab."),
            p("See the FAQ section for more details."),
-                             checkboxGroupInput(inputId = "varsToCreate",h3("Optional Variables"),
-                                               choices=processVarsOptions),
+                             checkboxGroupInput("varsToCreate",h3("Optional Variables"),choices=processVarsOptions),
                              actionLink("selectallvars","Select/Clear All Variables"),
+                             checkboxGroupInput("ratioSumsToCreate",h4("Ratio Variables - Normalized Sum")),
+                             actionLink("selectRatioSums","Select/Clear All Sum Ratios"),
+                             checkboxGroupInput("ratioMeansToCreate",h4("Ratio Variables - Normalized Mean")),
+                             actionLink("selectRatioMeans","Select/Clear All Mean Ratios")
                          ),
                          mainPanel(
                              tabPanel("Table",dataTableOutput("processedTableToView"))

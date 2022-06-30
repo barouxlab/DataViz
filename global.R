@@ -69,12 +69,13 @@ processVarsOptions = c("Normalized Intensity Sum",
                        "Normalized Distance to Nucleus",
                        "Group Intensity Sum",
                        "Group Intensity Mean",
-                       "Normalized Intensity Sum Ratio Ch2:Ch1",
-                       "Normalized Intensity Mean Ratio Ch2:Ch1",
                        "Signal Density",
                        "Relative Intensity Sum",
                        "Relative Intensity Mean",
                        "Object Count")
+
+#                        "Normalized Intensity Sum Ratio Ch2:Ch1",
+#                        "Normalized Intensity Mean Ratio Ch2:Ch1"
 
 # Instantiate the starting nulls for the plot selection options
 catVariableForFill_Reference = NULL
