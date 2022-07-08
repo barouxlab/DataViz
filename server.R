@@ -124,7 +124,7 @@ server = function(input, output, session) {
     # Create an observe() call for the select/clear all option in the image filtering area
     observe({
         if(input$selectallimages == 0) return(NULL) 
-        else if (input$selectallimages%%2 == 0)
+        else if (input$selectallimages%%2 == 1)
         {updateCheckboxGroupInput(session,"nROI",choices=imageLevelsForFiltering)}
         else
         {updateCheckboxGroupInput(session,"nROI",choices=imageLevelsForFiltering,selected=imageLevelsForFiltering)}
@@ -149,16 +149,16 @@ server = function(input, output, session) {
     observe({
         if(input$selectRatioSums == 0) return(NULL) 
         else if (input$selectRatioSums%%2 == 0)
-        {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStrings)}
+        {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsFormatted)}
         else
-        {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStrings,selected=channelPairsStrings)}
+        {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsFormatted,selected=channelPairsStringsFormatted)}
     })
     observe({
         if(input$selectRatioMeans == 0) return(NULL) 
         else if (input$selectRatioMeans%%2 == 0)
-        {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStrings)}
+        {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsFormatted)}
         else
-        {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStrings,selected=channelPairsStrings)}
+        {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsFormatted,selected=channelPairsStringsFormatted)}
     })
     
     # Handle the selection of variables to create when processing
