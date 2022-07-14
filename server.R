@@ -136,29 +136,30 @@ server = function(input, output, session) {
         # Compute the potential channel pairings
         potentialChannelPairsDF = do.call(expand.grid, rep(list(unique(subsettableData[["Channel"]])), 2)) %>% filter(Var1 != Var2)
         channelPairsList <<- unname(as.list(as.data.frame(t(potentialChannelPairsDF))))
-        channelPairsStrings <<- lapply(channelPairsList,toString)
+        channelPairsStrings = lapply(channelPairsList,toString)
         formatChannelStrings = function(s){return(paste("Ch",toString(strsplit(s[[1]],", ")[[1]][1]),":Ch",toString(strsplit(s[[1]],", ")[[1]][2]),sep=""))}
         channelPairsStringsFormatted <<- lapply(channelPairsStrings,formatChannelStrings)
         names(channelPairsStrings) = channelPairsStringsFormatted
+        channelPairsStringsForDisplay <<- channelPairsStrings
         # Update the relevant areas in the Processing Section
-        updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStrings)
-        updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStrings)
+        updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay)
+        updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay)
     })
     
     # Create buttons to select/clear ratio options
     observe({
         if(input$selectRatioSums == 0) return(NULL) 
         else if (input$selectRatioSums%%2 == 0)
-        {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsFormatted)}
+        {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay)}
         else
-        {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsFormatted,selected=channelPairsStringsFormatted)}
+        {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay,selected=channelPairsStringsForDisplay)}
     })
     observe({
         if(input$selectRatioMeans == 0) return(NULL) 
         else if (input$selectRatioMeans%%2 == 0)
-        {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsFormatted)}
+        {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay)}
         else
-        {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsFormatted,selected=channelPairsStringsFormatted)}
+        {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay,selected=channelPairsStringsForDisplay)}
     })
     
     # Handle the selection of variables to create when processing
