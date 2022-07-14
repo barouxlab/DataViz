@@ -210,7 +210,7 @@ server = function(input, output, session) {
     processedData = eventReactive(input$processButton,{
         req(importedData())
         dataToProcess = importedData()
-        processedData = processingFunction(dataToProcess,input$varsToCreate,input$ratioSumsToCreate,input$ratioMeansToCreate)
+        processedData = suppressWarnings(processingFunction(dataToProcess,input$varsToCreate,input$ratioSumsToCreate,input$ratioMeansToCreate))
         processedDataToWrite = processedData
         write.csv(processedDataToWrite, "TMP__ProcessedData.csv", row.names = FALSE)
         processedDataToReturn = read.csv("TMP__ProcessedData.csv",check.names = FALSE)

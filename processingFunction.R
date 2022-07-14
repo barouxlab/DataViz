@@ -38,21 +38,21 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
     # Normalized Intensity Sum
     if ("Normalized Intensity Sum" %in% varsToInclude & ("Intensity Sum" %in% names(dataToProcess))){
         dataToProcess = dataToProcess %>% group_by(`Image File`,Channel) %>% 
-                        mutate("Normalized Intensity Sum" = `Intensity Sum`/`Intensity Sum`[which(`Object`=="Nucleus")]) %>% 
+                        mutate("Normalized Intensity Sum" = ifelse(identical(which(`Object`=="Nucleus"),integer(0)),NA,`Intensity Sum`/`Intensity Sum`[which(`Object`=="Nucleus")])) %>% 
                         ungroup()
         }
     
     # Normalized Intensity Mean
     if ("Normalized Intensity Mean" %in% varsToInclude & ("Intensity Mean" %in% names(dataToProcess))){
         dataToProcess = dataToProcess %>% group_by(`Image File`,Channel) %>% 
-                        mutate("Normalized Intensity Mean" = `Intensity Mean`/`Intensity Mean`[which(`Object`=="Nucleus")]) %>% 
+                        mutate("Normalized Intensity Mean" = ifelse(identical(which(`Object`=="Nucleus"),integer(0)),NA,`Intensity Mean`/`Intensity Mean`[which(`Object`=="Nucleus")])) %>% 
                         ungroup()
         }
     
     # Normalized Intensity StdDev
     if ("Normalized Intensity StdDev" %in% varsToInclude & ("Intensity StdDev" %in% names(dataToProcess))){
         dataToProcess = dataToProcess %>% group_by(`Image File`,Channel) %>% 
-                        mutate("Normalized Intensity StdDev" = `Intensity StdDev`/`Intensity StdDev`[which(`Object`=="Nucleus")]) %>% 
+                        mutate("Normalized Intensity StdDev" = ifelse(identical(which(`Object`=="Nucleus"),integer(0)),NA,`Intensity StdDev`/`Intensity StdDev`[which(`Object`=="Nucleus")])) %>% 
                         ungroup()
         }
     
@@ -85,10 +85,8 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
     # added here.
     # !! To make the code work with multiple channels beyond 1 and 2, the case_when function was used to handle
     # !! multiple criteria; moreover, due to some object ID's being both Surfaces and Spots, the `Category`
-    # !! variable should be added in the group_by function.
+    # !! variables was added in the group_by function.
     # !! Confirm that this variable can be created when Normalized Sum/Mean lacks a Nucleus object
-    # !! Confirm how to handle cases when "Nucleus" doesn't exist or when Spots and Surfaces are the same object
-    # !! (e.g., subsettableData %>% filter(`Image File` == "MP_006p") %>% filter(`Object ID` == 13))
     
     # Normalized Intensity Sum Ratio
     if (length(ratioSumsToCreate) != 0 & ("Normalized Intensity Sum" %in% names(dataToProcess))){
@@ -96,9 +94,10 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
             splitStrings = lapply(strsplit(c,", "),as.numeric)
             ch_a = splitStrings[[1]][1]
             ch_b = splitStrings[[1]][2]
-            stringTitleSum = paste("Normalized Intensity Sum Ratio Ch",ch_a,":Ch",ch_b,sep = "")
-            dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`) %>% 
-                                mutate(!!stringTitleSum := case_when(
+            stringTitle = paste("Normalized Intensity Sum Ratio Ch",ch_a,":Ch",ch_b,sep = "")
+            dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`,`Category`) %>% 
+                                mutate(!!stringTitle := case_when(
+                                    `Normalized Intensity Sum`[which(`Channel`==ch_a)] == NA || `Normalized Intensity Sum`[which(`Channel`==ch_b)] == NA ~ NA_real_,
                                     Channel == ch_a || Channel == ch_b ~ ((`Normalized Intensity Sum`[which(`Channel`==ch_a)])/(`Normalized Intensity Sum`[which(`Channel`==ch_b)])),
                                     Channel != ch_a & Channel != ch_b ~ NA_real_
                                 )
@@ -113,9 +112,10 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
             splitStrings = lapply(strsplit(c,", "),as.numeric)
             ch_a = splitStrings[[1]][1]
             ch_b = splitStrings[[1]][2]
-            stringTitleMean = paste("Normalized Intensity Mean Ratio Ch",ch_a,":Ch",ch_b,sep = "")
-            dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`) %>% 
-                                mutate(!!stringTitleMean := case_when(
+            stringTitle = paste("Normalized Intensity Mean Ratio Ch",ch_a,":Ch",ch_b,sep = "")
+            dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`,`Category`) %>% 
+                                mutate(!!stringTitle := case_when(
+                                    `Normalized Intensity Mean`[which(`Channel`==ch_a)] == NA || `Normalized Intensity Mean`[which(`Channel`==ch_b)] == NA ~ NA_real_,
                                     Channel == ch_a || Channel == ch_b ~ ((`Normalized Intensity Mean`[which(`Channel`==ch_a)])/(`Normalized Intensity Mean`[which(`Channel`==ch_b)])),
                                     Channel != ch_a & Channel != ch_b ~ NA_real_
                                 )
