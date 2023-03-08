@@ -50,3 +50,5 @@ If interacting with the repository files, the following notes may be helpful:
 - "example_data_S3IT.zip" is an example ZIP formatted collection of Imaris exported tabular files; in order to use the Data Cleaning/Harmonization pipeline, ensure that your Imaris tabular data matches the directory format of this ZIP.
     - N.B. directory names are used by the data cleaning pipeline to create column names and metadata; ensure directories are named appropriately and, when at all possible, as they are outputted from Imaris.
 - "exampleCSV.csv" is an example CSV formatted dataset that can be imported without the cleaning / harmonization step.
+
+🌱
