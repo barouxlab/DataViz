@@ -84,7 +84,7 @@ cleaningFunction = function(inputTopLevelDirectory){
     dataToCat = suppressMessages(lapply(subDirectoriesOfInterest,analyzeLowestDir))
 
     # Join all of the separate files and make name edits as necessary
-    dataToPivot = suppressMessages(dataToCat %>% reduce(full_join)) %>% relocate(c("ImageID","Treatment","Genotype")) %>%
+    dataToCoalesce = suppressMessages(dataToCat %>% reduce(full_join)) %>% relocate(c("ImageID","Treatment","Genotype")) %>%
                                rename(`Image File`=ImageID, `Object ID`=ID, `Image Subset`=Image)
     
     # Augment the Shortest Distance to Surfaces Columns via a pivot then a coalesce to merge jagged rows
@@ -93,15 +93,19 @@ cleaningFunction = function(inputTopLevelDirectory){
     coalesce_by_column = function(df) {
         return(dplyr::coalesce(!!! as.list(df)))
     }
-    
-    dataToCoalesce = dataToPivot %>% distinct() %>%
-                               pivot_wider(names_from="Surfaces",values_from="Shortest Distance to Surfaces",names_prefix="Distance to Surface ")
-    
-    finalData = dataToCoalesce %>%
+
+    dataToPivot = dataToCoalesce %>%
                                group_by(`Image File`,`Treatment`,`Object ID`,`Category`,`Channel`,`Surpass Object`) %>% 
-                               summarise_all(coalesce_by_column) %>% dplyr::select(-c(`Distance to Surface NA`)) %>% ungroup()
+                               summarise_all(coalesce_by_column) %>% ungroup()
     
-    # Augment the Shortest Distance to Spots Columns in the same way, except without a coalesce
+    pivotColumnList = c("Shortest Distance to Surfaces","Overlapped Volume to Surfaces","Overlapped Volume Ratio to Surfaces")
+    
+    finalData = dataToPivot %>% distinct() %>%
+                               pivot_wider(names_from="Surfaces",names_glue = "{.value} - {Surfaces}", values_from=pivotColumnList) %>%
+                               dplyr::select(-c(`Shortest Distance to Surfaces - NA`)) %>% dplyr::select(-c(`Overlapped Volume to Surfaces - NA`)) %>%
+                               dplyr::select(-c(`Overlapped Volume Ratio to Surfaces - NA`))
+    
+    # Augment the Shortest Distance to Spots Columns in the same way
     if("Shortest Distance to Spots" %in% colnames(finalData)){
         finalData = finalData %>% 
                     pivot_wider(names_from="Spots",values_from="Shortest Distance to Spots",names_prefix="Distance to Spot ") %>% dplyr::select(-c(`Distance to Spot NA`))
