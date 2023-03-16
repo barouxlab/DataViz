@@ -95,7 +95,7 @@ cleaningFunction = function(inputTopLevelDirectory){
     }
 
     dataToPivot = dataToCoalesce %>%
-                               group_by(`Image File`,`Treatment`,`Object ID`,`Category`,`Channel`,`Surpass Object`) %>% 
+                               group_by(`Image File`,`Treatment`,`Object ID`,`Category`,`Channel`,`Surpass Object`,`Surfaces`) %>% 
                                summarise_all(coalesce_by_column) %>% ungroup()
     
     pivotColumnList = c("Shortest Distance to Surfaces","Overlapped Volume to Surfaces","Overlapped Volume Ratio to Surfaces")
