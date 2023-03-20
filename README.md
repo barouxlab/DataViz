@@ -51,4 +51,3 @@ If interacting with the repository files, the following notes may be helpful:
     - N.B. directory names are used by the data cleaning pipeline to create column names and metadata; ensure directories are named appropriately and, when at all possible, as they are outputted from Imaris.
 - "exampleCSV.csv" is an example CSV formatted dataset that can be imported without the cleaning / harmonization step.
 
-🌱
