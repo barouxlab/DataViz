@@ -10,15 +10,10 @@ server = function(input, output, session) {
         }
     })
     
-    #################################################
-    # TAB IMPORT
-    #################################################
     # Import the data
     importedData = eventReactive(input$confirmUpload,{
         req(inputtedData())
         dataToImport = inputtedData()
-        
-        # on the ZIP file 
         if(file_ext(dataToImport$name)=="zip"){
             # Unzip the file once it's selected to a sub-directory (to be created) inside the working directory
             tmpDirName = paste("TMP_",toString(abs(rnorm(1))*1e15),sep="")
@@ -44,8 +39,6 @@ server = function(input, output, session) {
             inputtedDataToReturn[["Channel"]][is.na(inputtedDataToReturn[["Channel"]])] = "NA"
             unlink(tmpDirName, recursive = TRUE)
             return(inputtedDataToReturn)
-            
-        # No preprocessing / cleaning is done on the CSV file
         } else if(file_ext(dataToImport$name)=="csv"){
             importedData = read.csv(dataToImport$datapath,check.names = FALSE)
             importedData$`Object ID` = as.character(importedData$`Object ID`)
@@ -117,124 +110,6 @@ server = function(input, output, session) {
         DT::datatable(recordsWithNAChannel, options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE))
     })
     
-    #################################################
-    # TAB PROCESS
-    #################################################
-    # Process the data
-    processedData = eventReactive(input$processButton,{
-      req(importedData())
-      dataToProcess = importedData()
-      processedData = suppressWarnings(processingFunction(dataToProcess,input$varsToCreate,input$ratioSumsToCreate,input$ratioMeansToCreate))
-      processedDataToWrite = processedData
-      write.csv(processedDataToWrite, "TMP__ProcessedData.csv", row.names = FALSE)
-      processedDataToReturn = read.csv("TMP__ProcessedData.csv",check.names = FALSE)
-      updateRadioButtons(session,"dataToSelect",choices=c("Original Data"="rawData","Processed Data"="processedData"))
-      processedDataToReturn$`Object ID` = as.character(processedDataToReturn$`Object ID`)
-      processedDataToReturn$`Channel` = as.character(processedDataToReturn$`Channel`)
-      processedDataToReturn$`Time` = as.numeric(processedDataToReturn$`Time`)
-      processedDataToReturn[["Channel"]][is.na(processedDataToReturn[["Channel"]])] = "NA"
-      finalProcessedDataToReturn = as_tibble(processedDataToReturn)
-      unlink("TMP__ProcessedData.csv")
-      return(finalProcessedDataToReturn)
-    })
-    
-    
-    # Create an observe call the updates the ratio options for the processing step after the data is imported
-    observe({
-      subsettableData = importedData()
-      # Compute the potential channel pairings
-      potentialChannelPairsDF = do.call(expand.grid, rep(list(unique(subsettableData[["Channel"]])), 2)) %>% filter(Var1 != Var2)
-      channelPairsList <<- unname(as.list(as.data.frame(t(potentialChannelPairsDF))))
-      channelPairsStrings = lapply(channelPairsList,toString)
-      formatChannelStrings = function(s){return(paste("Ch",toString(strsplit(s[[1]],", ")[[1]][1]),":Ch",toString(strsplit(s[[1]],", ")[[1]][2]),sep=""))}
-      channelPairsStringsFormatted <<- lapply(channelPairsStrings,formatChannelStrings)
-      names(channelPairsStrings) = channelPairsStringsFormatted
-      channelPairsStringsForDisplay <<- channelPairsStrings
-      # Update the relevant areas in the Processing Section
-      updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay)
-      updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay)
-    })
-    
-    # Create buttons to select/clear ratio options
-    observe({
-      if(input$selectRatioSums == 0) return(NULL) 
-      else if (input$selectRatioSums%%2 == 0)
-      {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay)}
-      else
-      {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay,selected=channelPairsStringsForDisplay)}
-    })
-    observe({
-      if(input$selectRatioMeans == 0) return(NULL) 
-      else if (input$selectRatioMeans%%2 == 0)
-      {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay)}
-      else
-      {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay,selected=channelPairsStringsForDisplay)}
-    })
-    
-    # Handle the selection of variables to create when processing
-    observeEvent(input$ratioSumsToCreate, {
-      if(length(input$ratioSumsToCreate) > 0){
-        updateCheckboxGroupInput(session,"varsToCreate",
-                                 selected=append(input$varsToCreate,"Normalized Intensity Sum"))
-      }
-    })
-    
-    observeEvent(input$ratioMeansToCreate, {
-      if(length(input$ratioMeansToCreate) > 0){
-        updateCheckboxGroupInput(session,"varsToCreate",
-                                 selected=append(input$varsToCreate,"Normalized Intensity Mean"))
-      }
-    })
-    
-    observeEvent(input$varsToCreate, {
-      if("Signal Density" %in% input$varsToCreate){
-        updateCheckboxGroupInput(session,"varsToCreate",
-                                 selected=append(input$varsToCreate,"Normalized Intensity Sum"))
-      }
-    })
-    
-    observeEvent(input$varsToCreate, {
-      if("Relative Intensity Sum" %in% input$varsToCreate){
-        updateCheckboxGroupInput(session,"varsToCreate",
-                                 selected=append(input$varsToCreate,"Normalized Intensity Sum"))
-      }
-    })
-    
-    observeEvent(input$varsToCreate, {
-      if("Relative Intensity Mean" %in% input$varsToCreate){
-        updateCheckboxGroupInput(session,"varsToCreate",
-                                 selected=append(input$varsToCreate,"Normalized Intensity Mean"))
-      }
-    })
-    
-    # Create an observe() call for the select/clear all option in the processing area
-    observe({
-      if(input$selectallvars == 0) return(NULL) 
-      else if (input$selectallvars%%2 == 0)
-      {updateCheckboxGroupInput(session,"varsToCreate",choices=processVarsOptions)}
-      else
-      {updateCheckboxGroupInput(session,"varsToCreate",choices=processVarsOptions,selected=processVarsOptions)}
-    })
-    
-    # Create an option for a quick download of the processed data
-    output$quickProcDownload = downloadHandler(
-      filename = function() {
-        paste(format(Sys.time(), "ProcessedData_Date_%Y_%m_%d_Time_%H%M%S"), ".csv", sep = "")
-      },
-      content = function(file) {
-        write.csv(processedData(), file, row.names = FALSE)
-      }
-    )
-    
-    # Output the processed data table as a function of the inputs given in the user interface above
-    output$processedTableToView = renderDataTable({
-      DT::datatable(processedData(), extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
-    })
-    
-    
-    #################################################
-    # TAB SELECT
-    #################################################
     # Create an observe() call to complete the checkbox items once the data is uploaded, unzipped, cleaned, and processed
     observe({
         subsettableData = importedData()
@@ -254,7 +129,102 @@ server = function(input, output, session) {
         else
         {updateCheckboxGroupInput(session,"nROI",choices=imageLevelsForFiltering,selected=imageLevelsForFiltering)}
     })
-
+    
+    # Create an observe call the updates the ratio options for the processing step after the data is imported
+    observe({
+        subsettableData = importedData()
+        # Compute the potential channel pairings
+        potentialChannelPairsDF = do.call(expand.grid, rep(list(unique(subsettableData[["Channel"]])), 2)) %>% filter(Var1 != Var2)
+        channelPairsList <<- unname(as.list(as.data.frame(t(potentialChannelPairsDF))))
+        channelPairsStrings = lapply(channelPairsList,toString)
+        formatChannelStrings = function(s){return(paste("Ch",toString(strsplit(s[[1]],", ")[[1]][1]),":Ch",toString(strsplit(s[[1]],", ")[[1]][2]),sep=""))}
+        channelPairsStringsFormatted <<- lapply(channelPairsStrings,formatChannelStrings)
+        names(channelPairsStrings) = channelPairsStringsFormatted
+        channelPairsStringsForDisplay <<- channelPairsStrings
+        # Update the relevant areas in the Processing Section
+        updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay)
+        updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay)
+    })
+    
+    # Create buttons to select/clear ratio options
+    observe({
+        if(input$selectRatioSums == 0) return(NULL) 
+        else if (input$selectRatioSums%%2 == 0)
+        {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay)}
+        else
+        {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay,selected=channelPairsStringsForDisplay)}
+    })
+    observe({
+        if(input$selectRatioMeans == 0) return(NULL) 
+        else if (input$selectRatioMeans%%2 == 0)
+        {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay)}
+        else
+        {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay,selected=channelPairsStringsForDisplay)}
+    })
+    
+    # Handle the selection of variables to create when processing
+    observeEvent(input$ratioSumsToCreate, {
+        if(length(input$ratioSumsToCreate) > 0){
+            updateCheckboxGroupInput(session,"varsToCreate",
+                                     selected=append(input$varsToCreate,"Normalized Intensity Sum"))
+        }
+    })
+    
+    observeEvent(input$ratioMeansToCreate, {
+        if(length(input$ratioMeansToCreate) > 0){
+            updateCheckboxGroupInput(session,"varsToCreate",
+                                     selected=append(input$varsToCreate,"Normalized Intensity Mean"))
+        }
+    })
+    
+    observeEvent(input$varsToCreate, {
+        if("Signal Density" %in% input$varsToCreate){
+            updateCheckboxGroupInput(session,"varsToCreate",
+                                     selected=append(input$varsToCreate,"Normalized Intensity Sum"))
+        }
+    })
+    
+    observeEvent(input$varsToCreate, {
+        if("Relative Intensity Sum" %in% input$varsToCreate){
+            updateCheckboxGroupInput(session,"varsToCreate",
+                                     selected=append(input$varsToCreate,"Normalized Intensity Sum"))
+        }
+    })
+    
+    observeEvent(input$varsToCreate, {
+        if("Relative Intensity Mean" %in% input$varsToCreate){
+            updateCheckboxGroupInput(session,"varsToCreate",
+                                     selected=append(input$varsToCreate,"Normalized Intensity Mean"))
+        }
+    })
+    
+    # Create an observe() call for the select/clear all option in the processing area
+    observe({
+        if(input$selectallvars == 0) return(NULL) 
+        else if (input$selectallvars%%2 == 0)
+        {updateCheckboxGroupInput(session,"varsToCreate",choices=processVarsOptions)}
+        else
+        {updateCheckboxGroupInput(session,"varsToCreate",choices=processVarsOptions,selected=processVarsOptions)}
+    })
+    
+    # Process the data
+    processedData = eventReactive(input$processButton,{
+        req(importedData())
+        dataToProcess = importedData()
+        processedData = suppressWarnings(processingFunction(dataToProcess,input$varsToCreate,input$ratioSumsToCreate,input$ratioMeansToCreate))
+        processedDataToWrite = processedData
+        write.csv(processedDataToWrite, "TMP__ProcessedData.csv", row.names = FALSE)
+        processedDataToReturn = read.csv("TMP__ProcessedData.csv",check.names = FALSE)
+        updateRadioButtons(session,"dataToSelect",choices=c("Original Data"="rawData","Processed Data"="processedData"))
+        processedDataToReturn$`Object ID` = as.character(processedDataToReturn$`Object ID`)
+        processedDataToReturn$`Channel` = as.character(processedDataToReturn$`Channel`)
+        processedDataToReturn$`Time` = as.numeric(processedDataToReturn$`Time`)
+        processedDataToReturn[["Channel"]][is.na(processedDataToReturn[["Channel"]])] = "NA"
+        finalProcessedDataToReturn = as_tibble(processedDataToReturn)
+        unlink("TMP__ProcessedData.csv")
+        return(finalProcessedDataToReturn)
+    })
+    
     # Create observe calls to update the outlier selection dropdown after the intial data is uploaded or processed
     observe({
         subsettableData = importedData()
@@ -268,7 +238,22 @@ server = function(input, output, session) {
         continuousVars = names(l[str_which(l,pattern="numeric")])
         updateSelectInput(session, "outlierVariable", choices = continuousVars, selected = NULL)
     })
-
+    
+    # Create an option for a quick download of the processed data
+    output$quickProcDownload = downloadHandler(
+        filename = function() {
+            paste(format(Sys.time(), "ProcessedData_Date_%Y_%m_%d_Time_%H%M%S"), ".csv", sep = "")
+        },
+        content = function(file) {
+            write.csv(processedData(), file, row.names = FALSE)
+        }
+    )
+    
+    # Output the processed data table as a function of the inputs given in the user interface above
+    output$processedTableToView = renderDataTable({
+        DT::datatable(processedData(), extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
+    })
+    
     # Create options for generating outliers based on variable input
     generatedOutliers = eventReactive(input$generateOutliers,{
         subsettableData = reactiveDF$filteredDataset
@@ -277,8 +262,6 @@ server = function(input, output, session) {
         dataToBoxplot = subsettableData %>%
                         select(!!sym(outlierVariableString)) %>%
                         pull(!!sym(outlierVariableString))
-        
-        print(length(dataToBoxplot))
         outliersToRemove = boxplot.stats(dataToBoxplot)$out
         outlierIndicesToRemove = which(dataToBoxplot %in% c(outliersToRemove))
         outlierTibble = subsettableData[outlierIndicesToRemove,]
@@ -288,7 +271,6 @@ server = function(input, output, session) {
     output$outlierTable = renderDataTable({
             DT::datatable(generatedOutliers(), options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE))
         })
-    
     
     # Instantiate the reactive variable for filtering
     reactiveDF = reactiveValues() 
@@ -408,9 +390,6 @@ server = function(input, output, session) {
         append=FALSE
     )
     
-    ########################################
-    # Tab DATA EXPORT
-    ########################################
     output$skimrOutputNumeric = renderDataTable({
         tableToDisplayNumeric = partition(mySkim(dataToExport()))$numeric %>% mutate(percentmissing = (1-complete_rate)) %>% rename("Variable"="skim_variable", "% Missing"="percentmissing", "SD"="sd","Mean"="mean") %>% select(Variable,`% Missing`,Mean,SD)
         DT::datatable(tableToDisplayNumeric, options = list(dom = 't', scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE)) %>% formatPercentage("% Missing", 2) %>% formatSignif(columns = c("Mean","SD"),digits=4)
@@ -483,9 +462,6 @@ server = function(input, output, session) {
     )
     
     
-    ########################################
-    # Tab 1-D Plots
-    ########################################
     # Subset the filtered data for plotting histograms, boxplots, and KDE's
     densityDataToHistoBox = eventReactive(input$generatePlotParams,{
         return(reactiveDF$filteredDataset)
@@ -512,7 +488,7 @@ server = function(input, output, session) {
         updateNumericInput(session,"yULKDE",value=yRangeKDE[2])
         
         histogram = ggplot(dataForPlotParams,aes(x=!!sym(singleConVariable),color=!!sym(catVariableForFill))) + 
-        geom_histogram(bins=as.numeric(numOfBinsRefined)) + facet_wrap(as.formula(paste("~", paste("`",catVariableForFill,"`",sep=""))), scales="free")
+        geom_histogram(bins=as.numeric(numOfBinsRefined)) + facet_wrap(as.formula(paste("~", paste("`",catVariableForFill,"`",sep=""))))
         xRangeHistogram <<- ggplot_build(histogram)$layout$panel_params[[1]]$x.range
         updateNumericInput(session,"xLLHistogram",value=xRangeHistogram[1])
         updateNumericInput(session,"xULHistogram",value=xRangeHistogram[2])
@@ -591,7 +567,7 @@ server = function(input, output, session) {
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         histogramCount = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) +
         geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Count") +
-        xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
+        xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         histogramCount
@@ -604,9 +580,9 @@ server = function(input, output, session) {
 
     histoRefinedPercentage = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        histogramPercentage = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) +
-        geom_histogram(aes(y=stat(density)*3, binwidth=3), bins=as.numeric(input$numOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
-        xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
+        histogramPercentage = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) +
+        geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
+        xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         histogramPercentage
@@ -647,12 +623,7 @@ server = function(input, output, session) {
     
     boxplotRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        dd = densityDataToHistoBoxRefined()
-        print("Mthod boxplotrefined check data length")
-        print(nrow(dd))
-        print(ncol(dd))
-        gg = ggplot(dd,aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) 
-        boxplot = gg + geom_boxplot(varwidth = FALSE, width = input$boxplotBoxWidth) + 
+        boxplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = FALSE, width = input$boxplotBoxWidth) +
         ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
@@ -661,13 +632,12 @@ server = function(input, output, session) {
     
     output$boxplotRefined = renderPlot({
         req(boxplotRefined())
-      dd = boxplotRefined()
-        dd
+        boxplotRefined()
         },height=plotHeight)
     
     violinplotRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        violinplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_violin(draw_quantiles = c(0.5), width = input$boxplotBoxWidth) +
+        violinplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_violin(draw_quantiles = c(0.5)) +
         ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
@@ -682,8 +652,7 @@ server = function(input, output, session) {
     # Create a summary table of values from the boxplot
     output$summaryTableFromBoxplot = renderDataTable({
         
-      bxdd = boxplotRefined()
-        layerData = layer_data(bxdd) %>% select(lower,middle,upper,PANEL,group)
+        layerData = layer_data(boxplotRefined()) %>% select(lower,middle,upper,PANEL,group)
         dataToSubset = densityDataToHistoBoxRefined()
         
         # Panel Assignments

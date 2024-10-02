@@ -92,67 +92,59 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                          tabPanel("Table",
                                                   dataTableOutput("filteredTableToView")),
                                          tabPanel("Outliers",
-                                                    
-                                                      h3("Outliers for Selected Level"),
-                                                      selectInput(inputId="outlierVariable",h4("Category Level"),choices = list("Filter Data First"="Genotype"),selected = "Genotype"),
-                                                      radioButtons(inputId = "removeOutliersRadio",
-                                                                   h3("Remove outliers on next filter?"),
-                                                                   c("Yes"="yes","No"="no"),
-                                                                   selected = "no"
-                                                      ),
-                                                      actionButton("generateOutliers","Generate Outliers for Selected Variable"),
-                                                  
-                                                      dataTableOutput("outlierTable"),
-                                                    
-                                                      HTML("<h4 style=\"margin-top: 25px\">Outliers</h4>"),
-                                                      HTML("<p>Method <code>boxplot.stats()</code> is used to compute the outliers.</p>"),
-                                                      HTML("<p>Outliers are the values of any data points which lie beyond the extremes of the whiskers."),
-                                                      HTML("<p>Lower whisker = smallest observation greater than or equal to lower hinge - 1.5 * IQR, where lower hinge is 25% quantile.</p>"),
-                                                      HTML("<p>Upper whisker = largest observation less than or equal to upper hinger + 1.5 * IQR, where upper hinge is 75% quantile.</p>"),
-                                                      HTML("<p>Outlier is a data point less than a lower whisker or a data point greater than an upper whisker.</p>")
-                                                    
-                                                  
+                                                  h3("Outliers for Selected Level"),
+                                                  selectInput(inputId="outlierVariable",h4("Category Level"),choices = list("Filter Data First"="Genotype"),selected = "Genotype"),
+                                                  radioButtons(inputId = "removeOutliersRadio",
+                                                               h3("Remove outliers on next filter?"),
+                                                               c("Yes"="yes","No"="no"),
+                                                               selected = "no"
+                                                              ),
+                                                  actionButton("generateOutliers","Generate Outliers for Selected Variable"),
+                                                  p(""),
+                                                  verbatimTextOutput("outlierText"),
+                                                  p(""),
+                                                  dataTableOutput("outlierTable")
+                                                 )
                                         )
-                              )
                          )
                         ),
-               tabPanel("Filtering / Binning",
-                      sidebarPanel(
-                                h2("Filtering"),
-                              selectInput(inputId = "additionalVarForFiltering","Filter by",choices = list("Select Variable"="Genotype"),selected = "Genotype"),
-                              fluidRow(
-                                  column(
-                                      width = 6,
-                                      div(style = "white-space: nowrap;", 
-                                          div(style="display: inline-block; width: 100%;",
-                                              numericInput("additionalFilterLower",label="Lower Limit (Inclusive)",value=0)
-                                             ),
-                                          h3("-",style="display:inline-block"),
-                                          div(style="display: inline-block; width: 100%;",
-                                              numericInput("additionalFilterUpper",label="Upper Limit (Inclusive)",value=1)
-                                             ),
-                                         ))),
-                              actionButton("additionalFilter", "Apply Filter"),
-                              actionButton("cancelFilter", "Cancel Filter"),
-                                                  h2("Binning"),
-                                                  tabPanel("Subset",
-                              p("Subset the data into groups defined by thresholds"),
-                              selectInput(inputId = "binningVariable","Variable for Group Creation",choices = list("Select Data First"="NormSum"),selected = "NormSum"),
-                              radioButtons(inputId = "rangeOrGroups",
-                                           p("Create groups by thresholds or subset by a single range"),
-                                           c("Thresholds (e.g., '0,1,5,10')"="threshold","Range (e.g., '1,5')"="range"),
-                                           selected = "threshold"
-                                          ),
-                              textInput("binCuts","",value="0,1"),
-                              actionButton("addBins", "Create Bins/Groups"),
-                              actionButton("removeBins","Clear Bins/Groups")
-                     )
-                                      ),
-                                  mainPanel(
-                                      h4("Filtered / Binned Data will be displayed below:"),
-                  dataTableOutput("filteredDatasetForFilterTab")
-                                  )
-                 ),
+                                                         tabPanel("Filtering / Binning",
+                                                                  sidebarPanel(
+                                                                      h2("Filtering"),
+                                                  selectInput(inputId = "additionalVarForFiltering","Filter by",choices = list("Select Variable"="Genotype"),selected = "Genotype"),
+                                                  fluidRow(
+                                                      column(
+                                                          width = 6,
+                                                          div(style = "white-space: nowrap;", 
+                                                              div(style="display: inline-block; width: 100%;",
+                                                                  numericInput("additionalFilterLower",label="Lower Limit (Inclusive)",value=0)
+                                                                 ),
+                                                              h3("-",style="display:inline-block"),
+                                                              div(style="display: inline-block; width: 100%;",
+                                                                  numericInput("additionalFilterUpper",label="Upper Limit (Inclusive)",value=1)
+                                                                 ),
+                                                             ))),
+                                                  actionButton("additionalFilter", "Apply Filter"),
+                                                  actionButton("cancelFilter", "Cancel Filter"),
+                                                                      h2("Binning"),
+                                                                      tabPanel("Subset",
+                                                  p("Subset the data into groups defined by thresholds"),
+                                                  selectInput(inputId = "binningVariable","Variable for Group Creation",choices = list("Select Data First"="NormSum"),selected = "NormSum"),
+                                                  radioButtons(inputId = "rangeOrGroups",
+                                                               p("Create groups by thresholds or subset by a single range"),
+                                                               c("Thresholds (e.g., '0,1,5,10')"="threshold","Range (e.g., '1,5')"="range"),
+                                                               selected = "threshold"
+                                                              ),
+                                                  textInput("binCuts","",value="0,1"),
+                                                  actionButton("addBins", "Create Bins/Groups"),
+                                                  actionButton("removeBins","Clear Bins/Groups")
+                                         )
+                                                                      ),
+                                                                  mainPanel(
+                                                                      h4("Filtered / Binned Data will be displayed below:"),
+                                                  dataTableOutput("filteredDatasetForFilterTab")
+                                                                  )
+                                                 ),
                 tabPanel("1-D Plots",
                          sidebarPanel(
                              actionButton("generatePlotParams", "Update Parameters"),
