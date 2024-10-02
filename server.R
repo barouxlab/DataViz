@@ -488,7 +488,7 @@ server = function(input, output, session) {
         updateNumericInput(session,"yULKDE",value=yRangeKDE[2])
         
         histogram = ggplot(dataForPlotParams,aes(x=!!sym(singleConVariable),color=!!sym(catVariableForFill))) + 
-        geom_histogram(bins=as.numeric(numOfBinsRefined)) + facet_wrap(as.formula(paste("~", paste("`",catVariableForFill,"`",sep=""))))
+        geom_histogram(bins=as.numeric(numOfBinsRefined)) + facet_wrap(as.formula(paste("~", paste("`",catVariableForFill,"`",sep=""))),scales="free")
         xRangeHistogram <<- ggplot_build(histogram)$layout$panel_params[[1]]$x.range
         updateNumericInput(session,"xLLHistogram",value=xRangeHistogram[1])
         updateNumericInput(session,"xULHistogram",value=xRangeHistogram[2])
@@ -567,7 +567,7 @@ server = function(input, output, session) {
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         histogramCount = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) +
         geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Count") +
-        xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
+        xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         histogramCount
@@ -596,7 +596,7 @@ server = function(input, output, session) {
     kdeRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         kdeSplit = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) + geom_density(adjust=input$kdeAdjust) + ylab("Density") +
-        xlim(input$xLLKDE,input$xULKDE) + ylim(input$yLLKDE,input$yULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
+        xlim(input$xLLKDE,input$xULKDE) + ylim(input$yLLKDE,input$yULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         kdeSplit
@@ -610,7 +610,7 @@ server = function(input, output, session) {
         kdeRefinedPercentage = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         kdeSplitPercentage = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) + geom_density(stat='bin',bins=as.numeric(input$kdeNumOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
-        xlim(input$xLLKDE,input$xULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
+        xlim(input$xLLKDE,input$xULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         kdeSplitPercentage
@@ -637,7 +637,7 @@ server = function(input, output, session) {
     
     violinplotRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        violinplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_violin(draw_quantiles = c(0.5)) +
+        violinplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_violin(draw_quantiles = c(0.5), width = input$boxplotBoxWidth) +
         ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))

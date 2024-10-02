@@ -103,7 +103,13 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   p(""),
                                                   verbatimTextOutput("outlierText"),
                                                   p(""),
-                                                  dataTableOutput("outlierTable")
+                                                  dataTableOutput("outlierTable"),
+                                                  HTML("<h4 style=\"margin-top: 25px\">Outliers</h4>"),
+                                                  HTML("<p>Method <code>boxplot.stats()</code> is used to compute the outliers.</p>"),
+                                                  HTML("<p>Outliers are the values of any data points which lie beyond the extremes of the whiskers."),
+                                                  HTML("<p>Lower whisker = smallest observation greater than or equal to lower hinge - 1.5 * IQR, where lower hinge is 25% quantile.</p>"),
+                                                  HTML("<p>Upper whisker = largest observation less than or equal to upper hinger + 1.5 * IQR, where upper hinge is 75% quantile.</p>"),
+                                                  HTML("<p>Outlier is a data point less than a lower whisker or a data point greater than an upper whisker.</p>")
                                                  )
                                         )
                          )
