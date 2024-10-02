@@ -97,8 +97,8 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
       stringTitle = paste("Normalized Intensity Sum Ratio Ch",ch_a,":Ch",ch_b,sep = "")
       dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`,`Category`) %>% 
         mutate(!!stringTitle := case_when(
-          `Normalized Intensity Sum`[which(`Channel`==ch_a)] == NA || `Normalized Intensity Sum`[which(`Channel`==ch_b)] == NA ~ NA_real_,
-          Channel == ch_a || Channel == ch_b ~ ((`Normalized Intensity Sum`[which(`Channel`==ch_a)])/(`Normalized Intensity Sum`[which(`Channel`==ch_b)])),
+          `Normalized Intensity Sum`[which(`Channel`==ch_a)] == NA | `Normalized Intensity Sum`[which(`Channel`==ch_b)] == NA ~ NA_real_,
+          Channel == ch_a | Channel == ch_b ~ ((`Normalized Intensity Sum`[which(`Channel`==ch_a)])/(`Normalized Intensity Sum`[which(`Channel`==ch_b)])),
           Channel != ch_a & Channel != ch_b ~ NA_real_
         )
         ) %>% 
@@ -115,8 +115,8 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
       stringTitle = paste("Normalized Intensity Mean Ratio Ch",ch_a,":Ch",ch_b,sep = "")
       dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`,`Category`) %>% 
         mutate(!!stringTitle := case_when(
-          `Normalized Intensity Mean`[which(`Channel`==ch_a)] == NA || `Normalized Intensity Mean`[which(`Channel`==ch_b)] == NA ~ NA_real_,
-          Channel == ch_a || Channel == ch_b ~ ((`Normalized Intensity Mean`[which(`Channel`==ch_a)])/(`Normalized Intensity Mean`[which(`Channel`==ch_b)])),
+          `Normalized Intensity Mean`[which(`Channel`==ch_a)] == NA | `Normalized Intensity Mean`[which(`Channel`==ch_b)] == NA ~ NA_real_,
+          Channel == ch_a | Channel == ch_b ~ ((`Normalized Intensity Mean`[which(`Channel`==ch_a)])/(`Normalized Intensity Mean`[which(`Channel`==ch_b)])),
           Channel != ch_a & Channel != ch_b ~ NA_real_
         )
         ) %>% 
