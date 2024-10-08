@@ -35,17 +35,17 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate){
   
   # !! Wrap each variable in if/then logic to maintain the ability to select it
   
-  # Normalized Intensity Sum
-  if ("Normalized Intensity Sum" %in% varsToInclude & ("Intensity Sum" %in% names(dataToProcess))){
+  # Create Intensity Sum Normalised per Nucleus (former, Normalized Intensity Sum)
+  if ("Intensity Sum Normalised per Nucleus" %in% varsToInclude & ("Intensity Sum" %in% names(dataToProcess))){
     dataToProcess = dataToProcess %>% group_by(`Image File`,Channel) %>% 
-      mutate("Normalized Intensity Sum" = if ("Nucleus" %in% Object) {`Intensity Sum`/`Intensity Sum`[Object=="Nucleus"]} else {NA_real_}) %>% 
+      mutate("Intensity Sum Normalised per Nucleus" = if ("Nucleus" %in% Object) {`Intensity Sum`/`Intensity Sum`[Object=="Nucleus"]} else {NA_real_}) %>% 
       ungroup()
   }
   
-  # Normalized Intensity Mean
-  if ("Normalized Intensity Mean" %in% varsToInclude & ("Intensity Mean" %in% names(dataToProcess))){
+  # Create Intensity Mean Normalised per Nucleus (former, Normalized Intensity Mean)
+  if ("Intensity Mean Normalised per Nucleus" %in% varsToInclude & ("Intensity Mean" %in% names(dataToProcess))){
     dataToProcess = dataToProcess %>% group_by(`Image File`,Channel) %>% 
-      mutate("Normalized Intensity Mean" = if ("Nucleus" %in% Object) {`Intensity Mean`/`Intensity Mean`[`Object`=="Nucleus"]} else {NA_real_}) %>% 
+      mutate("Intensity Mean Normalised per Nucleus" = if ("Nucleus" %in% Object) {`Intensity Mean`/`Intensity Mean`[`Object`=="Nucleus"]} else {NA_real_}) %>% 
       ungroup()
   }
   
@@ -81,24 +81,24 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate){
   }
   
   
-  # The "Normalized Intensity Sum Ratio Ch2:Ch1" and "Normalized Intensity Mean Ratio Ch2:Ch1" variables are
-  # added here.
+  # Create Ratio Ch[a]:Ch[b] of Intensity Sum Normalised per Nucleus (former, "Normalized Intensity Sum Ratio Ch2:Ch1")
+  # Variable "Normalized Intensity Mean Ratio Ch2:Ch1" is NOT created.
   # !! To make the code work with multiple channels beyond 1 and 2, the case_when function was used to handle
   # !! multiple criteria; moreover, due to some object ID's being both Surfaces and Spots, the `Category`
   # !! variables was added in the group_by function.
   # !! Confirm that this variable can be created when Normalized Sum/Mean lacks a Nucleus object
   
-  # Normalized Intensity Sum Ratio
-  if (length(ratioSumsToCreate) != 0 & ("Normalized Intensity Sum" %in% names(dataToProcess))){
+  # Ratio of Intensity Sum Normalized per Nucleus
+  if (length(ratioSumsToCreate) != 0 & ("Intensity Sum Normalised per Nucleus" %in% names(dataToProcess))){
     for (c in ratioSumsToCreate){
       splitStrings = lapply(strsplit(c,", "),as.numeric)
       ch_a = splitStrings[[1]][1]
       ch_b = splitStrings[[1]][2]
-      stringTitle = paste("Normalized Intensity Sum Ratio Ch",ch_a,":Ch",ch_b,sep = "")
+      stringTitle = paste("Ratio Ch",ch_a,":Ch",ch_b," of Intensity Sum Normalised per Nucleus",sep = "")
       dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`,`Category`) %>% 
         mutate(!!stringTitle := case_when(
-          `Normalized Intensity Sum`[which(`Channel`==ch_a)] == NA | `Normalized Intensity Sum`[which(`Channel`==ch_b)] == NA ~ NA_real_,
-          Channel == ch_a | Channel == ch_b ~ ((`Normalized Intensity Sum`[which(`Channel`==ch_a)])/(`Normalized Intensity Sum`[which(`Channel`==ch_b)])),
+          `Intensity Sum Normalised per Nucleus`[which(`Channel`==ch_a)] == NA | `Intensity Sum Normalised per Nucleus`[which(`Channel`==ch_b)] == NA ~ NA_real_,
+          Channel == ch_a | Channel == ch_b ~ ((`Intensity Sum Normalised per Nucleus`[which(`Channel`==ch_a)])/(`Intensity Sum Normalised per Nucleus`[which(`Channel`==ch_b)])),
           Channel != ch_a & Channel != ch_b ~ NA_real_
         )
         ) %>% 
@@ -129,26 +129,26 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate){
   # Add a "Signal Density" variable
   
   # Signal Density
-  if ("Signal Density" %in% varsToInclude & ("Normalized Intensity Sum" %in% names(dataToProcess)) & ("Volume" %in% names(dataToProcess))){
+  if ("Signal Density" %in% varsToInclude & ("Intensity Sum Normalised per Nucleus" %in% names(dataToProcess)) & ("Volume" %in% names(dataToProcess))){
     dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`,`Channel`) %>% 
-      mutate("Signal Density" = `Normalized Intensity Sum`/`Volume`) %>% 
+      mutate("Signal Density" = `Intensity Sum Normalised per Nucleus`/`Volume`) %>% 
       ungroup()
   }
   
   
   # Add "Relative" variables
   
-  # Relative Intensity Sum
-  if ("Relative Intensity Sum" %in% varsToInclude & ("Normalized Intensity Sum" %in% names(dataToProcess))){
+  # Create Intensity Sum Normalised by Group (former, Relative Intensity Sum)
+  if ("Intensity Sum Normalised by Group" %in% varsToInclude & ("Intensity Sum Normalised per Nucleus" %in% names(dataToProcess))){
     dataToProcess = dataToProcess %>% group_by(`Image File`,`Object`,Channel) %>% 
-      mutate("Relative Intensity Sum" = `Normalized Intensity Sum`/sum(`Normalized Intensity Sum`)) %>% 
+      mutate("Intensity Sum Normalised by Group" = `Intensity Sum Normalised per Nucleus`/sum(`Intensity Sum Normalised per Nucleus`)) %>% 
       ungroup()
   }
   
-  # Relative Intensity Mean
-  if ("Relative Intensity Mean" %in% varsToInclude & ("Normalized Intensity Mean" %in% names(dataToProcess))){
+  # Create Intensity Mean Normalised by Group (former, Relative Intensity Mean)
+  if ("Intensity Mean Normalised by Group" %in% varsToInclude & ("Intensity Mean Normalised per Nucleus" %in% names(dataToProcess))){
     dataToProcess = dataToProcess %>% group_by(`Image File`,`Object`,Channel) %>% 
-      mutate("Relative Intensity Mean" = `Normalized Intensity Mean`/sum(`Normalized Intensity Mean`)) %>% 
+      mutate("Intensity Mean Normalised by Group" = `Intensity Mean Normalised per Nucleus`/sum(`Intensity Mean Normalised per Nucleus`)) %>% 
       ungroup()
   }
   

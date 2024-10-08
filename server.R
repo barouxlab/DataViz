@@ -168,7 +168,7 @@ server = function(input, output, session) {
     observeEvent(input$ratioSumsToCreate, {
         if(length(input$ratioSumsToCreate) > 0){
             updateCheckboxGroupInput(session,"varsToCreate",
-                                     selected=append(input$varsToCreate,"Normalized Intensity Sum"))
+                                     selected=append(input$varsToCreate,"Intensity Sum Normalised per Nucleus"))
         }
     })
     
@@ -183,21 +183,21 @@ server = function(input, output, session) {
     observeEvent(input$varsToCreate, {
         if("Signal Density" %in% input$varsToCreate){
             updateCheckboxGroupInput(session,"varsToCreate",
-                                     selected=append(input$varsToCreate,"Normalized Intensity Sum"))
+                                     selected=append(input$varsToCreate,"Intensity Sum Normalised per Nucleus"))
         }
     })
     
     observeEvent(input$varsToCreate, {
-        if("Relative Intensity Sum" %in% input$varsToCreate){
+        if("Intensity Sum Normalised by Group" %in% input$varsToCreate){
             updateCheckboxGroupInput(session,"varsToCreate",
-                                     selected=append(input$varsToCreate,"Normalized Intensity Sum"))
+                                     selected=append(input$varsToCreate,"Intensity Sum Normalised per Nucleus"))
         }
     })
     
     observeEvent(input$varsToCreate, {
-        if("Relative Intensity Mean" %in% input$varsToCreate){
+        if("Intensity Mean Normalised by Group" %in% input$varsToCreate){
             updateCheckboxGroupInput(session,"varsToCreate",
-                                     selected=append(input$varsToCreate,"Normalized Intensity Mean"))
+                                     selected=append(input$varsToCreate,"Intensity Mean Normalised per Nucleus"))
         }
     })
     
