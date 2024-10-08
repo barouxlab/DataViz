@@ -143,7 +143,7 @@ server = function(input, output, session) {
         channelPairsStringsForDisplay <<- channelPairsStrings
         # Update the relevant areas in the Processing Section
         updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay)
-        updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay)
+        #updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay)
     })
     
     # Create buttons to select/clear ratio options
@@ -154,13 +154,15 @@ server = function(input, output, session) {
         else
         {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay,selected=channelPairsStringsForDisplay)}
     })
-    observe({
-        if(input$selectRatioMeans == 0) return(NULL) 
-        else if (input$selectRatioMeans%%2 == 0)
-        {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay)}
-        else
-        {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay,selected=channelPairsStringsForDisplay)}
-    })
+    
+    # remove event (when actionlink Select/Clear mean ratios is selected, checkbox norm intensity mean)
+    # observe({
+    #     if(input$selectRatioMeans == 0) return(NULL) 
+    #     else if (input$selectRatioMeans%%2 == 0)
+    #     {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay)}
+    #     else
+    #     {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay,selected=channelPairsStringsForDisplay)}
+    # })
     
     # Handle the selection of variables to create when processing
     observeEvent(input$ratioSumsToCreate, {
@@ -170,12 +172,13 @@ server = function(input, output, session) {
         }
     })
     
-    observeEvent(input$ratioMeansToCreate, {
-        if(length(input$ratioMeansToCreate) > 0){
-            updateCheckboxGroupInput(session,"varsToCreate",
-                                     selected=append(input$varsToCreate,"Normalized Intensity Mean"))
-        }
-    })
+    # remove event (when any of the chX:chY selected, checkbox norm intensity mean)
+    # observeEvent(input$ratioMeansToCreate, {
+    #     if(length(input$ratioMeansToCreate) > 0){
+    #         updateCheckboxGroupInput(session,"varsToCreate",
+    #                                  selected=append(input$varsToCreate,"Normalized Intensity Mean"))
+    #     }
+    # })
     
     observeEvent(input$varsToCreate, {
         if("Signal Density" %in% input$varsToCreate){
@@ -211,7 +214,7 @@ server = function(input, output, session) {
     processedData = eventReactive(input$processButton,{
         req(importedData())
         dataToProcess = importedData()
-        processedData = suppressWarnings(processingFunction(dataToProcess,input$varsToCreate,input$ratioSumsToCreate,input$ratioMeansToCreate))
+        processedData = suppressWarnings(processingFunction(dataToProcess,input$varsToCreate,input$ratioSumsToCreate))
         processedDataToWrite = processedData
         write.csv(processedDataToWrite, "TMP__ProcessedData.csv", row.names = FALSE)
         processedDataToReturn = read.csv("TMP__ProcessedData.csv",check.names = FALSE)

@@ -2,7 +2,7 @@
 # The "processed data" is defined as the original cleaned data with added custom variables that are
 # made (i.e., processed) from the original variables.
 
-processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratioMeansToCreate){
+processingFunction = function(importedData,varsToInclude,ratioSumsToCreate){
   # Before any processing, drop columns with no names
   if("" %in% colnames(importedData)){
     importedData = importedData %>% dplyr::select(-c(""))
@@ -106,23 +106,24 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
     }
   }
   
+  # Remove
   # Normalized Intensity Mean Ratio
-  if (length(ratioMeansToCreate) != 0 & ("Normalized Intensity Mean" %in% names(dataToProcess))){
-    for (c in ratioMeansToCreate){
-      splitStrings = lapply(strsplit(c,", "),as.numeric)
-      ch_a = splitStrings[[1]][1]
-      ch_b = splitStrings[[1]][2]
-      stringTitle = paste("Normalized Intensity Mean Ratio Ch",ch_a,":Ch",ch_b,sep = "")
-      dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`,`Category`) %>% 
-        mutate(!!stringTitle := case_when(
-          `Normalized Intensity Mean`[which(`Channel`==ch_a)] == NA | `Normalized Intensity Mean`[which(`Channel`==ch_b)] == NA ~ NA_real_,
-          Channel == ch_a | Channel == ch_b ~ ((`Normalized Intensity Mean`[which(`Channel`==ch_a)])/(`Normalized Intensity Mean`[which(`Channel`==ch_b)])),
-          Channel != ch_a & Channel != ch_b ~ NA_real_
-        )
-        ) %>% 
-        ungroup()
-    }
-  }
+  # if (length(ratioMeansToCreate) != 0 & ("Normalized Intensity Mean" %in% names(dataToProcess))){
+  #   for (c in ratioMeansToCreate){
+  #     splitStrings = lapply(strsplit(c,", "),as.numeric)
+  #     ch_a = splitStrings[[1]][1]
+  #     ch_b = splitStrings[[1]][2]
+  #     stringTitle = paste("Normalized Intensity Mean Ratio Ch",ch_a,":Ch",ch_b,sep = "")
+  #     dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`,`Category`) %>% 
+  #       mutate(!!stringTitle := case_when(
+  #         `Normalized Intensity Mean`[which(`Channel`==ch_a)] == NA | `Normalized Intensity Mean`[which(`Channel`==ch_b)] == NA ~ NA_real_,
+  #         Channel == ch_a | Channel == ch_b ~ ((`Normalized Intensity Mean`[which(`Channel`==ch_a)])/(`Normalized Intensity Mean`[which(`Channel`==ch_b)])),
+  #         Channel != ch_a & Channel != ch_b ~ NA_real_
+  #       )
+  #       ) %>% 
+  #       ungroup()
+  #   }
+  # }
   
   
   # Add a "Signal Density" variable
