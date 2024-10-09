@@ -59,7 +59,9 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              checkboxGroupInput("varsToCreate",h3("Optional Variables"),choices=processVarsOptions),
                              actionLink("selectallvars","Select/Clear All Variables"),
                              checkboxGroupInput("ratioSumsToCreate",h4("Ratio Variables - Normalized Sum")),
-                             actionLink("selectRatioSums","Select/Clear All Sum Ratios")
+                             actionLink("selectRatioSums","Select/Clear All Sum Ratios"),
+                             checkboxGroupInput("ratioSumsPerGroupToCreate",h4("Ratio Variables - Normalized Sum per Group")),
+                             actionLink("selectRatioSumsPerGroup","Select/Clear All Sum per Group Ratios")
                              #checkboxGroupInput("ratioMeansToCreate",h4("Ratio Variables - Normalized Mean")),
                              #actionLink("selectRatioMeans","Select/Clear All Mean Ratios")
                          ),

@@ -72,6 +72,8 @@ processVarsOptions = c("Intensity Sum Normalised per Nucleus",
                        "Signal Density",
                        "Intensity Sum Normalised by Group",
                        "Intensity Mean Normalised by Group",
+                       "Group Intensity Sum Relative to Nucleus",
+                       "Group Intensity Mean Relative to Nucleus",
                        "Object Count")
 
 #                        "Normalized Intensity Sum Ratio Ch2:Ch1",

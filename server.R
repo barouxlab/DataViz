@@ -143,6 +143,7 @@ server = function(input, output, session) {
         channelPairsStringsForDisplay <<- channelPairsStrings
         # Update the relevant areas in the Processing Section
         updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay)
+        updateCheckboxGroupInput(session,"ratioSumsPerGroupToCreate",choices=channelPairsStringsForDisplay)
         #updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay)
     })
     
@@ -163,6 +164,14 @@ server = function(input, output, session) {
     #     else
     #     {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay,selected=channelPairsStringsForDisplay)}
     # })
+    
+    observe({
+        if(input$selectRatioSumsPerGroup == 0) return(NULL) 
+        else if (input$selectRatioSumsPerGroup%%2 == 0)
+        {updateCheckboxGroupInput(session,"ratioSumsPerGroupToCreate",choices=channelPairsStringsForDisplay)}
+        else
+        {updateCheckboxGroupInput(session,"ratioSumsPerGroupToCreate",choices=channelPairsStringsForDisplay,selected=channelPairsStringsForDisplay)}
+    })
     
     # Handle the selection of variables to create when processing
     observeEvent(input$ratioSumsToCreate, {
@@ -201,6 +210,27 @@ server = function(input, output, session) {
         }
     })
     
+    observeEvent(input$varsToCreate, {
+        if("Group Intensity Sum Relative to Nucleus" %in% input$varsToCreate) {
+              updateCheckboxGroupInput(session,"varsToCreate",
+                                      selected=append(input$varsToCreate,"Group Intensity Sum"))
+        }
+    })
+    
+    observeEvent(input$varsToCreate, {
+        if("Group Intensity Mean Relative to Nucleus" %in% input$varsToCreate) {
+              updateCheckboxGroupInput(session,"varsToCreate",
+                                   selected=append(input$varsToCreate,"Group Intensity Mean"))
+        }
+    })
+    
+    observeEvent(input$ratioSumsPerGroupToCreate, {
+      if(length(input$ratioSumsPerGroupToCreate) > 0){
+        updateCheckboxGroupInput(session,"varsToCreate",
+                                 selected=append(input$varsToCreate,"Intensity Sum Normalised by Group"))
+      }
+    })    
+    
     # Create an observe() call for the select/clear all option in the processing area
     observe({
         if(input$selectallvars == 0) return(NULL) 
@@ -214,7 +244,7 @@ server = function(input, output, session) {
     processedData = eventReactive(input$processButton,{
         req(importedData())
         dataToProcess = importedData()
-        processedData = suppressWarnings(processingFunction(dataToProcess,input$varsToCreate,input$ratioSumsToCreate))
+        processedData = suppressWarnings(processingFunction(dataToProcess,input$varsToCreate,input$ratioSumsToCreate,input$ratioSumsPerGroupToCreate))
         processedDataToWrite = processedData
         write.csv(processedDataToWrite, "TMP__ProcessedData.csv", row.names = FALSE)
         processedDataToReturn = read.csv("TMP__ProcessedData.csv",check.names = FALSE)

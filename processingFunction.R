@@ -2,7 +2,7 @@
 # The "processed data" is defined as the original cleaned data with added custom variables that are
 # made (i.e., processed) from the original variables.
 
-processingFunction = function(importedData,varsToInclude,ratioSumsToCreate){
+processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratioSumsPerGroupToCreate){
   # Before any processing, drop columns with no names
   if("" %in% colnames(importedData)){
     importedData = importedData %>% dplyr::select(-c(""))
@@ -162,6 +162,42 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate){
       ungroup()
   }
   
+  
+  # Add group variables relative to Nucleus
+  
+  # Group Intensity Sum Relative to Nucleus
+  if ("Group Intensity Sum Relative to Nucleus" %in% varsToInclude & ("Intensity Sum" %in% names(dataToProcess)) & ("Group Intensity Sum" %in% names(dataToProcess))){
+    dataToProcess = dataToProcess %>% 
+      group_by(`Image File`,Channel) %>% 
+      mutate("Group Intensity Sum Relative to Nucleus" = `Group Intensity Sum`/`Intensity Sum`[`Object`=="Nucleus" & `Category`=="Surface"]) %>%
+      ungroup()
+  }
+  
+  # Group Intensity Mean Relative to Nucleus
+  if ("Group Intensity Mean Relative to Nucleus" %in% varsToInclude & ("Intensity Mean" %in% names(dataToProcess)) & ("Group Intensity Mean" %in% names(dataToProcess))){
+    dataToProcess = dataToProcess %>% 
+      group_by(`Image File`,Channel) %>% 
+      mutate("Group Intensity Mean Relative to Nucleus" = `Group Intensity Mean`/`Intensity Mean`[`Object`=="Nucleus" & `Category`=="Surface"]) %>%
+      ungroup()
+  }
+  
+  # Create Ratio Ch[a]:Ch[b] of Intensity Sum Normalized per Group
+  if (length(ratioSumsPerGroupToCreate) != 0 & ("Intensity Sum Normalised by Group" %in% names(dataToProcess))){
+    for (c in ratioSumsPerGroupToCreate){
+      splitStrings = lapply(strsplit(c,", "),as.numeric)
+      ch_a = splitStrings[[1]][1]
+      ch_b = splitStrings[[1]][2]
+      stringTitle = paste("Ratio Ch",ch_a,":Ch",ch_b," of Intensity Sum Normalised per Group",sep = "")
+      dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`,`Category`) %>% 
+        mutate(!!stringTitle := case_when(
+          `Intensity Sum Normalised by Group`[which(`Channel`==ch_a)] == NA | `Intensity Sum Normalised by Group`[which(`Channel`==ch_b)] == NA ~ NA_real_,
+          Channel == ch_a | Channel == ch_b ~ ((`Intensity Sum Normalised by Group`[which(`Channel`==ch_a)])/(`Intensity Sum Normalised by Group`[which(`Channel`==ch_b)])),
+          Channel != ch_a & Channel != ch_b ~ NA_real_
+        )
+        ) %>% 
+        ungroup()
+    }
+  }
   
   # Relocate the Image Subset and Time variables and make final data type casts
   finalDataToReturn = dataToProcess %>% relocate(c("Image Subset","Time"),.after=last_col())
