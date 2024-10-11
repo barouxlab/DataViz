@@ -615,7 +615,7 @@ server = function(input, output, session) {
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         histogramPercentage = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),y=after_stat(count / ave(count, PANEL, FUN = sum)),fill=!!sym(input$catVariableForFill))) +
         geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
-        xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
+        xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         histogramPercentage
@@ -657,6 +657,7 @@ server = function(input, output, session) {
     boxplotRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         boxplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = FALSE, width = input$boxplotBoxWidth) +
+        stat_summary(fun.y=mean, geom="point", shape=20, size=0, color="NA") +
         ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
@@ -684,8 +685,10 @@ server = function(input, output, session) {
     
     # Create a summary table of values from the boxplot
     output$summaryTableFromBoxplot = renderDataTable({
-        
+
         layerData = layer_data(boxplotRefined()) %>% select(lower,middle,upper,PANEL,group)
+        boxplot_means_df = as_tibble(ggplot_build(boxplotRefined())$data[[2]]) %>% select(group,PANEL,"mean"=y)
+        layerData = left_join(layerData, boxplot_means_df,by = c("PANEL", "group")) %>% mutate_if(is.numeric, round, 3)
         dataToSubset = densityDataToHistoBoxRefined()
         
         # Panel Assignments
@@ -705,9 +708,10 @@ server = function(input, output, session) {
         layerData$group_labels <- factor(layerData$group_labels, ordered = TRUE, levels = xLabels)
         
         # Select then rename the columns
-        boxDataToDisplay = layerData %>% select(lower,middle,upper,PANEL_labels,group_labels)
+        boxDataToDisplay = layerData %>% select(lower,middle,mean,upper,PANEL_labels,group_labels)
         names(boxDataToDisplay)[names(boxDataToDisplay) == "lower"] <- "Lower"
         names(boxDataToDisplay)[names(boxDataToDisplay) == "middle"] <- "Middle"
+        names(boxDataToDisplay)[names(boxDataToDisplay) == "mean"] <- "Mean"
         names(boxDataToDisplay)[names(boxDataToDisplay) == "upper"] <- "Upper"
         names(boxDataToDisplay)[names(boxDataToDisplay) == "PANEL_labels"] <- input$catVariableForSplitting
         names(boxDataToDisplay)[names(boxDataToDisplay) == "group_labels"] <- input$catVariableForFill
