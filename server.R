@@ -613,7 +613,7 @@ server = function(input, output, session) {
 
     histoRefinedPercentage = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        histogramPercentage = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) +
+        histogramPercentage = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),y=after_stat(count / ave(count, PANEL, FUN = sum)),fill=!!sym(input$catVariableForFill))) +
         geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
         xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
@@ -640,7 +640,7 @@ server = function(input, output, session) {
         kdeRefined()
         },height=plotHeight)
 
-        kdeRefinedPercentage = reactive({
+    kdeRefinedPercentage = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         kdeSplitPercentage = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) + geom_density(stat='bin',bins=as.numeric(input$kdeNumOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
         xlim(input$xLLKDE,input$xULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +

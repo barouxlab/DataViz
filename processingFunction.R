@@ -169,7 +169,8 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
   if ("Group Intensity Sum Relative to Nucleus" %in% varsToInclude & ("Intensity Sum" %in% names(dataToProcess)) & ("Group Intensity Sum" %in% names(dataToProcess))){
     dataToProcess = dataToProcess %>% 
       group_by(`Image File`,Channel) %>% 
-      mutate("Group Intensity Sum Relative to Nucleus" = `Group Intensity Sum`/`Intensity Sum`[`Object`=="Nucleus" & `Category`=="Surface"]) %>%
+      mutate("Group Intensity Sum Relative to Nucleus" = 
+               if ("Nucleus" %in% Object & "Surface" %in% Category) {`Group Intensity Sum`/`Intensity Sum`[`Object`=="Nucleus" & `Category`=="Surface"]} else {NA_real_}) %>%
       ungroup()
   }
   
@@ -177,7 +178,8 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
   if ("Group Intensity Mean Relative to Nucleus" %in% varsToInclude & ("Intensity Mean" %in% names(dataToProcess)) & ("Group Intensity Mean" %in% names(dataToProcess))){
     dataToProcess = dataToProcess %>% 
       group_by(`Image File`,Channel) %>% 
-      mutate("Group Intensity Mean Relative to Nucleus" = `Group Intensity Mean`/`Intensity Mean`[`Object`=="Nucleus" & `Category`=="Surface"]) %>%
+      mutate("Group Intensity Mean Relative to Nucleus" = 
+               if ("Nucleus" %in% Object & "Surface" %in% Category) {`Group Intensity Mean`/`Intensity Mean`[`Object`=="Nucleus" & `Category`=="Surface"]} else {NA_real_}) %>%
       ungroup()
   }
   
