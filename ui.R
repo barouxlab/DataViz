@@ -236,6 +236,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                   numericInput("yULBoxplot",label="Y Max",value=1)
                                                                  ),
                                                              ))),
+                                                  radioButtons(inputId="boxplotYScale",label="Y scale",choices=c("Linear"="linearY","Log"="logY"),selected="linearY",inline=TRUE),
                                                   fluidRow(
                                                       column(
                                                           width = 6,

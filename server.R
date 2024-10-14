@@ -663,6 +663,9 @@ server = function(input, output, session) {
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))) +
           {
             if (input$boxplotDistribution != "list") match.fun(input$boxplotDistribution)(alpha=input$boxplotPointTransparency,size=input$boxplotPointSize)
+          } +
+          {
+            if (input$boxplotYScale == "logY") scale_y_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}))
           }
         boxplot
     })
