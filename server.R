@@ -660,7 +660,10 @@ server = function(input, output, session) {
         stat_summary(fun.y=mean, geom="point", shape=20, size=0, color="NA") +
         ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
-        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))) +
+          {
+            if (input$boxplotDistribution != "list") match.fun(input$boxplotDistribution)(alpha=input$boxplotPointTransparency,size=input$boxplotPointSize)
+          }
         boxplot
     })
     

@@ -243,7 +243,21 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                               div(style="display: inline-block; width: 100%;",
                                                                   numericInput("boxplotBoxWidth",label="Box Width",value=0.5,step=0.02)
                                                                  )
-                                                             )))
+                                                             ))),
+                                                  selectInput(inputId = "boxplotDistribution","Data points",
+                                                              choices = list("none"="list","default"="geom_point","jitter"="geom_jitter"),
+                                                              selected = "none"),
+                                                  fluidRow(
+                                                    column(
+                                                      width = 6,
+                                                      div(style = "white-space: nowrap;", 
+                                                          div(style="display: inline-block; width: 100%;",
+                                                              numericInput("boxplotPointSize",label="Size",value=0.1,step=0.1)
+                                                          ),
+                                                          div(style="display: inline-block; width: 100%;",
+                                                              numericInput("boxplotPointTransparency",label="Transparency",value=0.5,step=0.1,min=0,max=1)
+                                                          ),
+                                                      )))
                                          ),
                                          tabPanel("Layout",
                                                   numericInput("numColumns","# of Plot Columns in Layout",value=2,min=1,max=100,step=1),
