@@ -868,7 +868,7 @@ server = function(input, output, session) {
     },ignoreNULL=TRUE)
     
     # Generate data for the scatterplot
-        observe({
+    observe({
         dataForPlotParams = densityDataToScatterParams()
         scatterForParams = ggplot(dataForPlotParams,
                    aes(y=!!sym(input$scatterY),
@@ -924,27 +924,40 @@ server = function(input, output, session) {
         listOfColors = as.list(strsplit(input$scatterplotHexStrings, ",")[[1]])
         
         if(input$contourCheckbox==FALSE){
+            scatterPlotStub = 
             ggplot(densityDataToScatter(),
                    aes(y=!!sym(input$scatterY),
                        x=!!sym(input$scatterX),
                        color=!!sym(input$scatterCatColor))) +
             geom_point(alpha=input$scatterplotTransparency) +
-            facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE) +
+            facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE, scales = "free") +
             xlim(input$xLLScatter,input$xULScatter) + ylim(input$yLLScatter,input$yULScatter) + scatterplotTheme() +
             scale_color_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) +
             theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
             theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         } else {
+            scatterPlotStub = 
             ggplot(densityDataToScatter(),
                    aes(y=!!sym(input$scatterY),
                        x=!!sym(input$scatterX))) +
             stat_density_2d(aes(fill = ..level..), geom = "polygon", colour="white") +
-            facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE) +
+            facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE, scales = "free") +
             xlim(input$xLLScatter,input$xULScatter) + ylim(input$yLLScatter,input$yULScatter) + scatterplotTheme() +
             scale_fill_continuous(type = input$contourColor) +
             theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
             theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         }
+        
+        # add log X / log Y
+        scatterPlotStub = scatterPlotStub +
+          {
+            if (input$scatterplotXScale == "logX") scale_x_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}))
+          } +
+          {
+            if (input$scatterplotYScale == "logY") scale_y_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}))
+          }
+        
+        scatterPlotStub
     })
     
     output$scatter = renderPlot({

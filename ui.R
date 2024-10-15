@@ -368,7 +368,9 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                          div(style="display: inline-block; width: 100%;",
                                                              numericInput("yULScatter",label="Y Max",value=1)
                                                             ),
-                                                        )))
+                                                        ))),
+                                             radioButtons(inputId="scatterplotXScale",label="X scale",choices=c("Linear"="linearX","Log"="logX"),selected="linearX",inline=TRUE),
+                                             radioButtons(inputId="scatterplotYScale",label="Y scale",choices=c("Linear"="linearY","Log"="logY"),selected="linearY",inline=TRUE)
                                          ),
                                          tabPanel("Layout",
                                                   numericInput("scatterNumColumns","# of Plot Columns in Layout",value=2,min=1,max=100,step=1),
