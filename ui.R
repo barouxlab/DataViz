@@ -224,6 +224,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                              )))
                                                  ),
                                          tabPanel("Box/Vio",
+                                                  shinyjs::useShinyjs(), 
                                                   fluidRow(
                                                       column(
                                                           width = 6,
@@ -275,6 +276,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                          ),
                          mainPanel(style = "overflow-y: auto;",
                              tabsetPanel(type = "tabs",
+                                         id = "tabs1Dplots",
                                          tabPanel("Directions",
                                                   p(""),
                                                   p("1. Requirements: data to plot have been selected using the Select tab

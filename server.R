@@ -658,7 +658,7 @@ server = function(input, output, session) {
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         boxplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = FALSE, width = input$boxplotBoxWidth) +
         stat_summary(fun.y=mean, geom="point", shape=20, size=0, color="NA") +
-        ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
+        ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))) +
           {
@@ -678,7 +678,7 @@ server = function(input, output, session) {
     violinplotRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         violinplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_violin(draw_quantiles = c(0.5), width = input$boxplotBoxWidth) +
-        ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE) +
+        ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         violinplot
@@ -723,6 +723,21 @@ server = function(input, output, session) {
         names(boxDataToDisplay)[names(boxDataToDisplay) == "group_labels"] <- input$catVariableForFill
         
         DT::datatable(boxDataToDisplay, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 2)))
+    })
+    
+    # Boxplot/Violing tab show/hide UI elements based on selection
+    observe({ 
+      if(input$tabs1Dplots == "Boxplots") {
+        shinyjs::show(id = "boxplotDistribution")
+        shinyjs::show(id = "boxplotYScale")
+        shinyjs::show(id = "boxplotPointSize")
+        shinyjs::show(id = "boxplotPointTransparency")
+      } else if(input$tabs1Dplots == "Violin Plots"){
+        shinyjs::hide(id = "boxplotDistribution")
+        shinyjs::hide(id = "boxplotYScale")
+        shinyjs::hide(id = "boxplotPointSize")
+        shinyjs::hide(id = "boxplotPointTransparency")
+      }
     })
     
     # Create the option to apply bins to the data then remove them if desired
