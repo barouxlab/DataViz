@@ -533,6 +533,40 @@ server = function(input, output, session) {
         updateNumericInput(session,"yULBoxplot",value=yRangeBoxplot[2])
         })
     
+    densityDataToHistoBoxReset = eventReactive(input$resetPlotParams,{
+      return(reactiveDF$filteredDataset)
+    },ignoreNULL=TRUE)
+    
+    # TO DO: Need refactoring (copy paste of observe on update parameters)
+    observe({
+      dataForPlotParams = densityDataToHistoBoxReset()
+      # Isolate the inputs so that only pressing the Reset Parameters button will trigger the changes
+      singleConVariable = isolate(input$singleConVariable)
+      catVariableForFill = isolate(input$catVariableForFill)
+      numOfBinsRefined = isolate(input$numOfBinsRefined)
+      
+      kde = ggplot(dataForPlotParams,aes(x=!!sym(singleConVariable),color=!!sym(catVariableForFill))) + geom_density() + ylab("Density")
+      xRangeKDE <<- ggplot_build(kde)$layout$panel_params[[1]]$x.range
+      yRangeKDE <<- ggplot_build(kde)$layout$panel_params[[1]]$y.range
+      updateNumericInput(session,"xLLKDE",value=xRangeKDE[1])
+      updateNumericInput(session,"xULKDE",value=xRangeKDE[2])
+      updateNumericInput(session,"yLLKDE",value=yRangeKDE[1])
+      updateNumericInput(session,"yULKDE",value=yRangeKDE[2])
+      
+      histogram = ggplot(dataForPlotParams,aes(x=!!sym(singleConVariable),color=!!sym(catVariableForFill))) + 
+        geom_histogram(bins=as.numeric(numOfBinsRefined)) + facet_wrap(as.formula(paste("~", paste("`",catVariableForFill,"`",sep=""))),scales="free")
+      xRangeHistogram <<- ggplot_build(histogram)$layout$panel_params[[1]]$x.range
+      updateNumericInput(session,"xLLHistogram",value=xRangeHistogram[1])
+      updateNumericInput(session,"xULHistogram",value=xRangeHistogram[2])
+      
+      dataForPlotParams = densityDataToHistoBox()
+      boxplot = ggplot(dataForPlotParams,aes(y=!!sym(singleConVariable),x=!!sym(catVariableForFill),color=!!sym(catVariableForFill))) + geom_boxplot(varwidth = FALSE)
+      yRangeBoxplot <<- ggplot_build(boxplot)$layout$panel_params[[1]]$y.range
+      updateNumericInput(session,"yLLBoxplot",value=yRangeBoxplot[1])
+      updateNumericInput(session,"yULBoxplot",value=yRangeBoxplot[2])
+    })
+    
+    
     # Create the option for an additional filter based on a user defined unidemionsal set of lower and upper bounds
     # and render the data to a table in the 1-D plot area
     observeEvent(input$additionalFilter,{
@@ -655,6 +689,13 @@ server = function(input, output, session) {
         },height=plotHeight)
     
     boxplotRefined = reactive({
+      
+        # for LogY axis prevents log(0) 
+        yLLBoxplot = input$yLLBoxplot
+        if (yLLBoxplot == 0) {yLLBoxplot = yLLBoxplot + 0.00001}
+        yULBoxplot = input$yULBoxplot 
+        if (yULBoxplot == 0) {yULBoxplot = yULBoxplot + 0.00001}
+        
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         boxplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = FALSE, width = input$boxplotBoxWidth) +
         stat_summary(fun.y=mean, geom="point", shape=20, size=0, color="NA") +
@@ -665,7 +706,7 @@ server = function(input, output, session) {
             if (input$boxplotDistribution != "list") match.fun(input$boxplotDistribution)(alpha=input$boxplotPointTransparency,size=input$boxplotPointSize)
           } +
           {
-            if (input$boxplotYScale == "logY") scale_y_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}))
+            if (input$boxplotYScale == "logY") scale_y_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}),limits=c(yLLBoxplot,yULBoxplot))
           }
         boxplot
     })
@@ -883,6 +924,26 @@ server = function(input, output, session) {
         updateNumericInput(session,"yULScatter",value=yRangeScatter[2])
     })
     
+    densityDataToScatterParamsReset = eventReactive(input$resetScatterPlotParams,{
+      return(reactiveDF$filteredDataset)
+    },ignoreNULL=TRUE)
+    
+    # TO DO: Need refactoring (copy paste of observe on update parameters)
+    observe({
+      dataForPlotParams = densityDataToScatterParamsReset()
+      scatterForParams = ggplot(dataForPlotParams,
+                                aes(y=!!sym(input$scatterY),
+                                    x=!!sym(input$scatterX))) +
+        stat_density_2d(aes(fill = ..level..), geom = "polygon", colour="white") +
+        facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE)
+      xRangeScatter <<- ggplot_build(scatterForParams)$layout$panel_params[[1]]$x.range
+      yRangeScatter <<- ggplot_build(scatterForParams)$layout$panel_params[[1]]$y.range
+      updateNumericInput(session,"xLLScatter",value=xRangeScatter[1])
+      updateNumericInput(session,"xULScatter",value=xRangeScatter[2])
+      updateNumericInput(session,"yLLScatter",value=yRangeScatter[1])
+      updateNumericInput(session,"yULScatter",value=yRangeScatter[2])
+    })    
+    
     # Output scatterplots
     scatterplotHeight = reactive(as.numeric(input$scatterplotHeight))
     
@@ -948,13 +1009,25 @@ server = function(input, output, session) {
             theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         }
         
+        # for LogY axis prevents log(0)
+        yLLScatter = input$yLLScatter 
+        if (yLLScatter == 0) {yLLScatter = yLLScatter + 0.00001}
+        yULScatter = input$yULScatter
+        if (yULScatter == 0) {yULScatter = yULScatter + 0.00001}
+
+        # for LogX axis prevents log(0)
+        xLLScatter = input$xLLScatter 
+        if (xLLScatter == 0) {xLLScatter = xLLScatter + 0.00001}
+        xULScatter = input$xULScatter
+        if (xULScatter == 0) {xULScatter = xULScatter + 0.00001}
+        
         # add log X / log Y
         scatterPlotStub = scatterPlotStub +
           {
-            if (input$scatterplotXScale == "logX") scale_x_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}))
+            if (input$scatterplotXScale == "logX") scale_x_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}),limits=c(xLLScatter,xULScatter))
           } +
           {
-            if (input$scatterplotYScale == "logY") scale_y_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}))
+            if (input$scatterplotYScale == "logY") scale_y_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}),limits=c(yLLScatter,yULScatter))
           }
         
         scatterPlotStub
