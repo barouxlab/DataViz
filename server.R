@@ -1003,6 +1003,32 @@ server = function(input, output, session) {
         }
     )
     
+    # Create the option to download the scatterplot data
+    output$downloadScatterplotData = downloadHandler(
+      filename = function() {
+        paste(format(Sys.time(), "ScatterplotData_Date_%Y_%m_%d_Time_%H%M%S"), ".csv", sep = "")
+      },
+      content = function(file) {
+        req(densityDataToScatter())
+        log_scatterX = paste("Log","(",input$scatterX,")",sep="")
+        log_scatterY = paste("Log","(",input$scatterY,")",sep="")
+        scatterPlotDataStub = densityDataToScatter()
+        scatterPlotDataStub = scatterPlotDataStub %>%
+          filter(!!sym(input$scatterY) >= input$yLLScatter) %>%
+          filter(!!sym(input$scatterY) <= input$yULScatter) %>%
+          filter(!!sym(input$scatterX) >= input$xLLScatter) %>%
+          filter(!!sym(input$scatterX) <= input$xULScatter) %>%
+          mutate(!!sym(log_scatterX) := log(!!sym(input$scatterX)), !!sym(log_scatterY) := log(!!sym(input$scatterY)))
+        
+        if (!input$contourCheckbox & !is.null(input$scatterCatColor)) { 
+          scatterPlotDataStub = scatterPlotDataStub %>% select(!!sym(input$scatterX),!!sym(input$scatterY),!!sym(input$scatterCatFacet),!!sym(input$scatterCatColor),!!sym(log_scatterX),!!sym(log_scatterY)) 
+        } else {
+          scatterPlotDataStub = scatterPlotDataStub %>% select(!!sym(input$scatterX),!!sym(input$scatterY),!!sym(input$scatterCatFacet),!!sym(log_scatterX),!!sym(log_scatterY)) 
+        }
+        write.csv(scatterPlotDataStub, file, row.names = FALSE)
+      }
+    )    
+    
     output$rColorBrewer = renderPlot({
         display.brewer.all()
         })

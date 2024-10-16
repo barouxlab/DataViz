@@ -336,6 +336,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              actionButton("scatterParams", "Update Parameters"),
                              actionButton("plotScatter", "Generate Scatterplot"),
                              actionButton("downloadScatter", "Download Scatterplot"),
+                             downloadButton("downloadScatterplotData", "Download Data"),
                              p(""),
                              # Input the X and Y variables of interest plus the categorical variables of interest
                              selectInput(inputId = "scatterX","X Variable",choices = list("Filter Data First"="NormMean"),selected = "NormMean"),
