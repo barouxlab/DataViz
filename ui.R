@@ -373,7 +373,8 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                             ),
                                                         ))),
                                              radioButtons(inputId="scatterplotXScale",label="X scale",choices=c("Linear"="linearX","Log"="logX"),selected="linearX",inline=TRUE),
-                                             radioButtons(inputId="scatterplotYScale",label="Y scale",choices=c("Linear"="linearY","Log"="logY"),selected="linearY",inline=TRUE)
+                                             radioButtons(inputId="scatterplotYScale",label="Y scale",choices=c("Linear"="linearY","Log"="logY"),selected="linearY",inline=TRUE),
+                                             checkboxInput("scatterplotPearsonCheckbox",label="Pearson correlation",value = FALSE)
                                          ),
                                          tabPanel("Layout",
                                                   numericInput("scatterNumColumns","# of Plot Columns in Layout",value=2,min=1,max=100,step=1),
@@ -410,7 +411,10 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                  ),
                                          tabPanel("Scatter Plot Data Table",
                                                   dataTableOutput("scatterplotTable")
-                                                 )
+                                                 ),
+                                         tabPanel("Scatter Plot Stats",
+                                                  dataTableOutput("summaryTableFromScatterplot")
+                                         )
                                         )
                          )
                         ),

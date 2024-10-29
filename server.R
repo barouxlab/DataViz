@@ -1030,6 +1030,12 @@ server = function(input, output, session) {
             if (input$scatterplotYScale == "logY") scale_y_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}),limits=c(yLLScatter,yULScatter))
           }
         
+        # add Pearson correlation
+        scatterPlotStub = scatterPlotStub +
+          {
+            if (input$scatterplotPearsonCheckbox) stat_cor(method = "pearson", size = 3.5, show.legend = FALSE)
+          }
+        
         scatterPlotStub
     })
     
@@ -1115,6 +1121,38 @@ server = function(input, output, session) {
         updateTextInput(session,"scatterplotHexStrings",value=toString(colorDF[input$scatterplotChosenPalette,"hexcodes"][[1]]))
     })
     
+    # Create a summary table of values from the scatterplot incl. Pearson correlation
+    output$summaryTableFromScatterplot = renderDataTable({
+      
+      # display stats only if Pearson checkbox was enabled
+      if (input$scatterplotPearsonCheckbox) {
+          
+        g = ggplot_build(scatterPlot())
+        pearsonData = as_tibble(g$data[[2]])
+        pearsonData = pearsonData %>% mutate(colour = sapply(colour, as.character))
+        
+        facet_strip = as_tibble(g$layout$layout)
+        
+        scatterPlotPearsonData = pearsonData %>% 
+          left_join(facet_strip, by = join_by(PANEL == PANEL)) 
+        
+        if (!input$contourCheckbox & !is.null(input$scatterCatColor)) { 
+          color_scale = g$plot$scales$get_scales("colour")
+          legend_labels = color_scale$get_labels()
+          legend_colors = unlist(color_scale$palette(length(legend_labels))[1:length(legend_labels)])
+          legend_info = data.frame(legend_labels,legend_colors,check.names = FALSE)
+          names(legend_info) <- c(input$scatterCatColor, "colour")
+          scatterPlotPearsonData = scatterPlotPearsonData %>% 
+            left_join(legend_info, by = join_by(colour == colour)) %>%
+            select(!!sym(input$scatterCatFacet),!!sym(input$scatterCatColor),estimate,p.value)
+        } else {
+          scatterPlotPearsonData = scatterPlotPearsonData %>% select(!!sym(input$scatterCatFacet),estimate,p.value)
+        }
+        scatterPlotPearsonData = scatterPlotPearsonData %>% rename("Pearson's R" = "estimate", "p-value" = "p.value") %>% mutate_if(is.numeric, round, 3)
+        
+        DT::datatable(scatterPlotPearsonData, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 2)))
+      }
+    })
     
 }
 
