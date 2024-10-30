@@ -165,6 +165,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              selectInput(inputId = "catVariableForFill","Color by",choices = list("Select Data First"="Image File"),selected = "Image File"),
                              selectInput(inputId = "catVariableForSplitting","Split by",choices = list("Select Data First"="Genotype"),selected = "Genotype"),
                              p(""),
+                             checkboxInput("kruskallwallisCheckbox",label="Kruskall-Wallis test",value = FALSE),
                              h4("Parameters and Formatting"),
                              tabsetPanel(type = "tabs",
                                          tabPanel("Histo",
@@ -328,7 +329,10 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                  ),
                                          tabPanel("Violin Plots",
                                                   plotOutput("violinplotRefined",height="auto")
-                                                  )
+                                                  ),
+                                         tabPanel("Statistic Report",
+                                                  dataTableOutput("statisticTable1D")
+                                         )
                                         )
                          )
                         ),
@@ -412,7 +416,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                          tabPanel("Scatter Plot Data Table",
                                                   dataTableOutput("scatterplotTable")
                                                  ),
-                                         tabPanel("Scatter Plot Stats",
+                                         tabPanel("Statistic Report",
                                                   dataTableOutput("summaryTableFromScatterplot")
                                          )
                                         )

@@ -765,6 +765,90 @@ server = function(input, output, session) {
         
         DT::datatable(boxDataToDisplay, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 2)))
     })
+
+    # Create a summary table of values from 1D plot incl. Kruskall-Wallis test
+    output$statisticTable1D = renderDataTable({
+      
+      # display stats only if Kruskall-Wallis checkbox was enabled
+      if (input$kruskallwallisCheckbox) {
+        
+        value_col = input$singleConVariable
+        group_col = input$catVariableForFill
+        
+        # keep unique categories
+        unique_categories = densityDataToHistoBoxRefined() %>% pull(!!sym(input$catVariableForSplitting)) %>% unique()
+        
+        # remove NAs in value_col
+        densityDataToHistoBoxRefined = densityDataToHistoBoxRefined() %>% filter(!is.na(!!sym(value_col)))
+        
+        kruskal_results = densityDataToHistoBoxRefined %>%
+          group_by(!!sym(input$catVariableForSplitting)) %>%
+          filter(n_distinct(!!sym(group_col)) > 1) %>%
+          group_split() %>%
+          map_dfr(~{
+            if (nrow(.x) > 0) {
+              kruskal_test = kruskal.test(.x[[value_col]] ~ .x[[group_col]])
+              tibble(
+                !!sym(input$catVariableForSplitting) := unique(.x[[input$catVariableForSplitting]]),
+                p_value = kruskal_test$p.value,
+                statistic = kruskal_test$statistic
+              )
+            }
+          })
+
+        # add Bonferroni correction (check)
+        if (nrow(kruskal_results) > 0) {
+          kruskal_results = kruskal_results %>%
+            mutate(
+              corrected_p_value = pmin(p_value * n(), 1)
+            )
+          
+          # create DF with empty values for remaining facets
+          # indicates that in those facets num.groups=1, cannot do KW test
+          # or that all values are identical
+          rest_categories = 
+            as_tibble(unique_categories) %>% 
+            filter(!(value %in% kruskal_results[[input$catVariableForSplitting]])) %>%
+            pull(value) %>% unique()
+          
+          rest_results = tibble(
+            !!sym(input$catVariableForSplitting) := rest_categories,
+            p_value = NA,
+            statistic = NA,
+            corrected_p_value = NA
+          )
+          
+          kruskal_results = kruskal_results %>% union(rest_results)
+          
+        } else if (nrow(kruskal_results) == 0){
+          # create DF with empty values for all facets
+          kruskal_results = tibble(
+            !!sym(input$catVariableForSplitting) := unique_categories,
+            p_value = NA,
+            statistic = NA,
+            corrected_p_value = NA
+          )
+        }
+
+        rowCallback <- c(
+          "function(row, data){",
+          "  for(var i=0; i<data.length; i++){",
+          "    if(data[i] === null){",
+          "      $('td:eq('+i+')', row).html('NA')",
+          "        .css({'color': 'rgb(151,151,151)', 'font-style': 'italic'});",
+          "    }",
+          "  }",
+          "}"  
+        )
+        
+        DT::datatable(kruskal_results, extensions = "FixedColumns", plugins = "natural", 
+                      options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, 
+                                     fixedColumns = list(leftColumns = 2),
+                                     rowCallback = JS(rowCallback))) %>% 
+          formatSignif(columns = c("p_value","corrected_p_value"), digits = 3) %>%
+          formatRound(columns = "statistic", digits = 3)
+      }
+    })
     
     # Boxplot/Violing tab show/hide UI elements based on selection
     observe({ 
