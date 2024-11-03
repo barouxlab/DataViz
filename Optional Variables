@@ -1,0 +1,74 @@
+[This page is still under construction]
+# Foreword
+## Aim of processing variables
+Processing intensity and distance variables  
+  help overcome technical variability between images, enabling effective comparisons across replicates and treatments
+  reveals relative fractions that provide meaningful insights
+
+## Reference Object for Normalization
+The reference object is the Surface object "Nucleus". 
+In the future, DataViz will be customizable for this reference object
+Workaround if your images do not correspond to Nucleus images:
+  Create a main Surface delimiting your region of interest and name it "Nucleus" 
+
+## Application Examples
+Based on nuclear and chromatin biology studies - transferable to any other cellular studies
+- the Relative Heterochromatin Fraction (RFF) will be the Group Intensity Sum Relative to Nucleus, for the chromatin (DNA) staining channel
+- local chromatin compaction can be infered from the Intensity Mean. When Normalized by Group, it will provide information on the variability of chromatin compaction within he segmented nuclear regions (speckles, bodies, chromocenters..)
+- the fraction of a protein clustering in discrete regions (and segmented) can be measured by the Group Intensity Sum Relative to Nucleus
+- the enrichment of a chromatin protein relative to DNA within speckles, or nuclear domains, can be measured by the Normalized Intensity Sum Ratio (of channels to be defined)
+- ....
+(more examples to come)
+
+# Intensity Variables
+## Aim 
+Intensity Sum, Intensity Mean and Intensity Standard Deviation (Intensity StdDev) provides different information
+  Intensity Sum gives the total amount of signal within one object 
+  Intensity Mean informs on the density of signal within one object
+  Intensity StdDev is a proxy for heterogeneity of signal distribution within an object
+Normalization or expression of a ratio allows comparison between image replicates, and to infer meaningful information on the distribution of the signal (labelled component of interest)
+
+## Intensity Normalized per Nucleus
+### Intensity Sum Normalized per Nucleus
+For each image, each object, each channel, the Intensity Sum of the object is divided by the Intensity Sum in the Surface “Nucleus”
+This variable expresses the fraction of the signal in one object relative to the whole nucleus. 
+Application example
+  Chromatin staining shows densely staining regions (chromocenters, heterochromatin) that can be segmented. The Intensity Sum Normalized per Nucleus, expresses how much chromatin is present in each chromocenter.  This would be the Relative Chromatin Fraction per Chromocenter
+
+### Intensity Sum Ratio ch[a]:ch[b] Normalized per Nucleus
+For each image, each object, the Intensity Sum ratio between two channels defined by the user is computed
+and divided by the Intensity Sum ratio within the reference surface "Nucleus"
+
+###  Intensity Mean Normalized per Nucleus
+For each image, each object, each channel, the Intensity Mean of the object is divided by the Intensity Mean in the Surface “Nucleus”
+Application example
+  Building on the example of Chromocenters,  the Intensity Mean Normalized per Nucleus, expresses how the density of chromatin per chromocenter relates to the overall density in the nucleus
+
+###  Intensity StdDev Normalized per Nucleus
+For each image, each object, each channel, the Intensity StdDev of the object is divided by the Intensity StdDev in the Surface “Nucleus”
+Application example
+Building on the example of Chromocenters,  the Intensity StdDev Normalized per Nucleus, allows to measure whether chromatin is more or less heterogenous per chromocenter compared to the overall distribution in the Nucleus
+
+## Intensity Normalized by Group
+### Intensity Sum Normalized by Group
+
+### Intensity Sum Ratio Normalized by Group
+
+### Intensity Mean Normalized by Group
+
+## Group Intensity variables
+### Group Intensity Sum
+### Group Intensity Sum Ratio
+### Group Intensity Mean
+### Group Intensity Sum Relative to Nucleus
+### Group Intensity Mean Relative to Nucleus
+
+# Distance variables
+## Distance Normalized per Nucleus
+
+# Shape and Size variables
+## Volume ratio
+## Surface-to-Volume ratio
+
+# Object counts
+## Object count per Group
