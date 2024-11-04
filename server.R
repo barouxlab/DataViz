@@ -1244,9 +1244,16 @@ server = function(input, output, session) {
         } else {
           scatterPlotPearsonData = scatterPlotPearsonData %>% select(!!sym(input$scatterCatFacet),estimate,p.value)
         }
-        scatterPlotPearsonData = scatterPlotPearsonData %>% rename("Pearson's R" = "estimate", "p-value" = "p.value") %>% mutate_if(is.numeric, round, 3)
         
-        DT::datatable(scatterPlotPearsonData, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 2)))
+        scatterPlotPearsonData = scatterPlotPearsonData %>% 
+          mutate(`p-value` = ifelse(`p.value` < 0.0001, "<0.0001", as.character(`p.value`))) %>% 
+          rename("Pearson's R" = "estimate") %>%
+          select(-`p.value`)
+        
+        DT::datatable(scatterPlotPearsonData, extensions = "FixedColumns", plugins = "natural", 
+                      options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, 
+                                     fixedColumns = list(leftColumns = 2))) %>% 
+          formatRound(columns = "Pearson's R", digits = 3)
       }
     })
     
