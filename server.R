@@ -696,8 +696,20 @@ server = function(input, output, session) {
         yULBoxplot = input$yULBoxplot 
         if (yULBoxplot == 0) {yULBoxplot = yULBoxplot + 0.00001}
         
+        boxplotData = densityDataToHistoBoxRefined()
+        # deduplicate (take 1st row) for group variables
+        if (input$singleConVariable %in% c("Group Intensity Sum", 
+                                           "Group Intensity Mean", 
+                                           "Group Intensity Sum Relative to Nucleus", 
+                                           "Group Intensity Mean Relative to Nucleus")) {
+          l = sapply(boxplotData, class)
+          categoricalVars = sort(names(l[str_which(l,pattern="character")]))
+          categoricalVars = sort(categoricalVars[-which(categoricalVars=="Object ID")])
+          boxplotData = boxplotData %>% distinct(!!!syms(categoricalVars), .keep_all = TRUE) 
+        }
+        
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        boxplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = FALSE, width = input$boxplotBoxWidth) +
+        boxplot = ggplot(boxplotData,aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = FALSE, width = input$boxplotBoxWidth) +
         stat_summary(fun.y=mean, geom="point", shape=20, size=0, color="NA") +
         ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
