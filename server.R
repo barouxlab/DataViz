@@ -803,7 +803,8 @@ server = function(input, output, session) {
               tibble(
                 !!sym(input$catVariableForSplitting) := unique(.x[[input$catVariableForSplitting]]),
                 p_value = kruskal_test$p.value,
-                statistic = kruskal_test$statistic
+                statistic = kruskal_test$statistic,
+                n = nrow(.x)
               )
             }
           })
@@ -827,6 +828,7 @@ server = function(input, output, session) {
             !!sym(input$catVariableForSplitting) := rest_categories,
             p_value = NA,
             statistic = NA,
+            n = NA,
             corrected_p_value = NA
           )
           
@@ -838,9 +840,16 @@ server = function(input, output, session) {
             !!sym(input$catVariableForSplitting) := unique_categories,
             p_value = NA,
             statistic = NA,
+            n = NA,
             corrected_p_value = NA
           )
         }
+        
+        # display <0.0001 for small values
+        kruskal_results = kruskal_results %>% 
+          mutate(`p-value` = ifelse(`p_value` < 0.0001, "<0.0001", sprintf("%.4f", `p_value`))) %>% 
+          mutate(`corrected p-value` = ifelse(`corrected_p_value` < 0.0001, "<0.0001", sprintf("%.4f", `corrected_p_value`))) %>%
+          select(-`p_value`) %>% select(-`corrected_p_value`)
 
         rowCallback <- c(
           "function(row, data){",
@@ -857,7 +866,6 @@ server = function(input, output, session) {
                       options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, 
                                      fixedColumns = list(leftColumns = 2),
                                      rowCallback = JS(rowCallback))) %>% 
-          formatSignif(columns = c("p_value","corrected_p_value"), digits = 3) %>%
           formatRound(columns = "statistic", digits = 3)
       }
     })
