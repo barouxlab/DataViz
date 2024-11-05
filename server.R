@@ -1245,10 +1245,11 @@ server = function(input, output, session) {
           scatterPlotPearsonData = scatterPlotPearsonData %>% select(!!sym(input$scatterCatFacet),estimate,p.value)
         }
         
+        # display <0.0001 for small values
         scatterPlotPearsonData = scatterPlotPearsonData %>% 
-          mutate(`p-value` = ifelse(`p.value` < 0.0001, "<0.0001", as.character(`p.value`))) %>% 
-          rename("Pearson's R" = "estimate") %>%
-          select(-`p.value`)
+          mutate(`p-value` = ifelse(`p.value` < 0.0001, "<0.0001", sprintf("%.4f", `p.value`))) %>% 
+          select(-`p.value`) %>%
+          rename("Pearson's R" = "estimate")
         
         DT::datatable(scatterPlotPearsonData, extensions = "FixedColumns", plugins = "natural", 
                       options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, 
