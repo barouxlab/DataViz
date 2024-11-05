@@ -1230,6 +1230,7 @@ server = function(input, output, session) {
       
       # display stats only if Pearson checkbox was enabled
       if (input$scatterplotPearsonCheckbox) {
+        req(densityDataToScatter())
           
         g = ggplot_build(scatterPlot())
         pearsonData = as_tibble(g$data[[2]])
@@ -1240,17 +1241,36 @@ server = function(input, output, session) {
         scatterPlotPearsonData = pearsonData %>% 
           left_join(facet_strip, by = join_by(PANEL == PANEL)) 
         
+        scatterPlotDataStub = densityDataToScatter()
+        sc_data = scatterPlotDataStub %>%
+          filter(!!sym(input$scatterY) >= input$yLLScatter) %>%
+          filter(!!sym(input$scatterY) <= input$yULScatter) %>%
+          filter(!!sym(input$scatterX) >= input$xLLScatter) %>%
+          filter(!!sym(input$scatterX) <= input$xULScatter)
+        
         if (!input$contourCheckbox & !is.null(input$scatterCatColor)) { 
           color_scale = g$plot$scales$get_scales("colour")
           legend_labels = color_scale$get_labels()
           legend_colors = unlist(color_scale$palette(length(legend_labels))[1:length(legend_labels)])
           legend_info = data.frame(legend_labels,legend_colors,check.names = FALSE)
           names(legend_info) <- c(input$scatterCatColor, "colour")
+          
+          countData = sc_data %>% group_by(!!sym(input$scatterCatFacet),!!sym(input$scatterCatColor)) %>% 
+            summarise(n = n(), .groups="drop")
+          
           scatterPlotPearsonData = scatterPlotPearsonData %>% 
-            left_join(legend_info, by = join_by(colour == colour)) %>%
-            select(!!sym(input$scatterCatFacet),!!sym(input$scatterCatColor),estimate,p.value)
+            left_join(legend_info, by = join_by(colour == colour))
+          
+          scatterPlotPearsonData = left_join(scatterPlotPearsonData, countData, 
+                                             by = c(setNames(input$scatterCatColor,input$scatterCatColor),
+                                                    setNames(input$scatterCatFacet,input$scatterCatFacet)))
+          
+          scatterPlotPearsonData = scatterPlotPearsonData %>%
+            select(!!sym(input$scatterCatFacet),!!sym(input$scatterCatColor),estimate,p.value,n)
         } else {
-          scatterPlotPearsonData = scatterPlotPearsonData %>% select(!!sym(input$scatterCatFacet),estimate,p.value)
+          countData = sc_data %>% group_by(!!sym(input$scatterCatFacet)) %>% summarise(n = n())
+          scatterPlotPearsonData = left_join(scatterPlotPearsonData, countData, by = setNames(input$scatterCatFacet,input$scatterCatFacet))
+          scatterPlotPearsonData = scatterPlotPearsonData %>% select(!!sym(input$scatterCatFacet),estimate,p.value,n)
         }
         
         # display <0.0001 for small values
