@@ -775,6 +775,18 @@ server = function(input, output, session) {
         names(boxDataToDisplay)[names(boxDataToDisplay) == "PANEL_labels"] <- input$catVariableForSplitting
         names(boxDataToDisplay)[names(boxDataToDisplay) == "group_labels"] <- input$catVariableForFill
         
+        # count n
+        bx_data = dataToSubset %>% 
+          filter(!!sym(input$singleConVariable) >= input$yLLBoxplot) %>%
+          filter(!!sym(input$singleConVariable) <= input$yULBoxplot) 
+        
+        countData = bx_data %>% group_by(!!sym(input$catVariableForSplitting),!!sym(input$catVariableForFill)) %>% 
+          summarise(n = n(), .groups="drop")
+        
+        boxDataToDisplay = boxDataToDisplay %>% 
+          left_join(countData, by = c(setNames(input$catVariableForSplitting,input$catVariableForSplitting),
+                                      setNames(input$catVariableForFill,input$catVariableForFill)))
+        
         DT::datatable(boxDataToDisplay, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 2)))
     })
 
