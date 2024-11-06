@@ -599,7 +599,25 @@ server = function(input, output, session) {
             paste(format(Sys.time(), "FilteredData_Date_%Y_%m_%d_Time_%H%M%S"), ".csv", sep = "")
         },
         content = function(file) {
-            write.csv(reactiveDF$filteredDataset, file, row.names = FALSE)
+          
+            downloadDataStub = reactiveDF$filteredDataset
+            if(input$tabs1Dplots == "Histograms") {
+              downloadDataStub = downloadDataStub %>% 
+                filter(!!sym(input$singleConVariable) >= input$xLLHistogram) %>% 
+                filter(!!sym(input$singleConVariable) <= input$xULHistogram)
+            } else if(input$tabs1Dplots == "Density Plots") {
+              downloadDataStub = downloadDataStub %>% 
+                filter(!!sym(input$singleConVariable) >= input$xLLKDE) %>% 
+                filter(!!sym(input$singleConVariable) <= input$xULKDE)
+            } else if(input$tabs1Dplots %in% c("Boxplots", "Boxplot Stats", "Violin Plots")) {
+              downloadDataStub = downloadDataStub %>% 
+                filter(!!sym(input$singleConVariable) >= input$yLLBoxplot) %>% 
+                filter(!!sym(input$singleConVariable) <= input$yULBoxplot)
+            } 
+            
+            downloadDataStub = downloadDataStub %>% 
+              select(!!sym(input$singleConVariable), !!sym(input$catVariableForFill), !!sym(input$catVariableForSplitting))
+            write.csv(downloadDataStub, file, row.names = FALSE)
         }
     )
     
