@@ -88,6 +88,8 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              checkboxGroupInput(inputId = "eOI",h3("Genotypes")),
                              checkboxGroupInput(inputId = "nROI",h3("Image File")),
                              actionLink("selectallimages","Select/Clear All Images"),
+                             checkboxGroupInput(inputId = "exportVariables",h3("Variables"),selected=NULL),
+                             actionLink("selectallvariables","Select/Clear All Variables")
                          ),
                          mainPanel(
                              tabsetPanel(type = "tabs",

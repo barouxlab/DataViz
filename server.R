@@ -130,6 +130,30 @@ server = function(input, output, session) {
         {updateCheckboxGroupInput(session,"nROI",choices=imageLevelsForFiltering,selected=imageLevelsForFiltering)}
     })
     
+    # Create an observe() call for numeric variables in Select (after Process)
+    observe({
+      
+      if (input$dataToSelect == "rawData"){
+        subsettableData = importedData()
+      }
+      else if (input$dataToSelect == "processedData"){
+        subsettableData = processedData()
+      }
+      
+      l = sapply(subsettableData, class)
+      numericVariables <<- names(grep(paste(c("numeric","integer"),collapse="|"), l, value=TRUE)) 
+      updateCheckboxGroupInput(session,"exportVariables",choices=numericVariables, selected = numericVariables)
+    })
+    
+    # Create an observe() call for the select/clear all option in the Select numeric variables
+    observe({
+      if(input$selectallvariables == 0) return(NULL)
+      else if (input$selectallvariables%%2 == 1)
+      {updateCheckboxGroupInput(session,"exportVariables",choices=numericVariables)}
+      else
+      {updateCheckboxGroupInput(session,"exportVariables",choices=numericVariables,selected=numericVariables)}
+    })
+    
     # Create an observe call the updates the ratio options for the processing step after the data is imported
     observe({
         subsettableData = importedData()
@@ -260,16 +284,22 @@ server = function(input, output, session) {
     
     # Create observe calls to update the outlier selection dropdown after the intial data is uploaded or processed
     observe({
+      if (input$dataToSelect == "rawData"){
         subsettableData = importedData()
-        l = sapply(subsettableData, class)
-        continuousVars = names(l[str_which(l,pattern="numeric")])
-        updateSelectInput(session, "outlierVariable", choices = continuousVars, selected = NULL)
-    })
-    observe({
+      }
+      else if (input$dataToSelect == "processedData"){
         subsettableData = processedData()
-        l = sapply(subsettableData, class)
-        continuousVars = names(l[str_which(l,pattern="numeric")])
-        updateSelectInput(session, "outlierVariable", choices = continuousVars, selected = NULL)
+      }
+      l = sapply(subsettableData, class)
+      continuousVars = names(grep(paste(c("numeric","integer"),collapse="|"), l, value=TRUE)) 
+      updateSelectInput(session, "outlierVariable", choices = continuousVars, selected = NULL)
+    })
+    
+    observe({
+      subsettableData = reactiveDF$filteredDataset
+      l = sapply(subsettableData, class)
+      continuousVars = names(grep(paste(c("numeric","integer"),collapse="|"), l, value=TRUE)) 
+      updateSelectInput(session, "outlierVariable", choices = continuousVars, selected = NULL)
     })
     
     # Create an option for a quick download of the processed data
@@ -319,6 +349,13 @@ server = function(input, output, session) {
          # Apply the filters to the data (from the checkbox)
         filteredDataToOutlier = sData %>% dplyr::filter(`Object` %in% input$sOOI) %>% dplyr::filter(`Image File` %in% input$nROI) %>% dplyr::filter(`Treatment` %in% input$lDOI) %>% dplyr::filter(`Genotype` %in% input$eOI) %>% dplyr::filter(`Channel` %in% input$chOI)
         
+        # Apply selection filter of variables (numeric)
+        # num. variables to remove = all num. variabes - selected num. variable
+        l = sapply(filteredDataToOutlier, class)
+        numericVariables = names(grep(paste(c("numeric","integer"),collapse="|"), l, value=TRUE))
+        numericVariablesToRemove = setdiff(numericVariables,input$exportVariables)
+        filteredDataToOutlier = filteredDataToOutlier %>% select(-numericVariablesToRemove)
+
         # Optionally: remove outliers
         if (input$removeOutliersRadio == "no"){
             filteredData = filteredDataToOutlier
