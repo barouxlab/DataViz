@@ -533,40 +533,6 @@ server = function(input, output, session) {
         updateNumericInput(session,"yULBoxplot",value=yRangeBoxplot[2])
         })
     
-    densityDataToHistoBoxReset = eventReactive(input$resetPlotParams,{
-      return(reactiveDF$filteredDataset)
-    },ignoreNULL=TRUE)
-    
-    # TO DO: Need refactoring (copy paste of observe on update parameters)
-    observe({
-      dataForPlotParams = densityDataToHistoBoxReset()
-      # Isolate the inputs so that only pressing the Reset Parameters button will trigger the changes
-      singleConVariable = isolate(input$singleConVariable)
-      catVariableForFill = isolate(input$catVariableForFill)
-      numOfBinsRefined = isolate(input$numOfBinsRefined)
-      
-      kde = ggplot(dataForPlotParams,aes(x=!!sym(singleConVariable),color=!!sym(catVariableForFill))) + geom_density() + ylab("Density")
-      xRangeKDE <<- ggplot_build(kde)$layout$panel_params[[1]]$x.range
-      yRangeKDE <<- ggplot_build(kde)$layout$panel_params[[1]]$y.range
-      updateNumericInput(session,"xLLKDE",value=xRangeKDE[1])
-      updateNumericInput(session,"xULKDE",value=xRangeKDE[2])
-      updateNumericInput(session,"yLLKDE",value=yRangeKDE[1])
-      updateNumericInput(session,"yULKDE",value=yRangeKDE[2])
-      
-      histogram = ggplot(dataForPlotParams,aes(x=!!sym(singleConVariable),color=!!sym(catVariableForFill))) + 
-        geom_histogram(bins=as.numeric(numOfBinsRefined)) + facet_wrap(as.formula(paste("~", paste("`",catVariableForFill,"`",sep=""))),scales="free")
-      xRangeHistogram <<- ggplot_build(histogram)$layout$panel_params[[1]]$x.range
-      updateNumericInput(session,"xLLHistogram",value=xRangeHistogram[1])
-      updateNumericInput(session,"xULHistogram",value=xRangeHistogram[2])
-      
-      dataForPlotParams = densityDataToHistoBox()
-      boxplot = ggplot(dataForPlotParams,aes(y=!!sym(singleConVariable),x=!!sym(catVariableForFill),color=!!sym(catVariableForFill))) + geom_boxplot(varwidth = FALSE)
-      yRangeBoxplot <<- ggplot_build(boxplot)$layout$panel_params[[1]]$y.range
-      updateNumericInput(session,"yLLBoxplot",value=yRangeBoxplot[1])
-      updateNumericInput(session,"yULBoxplot",value=yRangeBoxplot[2])
-    })
-    
-    
     # Create the option for an additional filter based on a user defined unidemionsal set of lower and upper bounds
     # and render the data to a table in the 1-D plot area
     observeEvent(input$additionalFilter,{
@@ -1057,26 +1023,6 @@ server = function(input, output, session) {
         updateNumericInput(session,"yLLScatter",value=yRangeScatter[1])
         updateNumericInput(session,"yULScatter",value=yRangeScatter[2])
     })
-    
-    densityDataToScatterParamsReset = eventReactive(input$resetScatterPlotParams,{
-      return(reactiveDF$filteredDataset)
-    },ignoreNULL=TRUE)
-    
-    # TO DO: Need refactoring (copy paste of observe on update parameters)
-    observe({
-      dataForPlotParams = densityDataToScatterParamsReset()
-      scatterForParams = ggplot(dataForPlotParams,
-                                aes(y=!!sym(input$scatterY),
-                                    x=!!sym(input$scatterX))) +
-        stat_density_2d(aes(fill = ..level..), geom = "polygon", colour="white") +
-        facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE)
-      xRangeScatter <<- ggplot_build(scatterForParams)$layout$panel_params[[1]]$x.range
-      yRangeScatter <<- ggplot_build(scatterForParams)$layout$panel_params[[1]]$y.range
-      updateNumericInput(session,"xLLScatter",value=xRangeScatter[1])
-      updateNumericInput(session,"xULScatter",value=xRangeScatter[2])
-      updateNumericInput(session,"yLLScatter",value=yRangeScatter[1])
-      updateNumericInput(session,"yULScatter",value=yRangeScatter[2])
-    })    
     
     # Output scatterplots
     scatterplotHeight = reactive(as.numeric(input$scatterplotHeight))
