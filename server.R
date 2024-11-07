@@ -812,7 +812,7 @@ server = function(input, output, session) {
     })
 
     # Create a summary table of values from 1D plot incl. Kruskall-Wallis test
-    output$statisticTable1D = renderDataTable({
+    output$kwTable1D = renderDataTable({
       
       # display stats only if Kruskall-Wallis checkbox was enabled
       if (input$kruskallwallisCheckbox) {
@@ -901,6 +901,88 @@ server = function(input, output, session) {
                                      rowCallback = JS(rowCallback))) %>% 
           formatRound(columns = "statistic", digits = 3)
       }
+    })
+    
+    # Create summary table statistics for ANOVA test
+    output$anovaTable1D = renderDataTable({
+      
+      if (input$anovaCheckbox) {
+        
+        value_col = input$singleConVariable
+        group_col = input$catVariableForFill
+        
+        # keep unique categories
+        unique_categories = densityDataToHistoBoxRefined() %>% pull(!!sym(input$catVariableForSplitting)) %>% unique()
+        
+        # remove NAs in value_col
+        densityDataToHistoBoxRefined = densityDataToHistoBoxRefined() %>% filter(!is.na(!!sym(value_col)))
+        
+        anova_results = densityDataToHistoBoxRefined %>%
+          group_by(!!sym(input$catVariableForSplitting)) %>%
+          filter(n_distinct(!!sym(group_col)) > 1) %>%
+          group_split() %>%
+          map_dfr(~{
+            if (nrow(.x) > 0) {
+              anova_test = aov(.x[[value_col]] ~ .x[[group_col]])
+              anova_summary = summary(anova_test)
+              tibble(
+                !!sym(input$catVariableForSplitting) := unique(.x[[input$catVariableForSplitting]]),
+                p_value = anova_summary[[1]]$`Pr(>F)`[1],
+                statistic = anova_summary[[1]]$`F value`[1],
+                n = nrow(.x)
+              )
+            }
+          })
+        
+        if (nrow(anova_results) > 0) {
+          
+          rest_categories = 
+            as_tibble(unique_categories) %>% 
+            filter(!(value %in% anova_results[[input$catVariableForSplitting]])) %>%
+            pull(value) %>% unique()
+          
+          rest_results = tibble(
+            !!sym(input$catVariableForSplitting) := rest_categories,
+            p_value = NA,
+            statistic = NA,
+            n = NA
+          )
+          
+          anova_results = anova_results %>% union(rest_results)
+          
+        } else if (nrow(anova_results) == 0){
+          anova_results = tibble(
+            !!sym(input$catVariableForSplitting) := unique_categories,
+            p_value = NA,
+            statistic = NA,
+            n = NA
+          )
+        }
+        
+        # display <0.0001 for small values
+        anova_results = anova_results %>% 
+          mutate(`p-value` = ifelse(`p_value` < 0.0001, "<0.0001", sprintf("%.4f", `p_value`))) %>% 
+          select(-`p_value`)
+        
+        
+        rowCallback <- c(
+          "function(row, data){",
+          "  for(var i=0; i<data.length; i++){",
+          "    if(data[i] === null){",
+          "      $('td:eq('+i+')', row).html('NA')",
+          "        .css({'color': 'rgb(151,151,151)', 'font-style': 'italic'});",
+          "    }",
+          "  }",
+          "}"  
+        )
+        
+        DT::datatable(anova_results, extensions = "FixedColumns", plugins = "natural", 
+                      options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, 
+                                     fixedColumns = list(leftColumns = 2),
+                                     rowCallback = JS(rowCallback))) %>% 
+          formatRound(columns = "statistic", digits = 3)
+        
+      }  
     })
     
     # Boxplot/Violing tab show/hide UI elements based on selection

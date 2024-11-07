@@ -167,6 +167,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              selectInput(inputId = "catVariableForSplitting","Split by",choices = list("Select Data First"="Genotype"),selected = "Genotype"),
                              p(""),
                              checkboxInput("kruskallwallisCheckbox",label="Kruskall-Wallis test",value = FALSE),
+                             checkboxInput("anovaCheckbox",label="ANOVA test",value = FALSE),
                              h4("Parameters and Formatting"),
                              tabsetPanel(type = "tabs",
                                          tabPanel("Histo",
@@ -331,8 +332,11 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                          tabPanel("Violin Plots",
                                                   plotOutput("violinplotRefined",height="auto")
                                                   ),
-                                         tabPanel("Statistic Report",
-                                                  dataTableOutput("statisticTable1D")
+                                         tabPanel("Kruskall-Wallis Stats Report",
+                                                  dataTableOutput("kwTable1D")
+                                         ),
+                                         tabPanel("ANOVA Stats Report",
+                                                  dataTableOutput("anovaTable1D")
                                          )
                                         )
                          )
