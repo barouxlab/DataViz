@@ -76,7 +76,7 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
   # Group Intensity Mean
   if ("Group Intensity Mean" %in% varsToInclude & ("Intensity Mean" %in% names(dataToProcess))){
     dataToProcess = dataToProcess %>% group_by(`Image File`,Channel,Category,`Object`) %>% 
-      mutate("Group Intensity Mean" = sum(`Intensity Mean`)) %>% 
+      mutate("Group Intensity Mean" = mean(`Intensity Mean`)) %>% 
       ungroup()
   }
   
