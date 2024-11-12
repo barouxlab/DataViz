@@ -65,7 +65,7 @@ fileNamestoSkip = c("Diameter.csv",
 # Instantiate the names of the processed variables that can be created
 processVarsOptions = c("Intensity Sum Normalised per Nucleus",
                        "Intensity Mean Normalised per Nucleus",
-                       "Normalized Intensity StdDev",
+                       "Intensity StdDev Normalised per Nucleus",
                        "Normalized Distance to Nucleus",
                        "Group Intensity Sum",
                        "Group Intensity Mean",

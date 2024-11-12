@@ -49,10 +49,10 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
       ungroup()
   }
   
-  # Normalized Intensity StdDev
-  if ("Normalized Intensity StdDev" %in% varsToInclude & ("Intensity StdDev" %in% names(dataToProcess))){
+  # Create Intensity StdDev Normalised per Nucleus (former, Normalized Intensity StdDev)
+  if ("Intensity StdDev Normalised per Nucleus" %in% varsToInclude & ("Intensity StdDev" %in% names(dataToProcess))){
     dataToProcess = dataToProcess %>% group_by(`Image File`,Channel) %>% 
-      mutate("Normalized Intensity StdDev" = if ("Nucleus" %in% Object) {`Intensity StdDev`/`Intensity StdDev`[`Object`=="Nucleus"]} else {NA_real_}) %>% 
+      mutate("Intensity StdDev Normalised per Nucleus" = if ("Nucleus" %in% Object) {`Intensity StdDev`/`Intensity StdDev`[`Object`=="Nucleus"]} else {NA_real_}) %>% 
       ungroup()
   }
   
