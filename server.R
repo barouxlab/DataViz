@@ -570,21 +570,36 @@ server = function(input, output, session) {
         updateNumericInput(session,"yULBoxplot",value=yRangeBoxplot[2])
         })
     
+    
+    # updates Filtering/Binning Tab Channel selection
+    observe({
+      if ("Channel" %in% names(reactiveDF$filteredDataset)) {
+        updateSelectInput(session, "filterChOI", choices = c("All", sort(unique(reactiveDF$filteredDataset %>% pull(`Channel`)))),selected=input$filterChOI)
+      }
+    })
+    
     # Create the option for an additional filter based on a user defined unidemionsal set of lower and upper bounds
     # and render the data to a table in the 1-D plot area
     observeEvent(input$additionalFilter,{
         req(reactiveDF$filteredDataset)
-        # Make a copy so that it can be canceled
+        # Make a copy so that ONLY LAST applied filter can be canceled (if several filters applied sequentially)
         reactiveDF$filteredDatasetPreFilterReference = reactiveDF$filteredDataset
         
         dataToFilter = reactiveDF$filteredDataset
-        additionalFilteredDataset = dataToFilter %>% filter(!!sym(input$additionalVarForFiltering) >= input$additionalFilterLower,
-                                                            !!sym(input$additionalVarForFiltering) <= input$additionalFilterUpper)
+        
+        # filter per All channels
+        if (input$filterChOI == "All") {
+          additionalFilteredDataset = dataToFilter %>% filter(!!sym(input$additionalVarForFiltering) >= input$additionalFilterLower,
+                                                              !!sym(input$additionalVarForFiltering) <= input$additionalFilterUpper)
+        } else {
+          additionalFilteredDataset = dataToFilter %>% 
+            filter(!(`Channel` %in% input$filterChOI) | 
+                     (`Channel` %in% input$filterChOI & 
+                        !!sym(input$additionalVarForFiltering) >= input$additionalFilterLower & 
+                        !!sym(input$additionalVarForFiltering) <= input$additionalFilterUpper))
+        }
         reactiveDF$filteredDataset = additionalFilteredDataset
         
-        output$filteredDatasetForFilterTab = renderDataTable({
-        DT::datatable(reactiveDF$filteredDataset, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
-        })
         groupVarName <<- "__reset"
     },ignoreNULL=TRUE)
     
@@ -593,8 +608,19 @@ server = function(input, output, session) {
         req(reactiveDF$filteredDataset)
         req(reactiveDF$filteredDatasetRef)
         reactiveDF$filteredDataset = reactiveDF$filteredDatasetPreFilterReference
-        toggle("filteredDatasetForFilterTab")
     },ignoreNULL=TRUE)
+    
+    observeEvent(input$cancelAllFilter,{
+      req(reactiveDF$filteredDataset)
+      req(reactiveDF$filteredDatasetRef)
+      reactiveDF$filteredDataset = reactiveDF$filteredDatasetRef
+    },ignoreNULL=TRUE)    
+    
+    output$filteredDatasetForFilterTab = renderDataTable({
+      req(reactiveDF$filteredDataset)
+      DT::datatable(reactiveDF$filteredDataset, extensions = "FixedColumns",plugins = "natural",
+                    options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 4)))
+    })
     
     # Create the option to download the filtered data
     output$downloadAdditionalFilteredData = downloadHandler(
@@ -1010,6 +1036,7 @@ server = function(input, output, session) {
             breaksForBinning = as.list(strsplit(input$binCuts, ",")[[1]])
             # Make a new group variable name
             groupVarName <<- paste("Group - ",toString(input$binningVariable))
+
             # Apply the breaks
             dataToBin = reactiveDF$filteredDataset
             binnedDataset = dataToBin %>% mutate(Group=cut(!!sym(input$binningVariable),breaks=breaksForBinning),
@@ -1022,13 +1049,15 @@ server = function(input, output, session) {
             else if (input$rangeOrGroups == "range"){
                 reactiveDF$filteredDataset = binnedDataset %>% filter(Group != paste("> ",toString(tail(breaksForBinning, n=1)))) %>% rename(!!groupVarName:=Group)
             }
-            output$filteredDatasetForFilterTab = renderDataTable({
-                DT::datatable(reactiveDF$filteredDataset,
-                              extensions="FixedColumns",
-                              plugins="natural",
-                              options=list(scrollX=TRUE,scroll ="500px",
-                                             scrollCollapse=TRUE,fixedColumns=list(leftColumns = 4)))
-            })
+            
+            
+            # output$filteredDatasetForFilterTab = renderDataTable({
+            #     DT::datatable(reactiveDF$filteredDataset,
+            #                   extensions="FixedColumns",
+            #                   plugins="natural",
+            #                   options=list(scrollX=TRUE,scroll ="500px",
+            #                                  scrollCollapse=TRUE,fixedColumns=list(leftColumns = 4)))
+            # })
             # Update the categorical variable selection to include groups (previously called bins)
             subsettableData = reactiveDF$filteredDataset
             l = sapply(subsettableData, class)
@@ -1040,14 +1069,14 @@ server = function(input, output, session) {
             updateSelectInput(session,"scatterCatFacet",choices=c(categoricalVars,groupVarName), selected=categoricalVars[2])
         }
         else if (groupVarName == paste("Group - ",toString(input$binningVariable))){
-            req(reactiveDF$filteredDataset)
-            output$filteredDatasetForFilterTab = renderDataTable({
-                DT::datatable(reactiveDF$filteredDataset,
-                              extensions="FixedColumns",
-                              plugins="natural",
-                              options=list(scrollX=TRUE,scroll ="500px",
-                                             scrollCollapse=TRUE,fixedColumns=list(leftColumns = 4)))
-            })
+            # req(reactiveDF$filteredDataset)
+            # output$filteredDatasetForFilterTab = renderDataTable({
+            #     DT::datatable(reactiveDF$filteredDataset,
+            #                   extensions="FixedColumns",
+            #                   plugins="natural",
+            #                   options=list(scrollX=TRUE,scroll ="500px",
+            #                                  scrollCollapse=TRUE,fixedColumns=list(leftColumns = 4)))
+            # })
         }
     },ignoreNULL=TRUE)
     
