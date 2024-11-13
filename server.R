@@ -1159,13 +1159,28 @@ server = function(input, output, session) {
     # Generate data for the scatterplot
     observe({
         dataForPlotParams = densityDataToScatterParams()
-        scatterForParams = ggplot(dataForPlotParams,
-                   aes(y=!!sym(input$scatterY),
-                       x=!!sym(input$scatterX))) +
-            stat_density_2d(aes(fill = ..level..), geom = "polygon", colour="white") +
-            facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE)
-        xRangeScatter <<- ggplot_build(scatterForParams)$layout$panel_params[[1]]$x.range
-        yRangeScatter <<- ggplot_build(scatterForParams)$layout$panel_params[[1]]$y.range
+
+        # ensure NA from X and Y are removed
+        dataForPlotParams = dataForPlotParams %>% filter(!is.na(!!sym(input$scatterX)) & !is.na(!!sym(input$scatterY)))
+        if (nrow(dataForPlotParams) == 0) {
+          showModal(modalDialog(
+            title = "Data is NA in both X and Y variables. Use other variables.",
+            easyClose = TRUE
+          ))
+        }
+        req(nrow(dataForPlotParams) > 0, message = "No available data.")
+        
+        xRangeScatter = dataForPlotParams %>%
+          summarize(min_value = min(!!sym(input$scatterX), na.rm = TRUE), 
+                    max_value = max(!!sym(input$scatterX), na.rm = TRUE)) %>% unlist() %>% as.array()
+        
+        yRangeScatter = dataForPlotParams %>%
+          summarize(min_value = min(!!sym(input$scatterY), na.rm = TRUE), 
+                    max_value = max(!!sym(input$scatterY), na.rm = TRUE)) %>% unlist() %>% as.array()
+        
+        names(xRangeScatter) <- NULL
+        names(yRangeScatter) <- NULL
+        
         updateNumericInput(session,"xLLScatter",value=xRangeScatter[1])
         updateNumericInput(session,"xULScatter",value=xRangeScatter[2])
         updateNumericInput(session,"yLLScatter",value=yRangeScatter[1])
@@ -1212,26 +1227,42 @@ server = function(input, output, session) {
         req(densityDataToScatter())
         listOfColors = as.list(strsplit(input$scatterplotHexStrings, ",")[[1]])
         
+        # ensure NA from X and Y are removed
+        densityDataToScatter = densityDataToScatter() %>% filter(!is.na(!!sym(input$scatterX)) & !is.na(!!sym(input$scatterY)))
+        if (nrow(densityDataToScatter) == 0) {
+          showModal(modalDialog(
+            title = "Data is NA in both X and Y variables. Use other variables.",
+            easyClose = TRUE
+          ))
+        }
+        req(nrow(densityDataToScatter) > 0, message = "No available data.")
+
+        # apply X/Y limits separately
+        densityDataToScatter = densityDataToScatter %>% filter(!!sym(input$scatterY) >= input$yLLScatter & 
+                                                               !!sym(input$scatterY) <= input$yULScatter & 
+                                                               !!sym(input$scatterX) >= input$xLLScatter &
+                                                               !!sym(input$scatterX) <= input$xULScatter)
+        
         if(input$contourCheckbox==FALSE){
             scatterPlotStub = 
-            ggplot(densityDataToScatter(),
+            ggplot(densityDataToScatter,
                    aes(y=!!sym(input$scatterY),
                        x=!!sym(input$scatterX),
                        color=!!sym(input$scatterCatColor))) +
             geom_point(alpha=input$scatterplotTransparency) +
             facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE, scales = "free") +
-            xlim(input$xLLScatter,input$xULScatter) + ylim(input$yLLScatter,input$yULScatter) + scatterplotTheme() +
+            scatterplotTheme() +
             scale_color_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) +
             theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
             theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         } else {
             scatterPlotStub = 
-            ggplot(densityDataToScatter(),
+            ggplot(densityDataToScatter,
                    aes(y=!!sym(input$scatterY),
                        x=!!sym(input$scatterX))) +
-            stat_density_2d(aes(fill = ..level..), geom = "polygon", colour="white") +
+            stat_density_2d(aes(fill = ..level..), geom = "polygon", colour="white",contour_var = "ndensity") +
             facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE, scales = "free") +
-            xlim(input$xLLScatter,input$xULScatter) + ylim(input$yLLScatter,input$yULScatter) + scatterplotTheme() +
+            scatterplotTheme() +
             scale_fill_continuous(type = input$contourColor) +
             theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
             theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
