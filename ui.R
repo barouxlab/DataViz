@@ -415,6 +415,9 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   p("7.  Explore your data by choosing different x and y variables, select 'Update Parameters' and 'Generate plots' each time a new variable is chosen, this will update the plotting parameters.
 "),
                                                   p("Note: the 'Update Parameters' button will provide you with plotting parameters that are updated for your current data selection. Use this to guide your initial parameter set (e.g., x and y axes limits.)"),
+                                                  
+                                                  h4("Density contours"),
+                                                  HTML("<p><b>levels</b>: represents a contour line and the value stands for a normalized density estimate. Density estimate is computed using function <code>MASS::kde2d</code>. Normalized density estimate is defined as density / max(density) and ranges from 0 to 1.</p>")                                                  
                                          ),
                                          tabPanel("Scatter Plot",
                                                   plotOutput("scatter")
