@@ -769,6 +769,7 @@ server = function(input, output, session) {
         
         boxplotData = applyMinMax(densityDataToHistoBoxRefined(),input$singleConVariable,input$yLLBoxplot,input$yULBoxplot)
         req(nrow(boxplotData)>0)
+
         # deduplicate (take 1st row) for group variables
         if (input$singleConVariable %in% c("Group Intensity Sum", 
                                            "Group Intensity Mean", 
@@ -780,18 +781,35 @@ server = function(input, output, session) {
           boxplotData = boxplotData %>% distinct(!!!syms(categoricalVars), .keep_all = TRUE) 
         }
         
+        # apply next min value after 0 for data equal to 0 to avoid NAs at log and beeswarm
+        nmin = boxplotData %>% filter(!!sym(input$singleConVariable) > 0) %>% summarise(next_min = min(!!sym(input$singleConVariable))) %>% pull(next_min)
+        boxplotData = boxplotData %>% mutate(!!sym(input$singleConVariable) := 
+                                               if_else(!!sym(input$singleConVariable) == 0, !!sym(input$singleConVariable) + nmin, !!sym(input$singleConVariable)))
+        
+        
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         boxplot = ggplot(boxplotData,aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = FALSE, width = input$boxplotBoxWidth) +
         stat_summary(fun.y=mean, geom="point", shape=20, size=0, color="NA") +
         plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
-        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))) +
-          {
-            if (input$boxplotDistribution != "list") match.fun(input$boxplotDistribution)(alpha=input$boxplotPointTransparency,size=input$boxplotPointSize)
-          } +
-          {
-            if (input$boxplotYScale == "logY") scale_y_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}),limits=c(yLLBoxplot,yULBoxplot))
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        
+        if (input$boxplotYScale == "logY") {
+          boxplot = boxplot + scale_y_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}),limits=c(yLLBoxplot,yULBoxplot))
+        }
+        
+        if (input$boxplotDistribution != "list") {
+          # downsampling to 10k, otherwise cannot plot esp. beeswarm and also not visible
+          if (nrow(boxplotData) > 10000) {
+            sampleBoxplotData = sample_n(boxplotData, 10000)
+          } else {
+            sampleBoxplotData = boxplotData
           }
+          boxplot = boxplot + match.fun(input$boxplotDistribution)(data=sampleBoxplotData,
+                                               alpha=input$boxplotPointTransparency,
+                                               size=input$boxplotPointSize,
+                                               width=0.1,height=0)
+        }
         boxplot
     })
     

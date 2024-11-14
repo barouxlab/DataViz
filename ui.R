@@ -253,7 +253,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                  )
                                                              ))),
                                                   selectInput(inputId = "boxplotDistribution","Data points",
-                                                              choices = list("none"="list","default"="geom_point","jitter"="geom_jitter"),
+                                                              choices = list("none"="list","default"="geom_point","jitter"="geom_jitter","beeswarm"="geom_beeswarm"),
                                                               selected = "none"),
                                                   fluidRow(
                                                     column(
