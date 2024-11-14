@@ -540,6 +540,17 @@ server = function(input, output, session) {
     # Instantiate a themes reactive variable
     plotTheme = reactive({themesForPlotting[[input$theme]]})
     
+    
+    # gets min and max of a column from dataframe
+    getMinMax <- function(df,col) {
+      df = df %>% filter(!is.na(!!sym(col)))
+      rangeCol = df %>%
+        summarize(min_value = min(!!sym(col), na.rm = TRUE), 
+                  max_value = max(!!sym(col), na.rm = TRUE)) %>% unlist() %>% as.array()
+      names(rangeCol) <- NULL
+      return(rangeCol)
+    }
+    
     # Generate recommended parameters for the plots
     observe({
         dataForPlotParams = densityDataToHistoBox()
@@ -549,23 +560,25 @@ server = function(input, output, session) {
         catVariableForFill = isolate(input$catVariableForFill)
         numOfBinsRefined = isolate(input$numOfBinsRefined)
         
-        kde = ggplot(dataForPlotParams,aes(x=!!sym(singleConVariable),color=!!sym(catVariableForFill))) + geom_density() + ylab("Density")
-        xRangeKDE <<- ggplot_build(kde)$layout$panel_params[[1]]$x.range
-        yRangeKDE <<- ggplot_build(kde)$layout$panel_params[[1]]$y.range
+        # estimate kde X from data
+        xRangeKDE <<- getMinMax(dataForPlotParams,singleConVariable)
         updateNumericInput(session,"xLLKDE",value=xRangeKDE[1])
         updateNumericInput(session,"xULKDE",value=xRangeKDE[2])
+        
+        # estimate kde Y via pre-plotting
+        kde = ggplot(dataForPlotParams,aes(x=!!sym(singleConVariable),color=!!sym(catVariableForFill))) + geom_density() + ylab("Density")
+        y_ranges = lapply(ggplot_build(kde)$layout$panel_params, function(panel) panel$y.range)
+        yRangeKDE <<- c(min(sapply(y_ranges, function(x) x[1])),max(sapply(y_ranges, function(x) x[2])))
         updateNumericInput(session,"yLLKDE",value=yRangeKDE[1])
         updateNumericInput(session,"yULKDE",value=yRangeKDE[2])
-        
-        histogram = ggplot(dataForPlotParams,aes(x=!!sym(singleConVariable),color=!!sym(catVariableForFill))) + 
-        geom_histogram(bins=as.numeric(numOfBinsRefined)) + facet_wrap(as.formula(paste("~", paste("`",catVariableForFill,"`",sep=""))),scales="free")
-        xRangeHistogram <<- ggplot_build(histogram)$layout$panel_params[[1]]$x.range
+
+        # estimate histogram X from data
+        xRangeHistogram <<- getMinMax(dataForPlotParams,singleConVariable)
         updateNumericInput(session,"xLLHistogram",value=xRangeHistogram[1])
         updateNumericInput(session,"xULHistogram",value=xRangeHistogram[2])
         
-        dataForPlotParams = densityDataToHistoBox()
-        boxplot = ggplot(dataForPlotParams,aes(y=!!sym(singleConVariable),x=!!sym(catVariableForFill),color=!!sym(catVariableForFill))) + geom_boxplot(varwidth = FALSE)
-        yRangeBoxplot <<- ggplot_build(boxplot)$layout$panel_params[[1]]$y.range
+        # estimate boxplot/violin X from data
+        yRangeBoxplot <<- getMinMax(dataForPlotParams,singleConVariable)
         updateNumericInput(session,"yLLBoxplot",value=yRangeBoxplot[1])
         updateNumericInput(session,"yULBoxplot",value=yRangeBoxplot[2])
         })
@@ -676,12 +689,20 @@ server = function(input, output, session) {
     # Input the plot height variable
     plotHeight = reactive(as.numeric(input$plotHeight))
     
+    # applies min and max on a column
+    applyMinMax <- function(df,col,ll,ul) {
+      df = df %>% filter(!is.na(!!sym(col)))
+      df = df %>% filter(!!sym(col) >= ll & !!sym(col) <= ul)
+      return(df)
+    }
+    
     # Output histograms, kde's, boxplots, and violin plots based on categorical and numeric variable selection for refined plotting
     histoRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        histogramCount = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) +
+        densityDataToHistoBoxRefined = applyMinMax(densityDataToHistoBoxRefined(),input$singleConVariable,input$xLLHistogram,input$xULHistogram)
+        histogramCount = ggplot(densityDataToHistoBoxRefined,aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) +
         geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Count") +
-        xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
+        plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         histogramCount
@@ -694,9 +715,10 @@ server = function(input, output, session) {
 
     histoRefinedPercentage = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        histogramPercentage = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),y=after_stat(count / ave(count, PANEL, FUN = sum)),fill=!!sym(input$catVariableForFill))) +
+        densityDataToHistoBoxRefined = applyMinMax(densityDataToHistoBoxRefined(),input$singleConVariable,input$xLLHistogram,input$xULHistogram)
+        histogramPercentage = ggplot(densityDataToHistoBoxRefined,aes(x=!!sym(input$singleConVariable),y=after_stat(count / ave(count, PANEL, FUN = sum)),fill=!!sym(input$catVariableForFill))) +
         geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
-        xlim(input$xLLHistogram,input$xULHistogram) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
+        plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         histogramPercentage
@@ -709,8 +731,9 @@ server = function(input, output, session) {
     
     kdeRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        kdeSplit = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) + geom_density(adjust=input$kdeAdjust) + ylab("Density") +
-        xlim(input$xLLKDE,input$xULKDE) + ylim(input$yLLKDE,input$yULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
+        densityDataToHistoBoxRefined = applyMinMax(densityDataToHistoBoxRefined(),input$singleConVariable,input$xLLKDE,input$xULKDE)
+        kdeSplit = ggplot(densityDataToHistoBoxRefined,aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) + geom_density(adjust=input$kdeAdjust) + ylab("Density") +
+        ylim(input$yLLKDE,input$yULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         kdeSplit
@@ -723,8 +746,9 @@ server = function(input, output, session) {
 
     kdeRefinedPercentage = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        kdeSplitPercentage = ggplot(densityDataToHistoBoxRefined(),aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) + geom_density(stat='bin',bins=as.numeric(input$kdeNumOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
-        xlim(input$xLLKDE,input$xULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
+        densityDataToHistoBoxRefined = applyMinMax(densityDataToHistoBoxRefined(),input$singleConVariable,input$xLLKDE,input$xULKDE)
+        kdeSplitPercentage = ggplot(densityDataToHistoBoxRefined,aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) + geom_density(stat='bin',bins=as.numeric(input$kdeNumOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
+        plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         kdeSplitPercentage
@@ -743,7 +767,8 @@ server = function(input, output, session) {
         yULBoxplot = input$yULBoxplot 
         if (yULBoxplot == 0) {yULBoxplot = yULBoxplot + 0.00001}
         
-        boxplotData = densityDataToHistoBoxRefined()
+        boxplotData = applyMinMax(densityDataToHistoBoxRefined(),input$singleConVariable,input$yLLBoxplot,input$yULBoxplot)
+        req(nrow(boxplotData)>0)
         # deduplicate (take 1st row) for group variables
         if (input$singleConVariable %in% c("Group Intensity Sum", 
                                            "Group Intensity Mean", 
@@ -758,7 +783,7 @@ server = function(input, output, session) {
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         boxplot = ggplot(boxplotData,aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = FALSE, width = input$boxplotBoxWidth) +
         stat_summary(fun.y=mean, geom="point", shape=20, size=0, color="NA") +
-        ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
+        plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))) +
           {
@@ -777,8 +802,10 @@ server = function(input, output, session) {
     
     violinplotRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        violinplot = ggplot(densityDataToHistoBoxRefined(),aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_violin(draw_quantiles = c(0.5), width = input$boxplotBoxWidth) +
-        ylim(input$yLLBoxplot,input$yULBoxplot) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
+        densityDataToHistoBoxRefined = applyMinMax(densityDataToHistoBoxRefined(),input$singleConVariable,input$yLLBoxplot,input$yULBoxplot)
+        req(nrow(densityDataToHistoBoxRefined)>0)
+        violinplot = ggplot(densityDataToHistoBoxRefined,aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_violin(draw_quantiles = c(0.5), width = input$boxplotBoxWidth) +
+        plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         violinplot
@@ -792,48 +819,45 @@ server = function(input, output, session) {
     # Create a summary table of values from the boxplot
     output$summaryTableFromBoxplot = renderDataTable({
 
-        layerData = layer_data(boxplotRefined()) %>% select(lower,middle,upper,PANEL,group)
-        boxplot_means_df = as_tibble(ggplot_build(boxplotRefined())$data[[2]]) %>% select(group,PANEL,"mean"=y)
-        layerData = left_join(layerData, boxplot_means_df,by = c("PANEL", "group")) %>% mutate_if(is.numeric, round, 3)
-        dataToSubset = densityDataToHistoBoxRefined()
+        singleConVariable = input$singleConVariable
+        catVariableForFill = input$catVariableForFill
+        catVariableForSplitting = input$catVariableForSplitting
+        yLLBoxplot = input$yLLBoxplot
+        yULBoxplot = input$yULBoxplot
+      
+        g = ggplot_build(boxplotRefined())
         
+        # get stats + mean
+        layerData = layer_data(boxplotRefined()) %>% select(lower,middle,upper,PANEL,group,fill)
+        layerData = layerData %>% mutate(fill = sapply(fill, as.character))
+        boxplot_means_df = as_tibble(g$data[[2]]) %>% select(group,PANEL,"mean"=y,fill)
+        boxplot_means_df = boxplot_means_df %>% mutate(fill = sapply(fill, as.character))
+        layerData = left_join(layerData, boxplot_means_df,by = c("PANEL", "group", "fill")) %>% mutate_if(is.numeric, round, 3)
+
         # Panel Assignments
-        panelColumn = dataToSubset %>% select(!!sym(input$catVariableForSplitting))
-        panelLabels = sort(unique(as.data.frame(panelColumn)[,1]))
-        panelLabelNums = as.character(c(1:length(panelLabels)))
-        names(panelLabelNums) <- panelLabels
-        layerData$PANEL_labels <- fct_recode(factor(layerData$PANEL), !!!panelLabelNums)
-        layerData$PANEL_labels <- factor(layerData$PANEL_labels, ordered = TRUE, levels = panelLabels)
+        facet_strip = as_tibble(g$layout$layout)
+        layerData = layerData %>% left_join(facet_strip, by = join_by(PANEL == PANEL)) 
         
-        # X-Label Assignments
-        groupColumn = dataToSubset %>% select(!!sym(input$catVariableForFill))
-        xLabels = sort(unique(as.data.frame(groupColumn)[,1]))
-        xLabelNums = as.character(c(1:length(xLabels)))
-        names(xLabelNums) <- xLabels
-        layerData$group_labels <- fct_recode(factor(layerData$group), !!!xLabelNums)
-        layerData$group_labels <- factor(layerData$group_labels, ordered = TRUE, levels = xLabels)
+        # X-Label / Group Assignments
+        color_scale = g$plot$scales$get_scales("fill")
+        legend_labels = color_scale$get_labels()
+        legend_colors = unlist(color_scale$palette(length(legend_labels))[1:length(legend_labels)])
+        legend_info = data.frame(legend_labels,legend_colors,check.names = FALSE)
+        names(legend_info) <- c(catVariableForFill, "fill")
+        layerData = layerData %>% left_join(legend_info, by = join_by(fill == fill))
+        
+        # bring count data n()
+        bx_data = applyMinMax(densityDataToHistoBoxRefined(),singleConVariable,yLLBoxplot,yULBoxplot)
+        countData = bx_data %>% group_by(!!sym(catVariableForSplitting),!!sym(catVariableForFill)) %>% summarise(n = n(), .groups="drop")
+        layerData = layerData %>% 
+          left_join(countData, by = c(setNames(catVariableForSplitting,catVariableForSplitting),
+                                      setNames(catVariableForFill,catVariableForFill)))
         
         # Select then rename the columns
-        boxDataToDisplay = layerData %>% select(lower,middle,mean,upper,PANEL_labels,group_labels)
-        names(boxDataToDisplay)[names(boxDataToDisplay) == "lower"] <- "Lower"
-        names(boxDataToDisplay)[names(boxDataToDisplay) == "middle"] <- "Middle"
-        names(boxDataToDisplay)[names(boxDataToDisplay) == "mean"] <- "Mean"
-        names(boxDataToDisplay)[names(boxDataToDisplay) == "upper"] <- "Upper"
-        names(boxDataToDisplay)[names(boxDataToDisplay) == "PANEL_labels"] <- input$catVariableForSplitting
-        names(boxDataToDisplay)[names(boxDataToDisplay) == "group_labels"] <- input$catVariableForFill
-        
-        # count n
-        bx_data = dataToSubset %>% 
-          filter(!!sym(input$singleConVariable) >= input$yLLBoxplot) %>%
-          filter(!!sym(input$singleConVariable) <= input$yULBoxplot) 
-        
-        countData = bx_data %>% group_by(!!sym(input$catVariableForSplitting),!!sym(input$catVariableForFill)) %>% 
-          summarise(n = n(), .groups="drop")
-        
-        boxDataToDisplay = boxDataToDisplay %>% 
-          left_join(countData, by = c(setNames(input$catVariableForSplitting,input$catVariableForSplitting),
-                                      setNames(input$catVariableForFill,input$catVariableForFill)))
-        
+        boxDataToDisplay = layerData %>% 
+          select(!!sym(catVariableForSplitting),!!sym(catVariableForFill),lower,middle,mean,upper,n) %>% 
+          rename(Lower = lower, Middle = middle, Mean = mean, Upper = upper)
+
         DT::datatable(boxDataToDisplay, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 2)))
     })
 

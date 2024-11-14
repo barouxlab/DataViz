@@ -335,10 +335,12 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   plotOutput("violinplotRefined",height="auto")
                                                   ),
                                          tabPanel("Kruskall-Wallis Stats Report",
-                                                  dataTableOutput("kwTable1D")
+                                                  dataTableOutput("kwTable1D"),
+                                                  HTML("<p><b>Note</b>: test is calculated on selected/filtered dataset. Respective limits (X Min, X Max or Y Min, Y Max) are not applied.</p>")
                                          ),
                                          tabPanel("ANOVA Stats Report",
-                                                  dataTableOutput("anovaTable1D")
+                                                  dataTableOutput("anovaTable1D"),
+                                                  HTML("<p><b>Note</b>: test is calculated on selected/filtered dataset. Respective limits (X Min, X Max or Y Min, Y Max) are not applied.</p>")
                                          )
                                         )
                          )
