@@ -13,7 +13,7 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
   # These values are filled because the data itself should not be missing for subsequent operations.
   # Moreover, the names of variables (e.g., "Nucleus center of mass") are unified.
   if("Nucleus Center of Mass" %in% unique(importedData$`Object`)){
-    importedData$`Distance to Nucleus`[is.na(importedData$`Object`=="Nucleus Center of Mass" & importedData$`Distance to Nucleus`=="NA")] = 1
+    importedData = importedData %>% mutate(`Distance to Nucleus` = ifelse(`Object`=="Nucleus Center of Mass" & is.na(`Distance to Nucleus`), 1, `Distance to Nucleus`))
   }
   
   # Filter out any group that doesn't have a nucleus center of mass object or where Channel is NA (provided
@@ -90,20 +90,30 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
   
   # Ratio of Intensity Sum Normalized per Nucleus
   if (length(ratioSumsToCreate) != 0 & ("Intensity Sum Normalised per Nucleus" %in% names(dataToProcess))){
+
+    # calculate ratios
     for (c in ratioSumsToCreate){
       splitStrings = lapply(strsplit(c,", "),as.numeric)
       ch_a = splitStrings[[1]][1]
       ch_b = splitStrings[[1]][2]
       stringTitle = paste("Ratio Ch",ch_a,":Ch",ch_b," of Intensity Sum Normalised per Nucleus",sep = "")
-      dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`,`Category`) %>% 
-        mutate(!!stringTitle := case_when(
-          `Intensity Sum Normalised per Nucleus`[which(`Channel`==ch_a)] == NA | `Intensity Sum Normalised per Nucleus`[which(`Channel`==ch_b)] == NA ~ NA_real_,
-          Channel == ch_a | Channel == ch_b ~ ((`Intensity Sum Normalised per Nucleus`[which(`Channel`==ch_a)])/(`Intensity Sum Normalised per Nucleus`[which(`Channel`==ch_b)])),
-          Channel != ch_a & Channel != ch_b ~ NA_real_
-        )
-        ) %>% 
+      dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`,`Category`) %>%
+        mutate(!!stringTitle := `Intensity Sum Normalised per Nucleus`[`Channel`== ch_a] / `Intensity Sum Normalised per Nucleus`[`Channel`== ch_b]) %>%
         ungroup()
     }
+
+    # assign NAs to non-relevant channels
+    for (c in ratioSumsToCreate){
+      splitStrings = lapply(strsplit(c,", "),as.numeric)
+      ch_a = splitStrings[[1]][1]
+      ch_b = splitStrings[[1]][2]
+      stringTitle = paste("Ratio Ch",ch_a,":Ch",ch_b," of Intensity Sum Normalised per Nucleus",sep = "")
+      dataToProcess = dataToProcess %>% mutate(!!sym(stringTitle) := replace(!!sym(stringTitle),!(`Channel` %in% c(ch_a,ch_b)),NA_real_))
+    }
+    dataToProcess = dataToProcess %>% mutate(across(
+      matches("Ratio Ch.*Intensity Sum Normalised per Nucleus"),
+      ~ replace(., . %in% c(Inf, -Inf), NA_real_)))
+
   }
   
   # Remove
@@ -185,20 +195,30 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
   
   # Create Ratio Ch[a]:Ch[b] of Intensity Sum Normalized per Group
   if (length(ratioSumsPerGroupToCreate) != 0 & ("Intensity Sum Normalised by Group" %in% names(dataToProcess))){
+
+    # calculate ratios
     for (c in ratioSumsPerGroupToCreate){
       splitStrings = lapply(strsplit(c,", "),as.numeric)
       ch_a = splitStrings[[1]][1]
       ch_b = splitStrings[[1]][2]
       stringTitle = paste("Ratio Ch",ch_a,":Ch",ch_b," of Intensity Sum Normalised per Group",sep = "")
-      dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`,`Category`) %>% 
-        mutate(!!stringTitle := case_when(
-          `Intensity Sum Normalised by Group`[which(`Channel`==ch_a)] == NA | `Intensity Sum Normalised by Group`[which(`Channel`==ch_b)] == NA ~ NA_real_,
-          Channel == ch_a | Channel == ch_b ~ ((`Intensity Sum Normalised by Group`[which(`Channel`==ch_a)])/(`Intensity Sum Normalised by Group`[which(`Channel`==ch_b)])),
-          Channel != ch_a & Channel != ch_b ~ NA_real_
-        )
-        ) %>% 
+      dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`,`Category`) %>%
+        mutate(!!stringTitle := `Intensity Sum Normalised by Group`[`Channel`== ch_a]/ `Intensity Sum Normalised by Group`[`Channel`== ch_b]) %>%
         ungroup()
     }
+
+    # for every Ratio column, get channel and set other channels to NA
+    for (c in ratioSumsPerGroupToCreate){
+      splitStrings = lapply(strsplit(c,", "),as.numeric)
+      ch_a = splitStrings[[1]][1]
+      ch_b = splitStrings[[1]][2]
+      stringTitle = paste("Ratio Ch",ch_a,":Ch",ch_b," of Intensity Sum Normalised per Group",sep = "")
+      dataToProcess = dataToProcess %>% mutate(!!sym(stringTitle) := replace(!!sym(stringTitle),!(`Channel` %in% c(ch_a,ch_b)),NA_real_))
+    }
+    dataToProcess = dataToProcess %>% mutate(across(
+      matches("Ratio Ch.*Intensity Sum Normalised per Group"),
+      ~ replace(., . %in% c(Inf, -Inf), NA_real_)))
+
   }
   
   # Relocate the Image Subset and Time variables and make final data type casts
