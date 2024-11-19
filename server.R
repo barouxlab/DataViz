@@ -696,6 +696,34 @@ server = function(input, output, session) {
       return(df)
     }
     
+    # add p-value of KW test to plot
+    addKWPValueToPlot <- function(plotStub,value_col,group_col,split_col,df){
+      kruskal_results = calculateKWTest(df, value_col, group_col, split_col)
+      
+      g = ggplot_build(plotStub)
+      layerData = layer_data(plotStub)
+      facet_strip = as_tibble(g$layout$layout)
+      layerData = layerData %>% left_join(facet_strip, by = join_by(PANEL == PANEL)) 
+      layerData = layerData %>% group_by(!!sym(split_col)) %>% 
+        summarise(minx = if ("xmin" %in% colnames(.)) min(xmin) else min(x), 
+                  maxx = if ("xmax" %in% colnames(.)) max(xmax) else max(x),
+                  miny = if ("ymin" %in% colnames(.)) min(ymin) else min(y),
+                  maxy = if ("ymax" %in% colnames(.)) max(ymax) else max(y)) 
+      
+      kwToPlot = layerData %>% 
+        left_join(kruskal_results, by = join_by(!!sym(split_col) == !!sym(split_col))) %>% 
+        select(!!sym(split_col), minx, maxy, `p-value`) %>% rename("x" = minx, "y" = maxy) %>% 
+        mutate(`p-value` = paste0("p(KW)=", `p-value`))
+      
+      plotStub = plotStub + geom_text(data = kwToPlot, 
+                                                  aes(x = x, y = y, label = `p-value`), 
+                                                  color = "black", size = 3.5, 
+                                                  vjust=-1, hjust=0, 
+                                                  inherit.aes = FALSE)
+      
+      return(plotStub)
+    }
+    
     # Output histograms, kde's, boxplots, and violin plots based on categorical and numeric variable selection for refined plotting
     histoRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
@@ -705,6 +733,13 @@ server = function(input, output, session) {
         plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        
+        if (input$kruskallwallisCheckbox) {
+          histogramCount = addKWPValueToPlot(histogramCount,
+                                             input$singleConVariable,input$catVariableForFill,input$catVariableForSplitting,
+                                             densityDataToHistoBoxRefined)
+        }
+        
         histogramCount
     })
     
@@ -721,6 +756,13 @@ server = function(input, output, session) {
         plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        
+        if (input$kruskallwallisCheckbox) {
+          histogramPercentage = addKWPValueToPlot(histogramPercentage,
+                                             input$singleConVariable,input$catVariableForFill,input$catVariableForSplitting,
+                                             densityDataToHistoBoxRefined)
+        }
+        
         histogramPercentage
     })
     
@@ -732,10 +774,17 @@ server = function(input, output, session) {
     kdeRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         densityDataToHistoBoxRefined = applyMinMax(densityDataToHistoBoxRefined(),input$singleConVariable,input$xLLKDE,input$xULKDE)
-        kdeSplit = ggplot(densityDataToHistoBoxRefined,aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) + geom_density(adjust=input$kdeAdjust) + ylab("Density") +
+        kdeSplit = ggplot(densityDataToHistoBoxRefined,aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) + geom_density(adjust=input$kdeAdjust, alpha=input$kdeTransparency) + ylab("Density") +
         ylim(input$yLLKDE,input$yULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        
+        if (input$kruskallwallisCheckbox) {
+          kdeSplit = addKWPValueToPlot(kdeSplit,
+                                      input$singleConVariable,input$catVariableForFill,input$catVariableForSplitting,
+                                      densityDataToHistoBoxRefined)
+        }
+        
         kdeSplit
     })
     
@@ -747,10 +796,17 @@ server = function(input, output, session) {
     kdeRefinedPercentage = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         densityDataToHistoBoxRefined = applyMinMax(densityDataToHistoBoxRefined(),input$singleConVariable,input$xLLKDE,input$xULKDE)
-        kdeSplitPercentage = ggplot(densityDataToHistoBoxRefined,aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) + geom_density(stat='bin',bins=as.numeric(input$kdeNumOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
+        kdeSplitPercentage = ggplot(densityDataToHistoBoxRefined,aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) + geom_density(stat='bin',bins=as.numeric(input$kdeNumOfBinsRefined), alpha=input$kdeTransparency) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
         plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        
+        if (input$kruskallwallisCheckbox) {
+          kdeSplitPercentage = addKWPValueToPlot(kdeSplitPercentage,
+                                       input$singleConVariable,input$catVariableForFill,input$catVariableForSplitting,
+                                       densityDataToHistoBoxRefined)
+        }
+        
         kdeSplitPercentage
     })
     
@@ -810,6 +866,12 @@ server = function(input, output, session) {
                                                size=input$boxplotPointSize,
                                                width=0.1,height=0)
         }
+        
+        if (input$kruskallwallisCheckbox) {
+          boxplot = addKWPValueToPlot(boxplot,
+                                     input$singleConVariable,input$catVariableForFill,input$catVariableForSplitting,
+                                     boxplotData)
+        }
         boxplot
     })
     
@@ -826,6 +888,12 @@ server = function(input, output, session) {
         plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        
+        if (input$kruskallwallisCheckbox) {
+          violinplot = addKWPValueToPlot(violinplot,
+                                      input$singleConVariable,input$catVariableForFill,input$catVariableForSplitting,
+                                      densityDataToHistoBoxRefined)
+        }
         violinplot
     })
     
@@ -878,6 +946,76 @@ server = function(input, output, session) {
 
         DT::datatable(boxDataToDisplay, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 2)))
     })
+    
+    # calculate Kruskall-Wallis test
+    calculateKWTest <- function(df, value_col, group_col, split_col) {
+      
+      # remove NAs in value_col
+      df = df %>% filter(!is.na(!!sym(value_col)))
+      
+      # keep unique categories
+      unique_categories = df %>% pull(!!sym(split_col)) %>% unique()
+      
+      kruskal_results = df %>%
+        group_by(!!sym(split_col)) %>%
+        filter(n_distinct(!!sym(group_col)) > 1) %>%
+        group_split() %>%
+        map_dfr(~{
+          if (nrow(.x) > 0) {
+            kruskal_test = kruskal.test(.x[[value_col]] ~ .x[[group_col]])
+            tibble(
+              !!sym(split_col) := unique(.x[[split_col]]),
+              p_value = kruskal_test$p.value,
+              statistic = kruskal_test$statistic,
+              n = nrow(.x)
+            )
+          }
+        })
+      
+      # add Bonferroni correction (check)
+      if (nrow(kruskal_results) > 0) {
+        kruskal_results = kruskal_results %>%
+          mutate(
+            corrected_p_value = pmin(p_value * n(), 1)
+          )
+        
+        # create DF with empty values for remaining facets
+        # indicates that in those facets num.groups=1, cannot do KW test
+        # or that all values are identical
+        rest_categories = 
+          as_tibble(unique_categories) %>% 
+          filter(!(value %in% kruskal_results[[split_col]])) %>%
+          pull(value) %>% unique()
+        
+        rest_results = tibble(
+          !!sym(split_col) := rest_categories,
+          p_value = NA,
+          statistic = NA,
+          n = NA,
+          corrected_p_value = NA
+        )
+        
+        kruskal_results = kruskal_results %>% union(rest_results)
+        
+      } else if (nrow(kruskal_results) == 0){
+        # create DF with empty values for all facets
+        kruskal_results = tibble(
+          !!sym(split_col) := unique_categories,
+          p_value = NA,
+          statistic = NA,
+          n = NA,
+          corrected_p_value = NA
+        )
+      }
+      
+      # display <0.0001 for small values
+      kruskal_results = kruskal_results %>% 
+        mutate(`p-value` = ifelse(`p_value` < 0.0001, "<0.0001", sprintf("%.4f", `p_value`))) %>% 
+        mutate(`corrected p-value` = ifelse(`corrected_p_value` < 0.0001, "<0.0001", sprintf("%.4f", `corrected_p_value`))) %>%
+        select(-`p_value`) %>% select(-`corrected_p_value`)
+      
+      return(kruskal_results)
+    }
 
     # Create a summary table of values from 1D plot incl. Kruskall-Wallis test
     output$kwTable1D = renderDataTable({
@@ -887,70 +1025,11 @@ server = function(input, output, session) {
         
         value_col = input$singleConVariable
         group_col = input$catVariableForFill
+        split_col = input$catVariableForSplitting
         
-        # keep unique categories
-        unique_categories = densityDataToHistoBoxRefined() %>% pull(!!sym(input$catVariableForSplitting)) %>% unique()
+        df = densityDataToHistoBoxRefined()
         
-        # remove NAs in value_col
-        densityDataToHistoBoxRefined = densityDataToHistoBoxRefined() %>% filter(!is.na(!!sym(value_col)))
-        
-        kruskal_results = densityDataToHistoBoxRefined %>%
-          group_by(!!sym(input$catVariableForSplitting)) %>%
-          filter(n_distinct(!!sym(group_col)) > 1) %>%
-          group_split() %>%
-          map_dfr(~{
-            if (nrow(.x) > 0) {
-              kruskal_test = kruskal.test(.x[[value_col]] ~ .x[[group_col]])
-              tibble(
-                !!sym(input$catVariableForSplitting) := unique(.x[[input$catVariableForSplitting]]),
-                p_value = kruskal_test$p.value,
-                statistic = kruskal_test$statistic,
-                n = nrow(.x)
-              )
-            }
-          })
-
-        # add Bonferroni correction (check)
-        if (nrow(kruskal_results) > 0) {
-          kruskal_results = kruskal_results %>%
-            mutate(
-              corrected_p_value = pmin(p_value * n(), 1)
-            )
-          
-          # create DF with empty values for remaining facets
-          # indicates that in those facets num.groups=1, cannot do KW test
-          # or that all values are identical
-          rest_categories = 
-            as_tibble(unique_categories) %>% 
-            filter(!(value %in% kruskal_results[[input$catVariableForSplitting]])) %>%
-            pull(value) %>% unique()
-          
-          rest_results = tibble(
-            !!sym(input$catVariableForSplitting) := rest_categories,
-            p_value = NA,
-            statistic = NA,
-            n = NA,
-            corrected_p_value = NA
-          )
-          
-          kruskal_results = kruskal_results %>% union(rest_results)
-          
-        } else if (nrow(kruskal_results) == 0){
-          # create DF with empty values for all facets
-          kruskal_results = tibble(
-            !!sym(input$catVariableForSplitting) := unique_categories,
-            p_value = NA,
-            statistic = NA,
-            n = NA,
-            corrected_p_value = NA
-          )
-        }
-        
-        # display <0.0001 for small values
-        kruskal_results = kruskal_results %>% 
-          mutate(`p-value` = ifelse(`p_value` < 0.0001, "<0.0001", sprintf("%.4f", `p_value`))) %>% 
-          mutate(`corrected p-value` = ifelse(`corrected_p_value` < 0.0001, "<0.0001", sprintf("%.4f", `corrected_p_value`))) %>%
-          select(-`p_value`) %>% select(-`corrected_p_value`)
+        kruskal_results = calculateKWTest(df, value_col, group_col, split_col)
 
         rowCallback <- c(
           "function(row, data){",

@@ -227,7 +227,15 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                               div(style="display: inline-block; width: 100%;",
                                                                   numericInput("kdeNumOfBinsRefined",label="# of Bins for % KDE",value=30)
                                                                  )
-                                                             )))
+                                                             ))),
+                                                  fluidRow(
+                                                    column(
+                                                      width = 6,
+                                                      div(style = "white-space: nowrap;", 
+                                                          div(style="display: inline-block; width: 100%;",
+                                                              numericInput("kdeTransparency",label="Alpha",value=0.9,min=0,max=1,step=0.05)
+                                                          )
+                                                      )))
                                                  ),
                                          tabPanel("Box/Vio",
                                                   shinyjs::useShinyjs(), 
