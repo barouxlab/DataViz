@@ -494,7 +494,9 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                 tabPanel("About Us",
                          mainPanel(
                              h4("Authors"),
-                             HTML("<p> Dr. Célia Baroux - <a href='https://www.botinst.uzh.ch/en/research/development/celiabaroux.html' target='_blank'>IPMB, University of Zürich</a>: conception, financial support<br>Devin Routh and Philip Shemella - <a href='https://www.zi.uzh.ch/en/teaching-and-research/science-it.html' target='_blank'> S<sup>3</sup>IT at the University of Zürich </a>: conception and tool development</p>"),
+                             HTML("<p> Dr. Célia Baroux - <a href='https://www.botinst.uzh.ch/en/research/development/celiabaroux.html' target='_blank'>IPMB, University of Zürich</a>: conception, financial support
+                                  <br>Devin Routh and Philip Shemella - <a href='https://www.zi.uzh.ch/en/teaching-and-research/science-it.html' target='_blank'> S<sup>3</sup>IT at the University of Zürich </a>: conception and tool development
+                                  <br>Adiya Abisheva - <a href='https://www.zi.uzh.ch/en/teaching-and-research/science-it.html' target='_blank'> S<sup>3</sup>IT at the University of Zürich </a>: subsequent development and contribution</p>"),
                              h4("Funding"),
                              p("University of Zürich, Swiss National Science Foundation (SNSF), Ricola Foundation"),
                              h4("Contact"),
