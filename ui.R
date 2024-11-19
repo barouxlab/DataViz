@@ -275,8 +275,8 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   selectInput("theme",label=h4("Select theme for plots"),choices=names(themesForPlotting),selected=names(themesForPlotting)[4])
                                          ),
                                          tabPanel("Colors",
-                                                  selectInput("chosenPalette",label=h4("Select color palette"),choices=row.names(colorDF),selected="Custom"),
-                                                  textInput("hexStrings",label="Optionally edit the colors",value=toString(colorDF["Custom","hexcodes"][[1]]))
+                                                  selectInput("chosenPalette",label=h4("Select color palette"),choices=row.names(colorDF),selected="Custom1"),
+                                                  textInput("hexStrings",label="Optionally edit the colors",value=toString(colorDF["Custom1","hexcodes"][[1]]))
                                                  )
                                         )
                          ),
@@ -397,8 +397,8 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                          ),
                                          tabPanel("Colors",
                                                   selectInput("contourColor",label="Contour color",choices=c("viridis","gradient"),selected="viridis"),
-                                                  selectInput("scatterplotChosenPalette",label="Colors for non-contour scatter",choices=row.names(colorDF),selected="Custom"),
-                                                  textInput("scatterplotHexStrings",label="Optionally edit the non-contour colors",value=toString(colorDF["Custom","hexcodes"][[1]]))
+                                                  selectInput("scatterplotChosenPalette",label="Colors for non-contour scatter",choices=row.names(colorDF),selected="Custom1"),
+                                                  textInput("scatterplotHexStrings",label="Optionally edit the non-contour colors",value=toString(colorDF["Custom1","hexcodes"][[1]]))
                                                  ),
                                          tabPanel("Transparency",
                                                   numericInput("scatterplotTransparency",label="Alpha",value=0.9,min=0,max=1,step=0.05)

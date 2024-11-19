@@ -25,8 +25,13 @@ colorDF = brewer.pal.info
 colorDF$hexcodes = lapply(rownames(brewer.pal.info),function(name){brewer.pal(brewer.pal.info[name,"maxcolors"], name)})
 customColors = list("#0C2B7B","#F09636","#A92357","#3B8AF0","#2E6B1C","#53B7AB","#C169DF","#A34C1C","#F09689","#3E3C93","#58C3F3","#858428","#4AA370","#000673","#75677D")
 customLength = length(customColors)
-colorDF = colorDF %>% add_row(maxcolors=customLength,category="custom",colorblind=FALSE,hexcodes=list(customColors))
-row.names(colorDF)[36] = "Custom"
+colorDF = colorDF %>% add_row(maxcolors=customLength,category="custom2",colorblind=FALSE,hexcodes=list(customColors))
+row.names(colorDF)[36] = "Custom2"
+
+customColors = list("#4575b4","#fdae61","#91bfdb","#fee090","#e0f3f8","#ffffbf")
+customLength = length(customColors)
+colorDF = colorDF %>% add_row(maxcolors=customLength,category="custom1",colorblind=FALSE,hexcodes=list(customColors))
+row.names(colorDF)[37] = "Custom1"
 
 # Instantiate a list of acceptable surpass object types/strings
 acceptableSOLevels = c('Nucleus','Nucleus Center of Mass','Center of Mass','S2P','Nucleus Center Of Mass','Nucleolus','CC','NanoCC')
