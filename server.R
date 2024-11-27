@@ -700,6 +700,16 @@ server = function(input, output, session) {
     addKWPValueToPlot <- function(plotStub,value_col,group_col,split_col,df){
       kruskal_results = calculateKWTest(df, value_col, group_col, split_col)
       
+      # show modal KW not possible
+      if (sum(is.na(kruskal_results$statistic)) == nrow(kruskal_results)) {
+        showModal(modalDialog(
+          title = "Number of groups in the panel(s) is not equal to 2, cannot perform Kruskall-Wallis test.",
+          easyClose = TRUE
+        ))
+        updateCheckboxInput(session, "kruskallwallisCheckbox", value = FALSE)
+        return(plotStub)
+      }
+      
       g = ggplot_build(plotStub)
       layerData = layer_data(plotStub)
       facet_strip = as_tibble(g$layout$layout)
@@ -713,7 +723,7 @@ server = function(input, output, session) {
       kwToPlot = layerData %>% 
         left_join(kruskal_results, by = join_by(!!sym(split_col) == !!sym(split_col))) %>% 
         select(!!sym(split_col), minx, maxy, `p-value`) %>% rename("x" = minx, "y" = maxy) %>% 
-        mutate(`p-value` = paste0("p(KW)=", `p-value`))
+        mutate(`p-value` = paste0("p =", `p-value`))
       
       plotStub = plotStub + geom_text(data = kwToPlot, 
                                                   aes(x = x, y = y, label = `p-value`), 
@@ -958,7 +968,7 @@ server = function(input, output, session) {
       
       kruskal_results = df %>%
         group_by(!!sym(split_col)) %>%
-        filter(n_distinct(!!sym(group_col)) > 1) %>%
+        filter(n_distinct(!!sym(group_col)) == 2) %>%
         group_split() %>%
         map_dfr(~{
           if (nrow(.x) > 0) {
@@ -980,7 +990,7 @@ server = function(input, output, session) {
           )
         
         # create DF with empty values for remaining facets
-        # indicates that in those facets num.groups=1, cannot do KW test
+        # indicates that in those facets num.groups=1 or >2, cannot do KW test
         # or that all values are identical
         rest_categories = 
           as_tibble(unique_categories) %>% 
