@@ -233,7 +233,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                       width = 6,
                                                       div(style = "white-space: nowrap;", 
                                                           div(style="display: inline-block; width: 100%;",
-                                                              numericInput("kdeTransparency",label="Alpha",value=0.9,min=0,max=1,step=0.05)
+                                                              numericInput("kdeTransparency",label="Transparency",value=0.9,min=0,max=1,step=0.05)
                                                           )
                                                       )))
                                                  ),
@@ -268,7 +268,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                       width = 6,
                                                       div(style = "white-space: nowrap;", 
                                                           div(style="display: inline-block; width: 100%;",
-                                                              numericInput("boxplotPointSize",label="Size",value=0.1,step=0.1)
+                                                              numericInput("boxplotPointSize",label="Size",value=0.7,step=0.1)
                                                           ),
                                                           div(style="display: inline-block; width: 100%;",
                                                               numericInput("boxplotPointTransparency",label="Transparency",value=0.5,step=0.1,min=0,max=1)

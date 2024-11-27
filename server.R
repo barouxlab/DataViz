@@ -844,7 +844,7 @@ server = function(input, output, session) {
         
         
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
-        boxplot = ggplot(boxplotData,aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = FALSE, width = input$boxplotBoxWidth) +
+        boxplot = ggplot(boxplotData,aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = FALSE, width = input$boxplotBoxWidth, outlier.alpha = 0.3, outlier.size = 0.6) +
         stat_summary(fun.y=mean, geom="point", shape=20, size=0, color="NA") +
         plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
@@ -856,7 +856,7 @@ server = function(input, output, session) {
         
         if (input$boxplotDistribution != "list") {
           # downsampling to 10k, otherwise cannot plot esp. beeswarm and also not visible
-          if (nrow(boxplotData) > 10000) {
+          if (nrow(boxplotData) > 10000 & input$boxplotDistribution == "geom_beeswarm") {
             sampleBoxplotData = sample_n(boxplotData, 10000)
           } else {
             sampleBoxplotData = boxplotData
