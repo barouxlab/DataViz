@@ -1166,20 +1166,25 @@ server = function(input, output, session) {
             # Retrieve the breaks
             breaksForBinning = as.list(strsplit(input$binCuts, ",")[[1]])
             # Make a new group variable name
-            groupVarName <<- paste("Group - ",toString(input$binningVariable))
+            groupVarName <<- paste("Bin - ",toString(input$binningVariable))
 
             # Apply the breaks
+            # TODO: fix the lower threshold (incorrect bin assignment)
             dataToBin = reactiveDF$filteredDataset
             binnedDataset = dataToBin %>% mutate(Group=cut(!!sym(input$binningVariable),breaks=breaksForBinning),
                                                  Group=forcats::fct_explicit_na(Group,paste("> ",toString(tail(breaksForBinning, n=1)))))
+            
+            # keep threshold only
+            reactiveDF$filteredDataset = binnedDataset %>% rename(!!groupVarName:=Group)
+            
             # Turn the imported/processed data into a format that can be filtered and subsetted
             # Allow the option to have only data within the ranges or as a full series of thresholds / cut points
-            if (input$rangeOrGroups == "threshold"){
-                reactiveDF$filteredDataset = binnedDataset %>% rename(!!groupVarName:=Group)
-            }
-            else if (input$rangeOrGroups == "range"){
-                reactiveDF$filteredDataset = binnedDataset %>% filter(Group != paste("> ",toString(tail(breaksForBinning, n=1)))) %>% rename(!!groupVarName:=Group)
-            }
+            # if (input$rangeOrGroups == "threshold"){
+            #     reactiveDF$filteredDataset = binnedDataset %>% rename(!!groupVarName:=Group)
+            # }
+            # else if (input$rangeOrGroups == "range"){
+            #     reactiveDF$filteredDataset = binnedDataset %>% filter(Group != paste("> ",toString(tail(breaksForBinning, n=1)))) %>% rename(!!groupVarName:=Group)
+            # }
             
             
             # output$filteredDatasetForFilterTab = renderDataTable({
