@@ -545,15 +545,75 @@ server = function(input, output, session) {
         categoricalVars = sort(categoricalVars[-which(categoricalVars=="Object ID")])
         continuousVars = sort(names(l[str_which(l,pattern="character",negate=TRUE)]))
         updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = catVariableForFill_Reference)
-        updateSelectInput(session, "singleConVariable", choices = continuousVars, selected = singleConVariable_Reference)
-        updateSelectInput(session, "binningVariable", choices = continuousVars, selected = binningVariable_Reference)
+        updateSelectInput(session, "singleConVariable", choices = updateCategoriesContinuousVars(continuousVars), selected = singleConVariable_Reference)
+        updateSelectInput(session, "binningVariable", choices = updateCategoriesContinuousVars(continuousVars), selected = binningVariable_Reference)
         updateSelectInput(session, "catVariableForSplitting", choices = categoricalVars, selected = catVariableForSplitting_Reference)
-        updateSelectInput(session, "additionalVarForFiltering", choices = continuousVars, selected = additionalVarForFiltering_Reference)
-        updateSelectInput(session, "scatterX", choices = continuousVars, selected = scatterX_Reference)
-        updateSelectInput(session, "scatterY", choices = continuousVars, selected = scatterY_Reference)
+        updateSelectInput(session, "additionalVarForFiltering", choices = updateCategoriesContinuousVars(continuousVars), selected = additionalVarForFiltering_Reference)
+        updateSelectInput(session, "scatterX", choices = updateCategoriesContinuousVars(continuousVars), selected = scatterX_Reference)
+        updateSelectInput(session, "scatterY", choices = updateCategoriesContinuousVars(continuousVars), selected = scatterY_Reference)
         updateSelectInput(session, "scatterCatColor", choices = categoricalVars, selected = scatterCatColor_Reference)
         updateSelectInput(session, "scatterCatFacet", choices = categoricalVars, selected = scatterCatFacet_Reference)
     },ignoreNULL=TRUE)
+    
+    updateCategoriesContinuousVars <- function(continuousVars) {
+      allOptVarsJSON = rjson::fromJSON(file = "optionalvariables.json")
+      allOptVars = c()
+      for(elem in allOptVarsJSON$optionalvariables) {
+        for(a in elem$variables){
+          allOptVars = c(allOptVars, a$name)
+        }
+      }
+      
+      dfVars = continuousVars[!continuousVars %in% allOptVars]
+      selectedOptVars = continuousVars[continuousVars %in% allOptVars]
+      selectedOptVars1 = selectedOptVars
+      ratioVars = dfVars[grepl("Ratio", dfVars)]
+      dfVars = dfVars[!grepl("Ratio", dfVars)]
+      
+      ll = list()
+      ll[["Non-optional variables"]] = dfVars
+      
+      # assign selected opt vars to categories from JSON
+      for(elem in allOptVarsJSON$optionalvariables) {
+        if (length(selectedOptVars1) > 0) {
+          categoryVar = elem$name
+          varList = c()
+          for(a in elem$variables){
+            varList = c(varList, a$name)
+          }
+
+          selCatVars = selectedOptVars1[selectedOptVars1 %in% varList]
+          if (length(selCatVars) > 0) {
+            if (length(selCatVars) == 1) {
+              ll[[categoryVar]] = c(selCatVars,"")
+            } else {
+              ll[[categoryVar]] = selCatVars  
+            }
+            selectedOptVars1 = selectedOptVars1[!selectedOptVars1 %in% varList]
+          }
+        }
+      }
+      
+      ratioVars_SumNormNucl = ratioVars[grepl("Intensity Sum Normalised per Nucleus", ratioVars)]
+      if (length(ratioVars_SumNormNucl) > 0) {
+        if (length(ratioVars_SumNormNucl) == 1) {
+          ll[['Ratio of Intensity Sum Normalised per Nucleus']] = c(ratioVars_SumNormNucl,"")
+        } else {
+          ll[['Ratio of Intensity Sum Normalised per Nucleus']] = ratioVars_SumNormNucl
+        }
+      }
+
+      ratioVars_SumNormGr = ratioVars[grepl("Intensity Sum Normalised per Group", ratioVars)]
+      if (length(ratioVars_SumNormGr) > 0) {
+        if (length(ratioVars_SumNormGr) == 1) {
+          ll[['Ratio of Intensity Sum Normalised per Group']] = c(ratioVars_SumNormGr,"")
+        } else {
+          ll[['Ratio of Intensity Sum Normalised per Group']] = ratioVars_SumNormGr
+        }
+      }
+      
+      return(ll)
+    }
     
     # Finalize the exporting / downloading functionality of the filtered/selected data
     output$selectedDQD = downloadHandler(

@@ -16,8 +16,8 @@
       "htmltype" : "h4",
       "name" : "Channel ratio variables",
       "variables" : [
-        {"name": "Ratio of Intensity Sum Normalized per Nucleus", "desc" : ""},
-        {"name": "Ratio of Intensity Sum Normalized by Group", "desc" : ""}
+        {"name": "Ratio of Intensity Sum Normalised per Nucleus", "desc" : ""},
+        {"name": "Ratio of Intensity Sum Normalised per Group", "desc" : "by Group"}
       ]
     },
     {
