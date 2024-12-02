@@ -696,44 +696,62 @@ server = function(input, output, session) {
       return(df)
     }
     
+    # calculateKWTextPosition <- function(plotStub,split_col,kruskal_results){
+    #   # show modal KW not possible
+    #   if (sum(is.na(kruskal_results$statistic)) == nrow(kruskal_results)) {
+    #     showModal(modalDialog(
+    #       title = "Number of groups in the panel(s) is not equal to 2, cannot perform Kruskall-Wallis test.",
+    #       easyClose = TRUE
+    #     ))
+    #     updateCheckboxInput(session, "kruskallwallisCheckbox", value = FALSE)
+    #     return(plotStub)
+    #   }
+    #   
+    #   g = ggplot_build(plotStub)
+    #   layerData = layer_data(plotStub)
+    #   facet_strip = as_tibble(g$layout$layout)
+    #   layerData = layerData %>% left_join(facet_strip, by = join_by(PANEL == PANEL)) 
+    #   layerData = layerData %>% group_by(!!sym(split_col)) %>% 
+    #     summarise(minx = if ("xmin" %in% colnames(.)) min(xmin) else min(x), 
+    #               maxx = if ("xmax" %in% colnames(.)) max(xmax) else max(x),
+    #               miny = if ("ymin_final" %in% colnames(.)) min(ymin_final) else { if ("ymin" %in% colnames(.)) min(ymin) else min(y) },
+    #               maxy = if ("ymax_final" %in% colnames(.)) max(ymax_final) else { if ("ymax" %in% colnames(.)) max(ymax) else max(y) }) 
+    #   
+    #   kwToPlot = layerData %>% 
+    #     left_join(kruskal_results, by = join_by(!!sym(split_col) == !!sym(split_col))) %>% 
+    #     select(!!sym(split_col), minx, maxy, `p-value`) %>% rename("x" = minx, "y" = maxy) %>% 
+    #     mutate(`p-value` = paste0("p =", `p-value`))
+    #   
+    #   return(kwToPlot)  
+    # }
+
     # add p-value of KW test to plot
-    addKWPValueToPlot <- function(plotStub,value_col,group_col,split_col,df){
-      kruskal_results = calculateKWTest(df, value_col, group_col, split_col)
-      
-      # show modal KW not possible
-      if (sum(is.na(kruskal_results$statistic)) == nrow(kruskal_results)) {
-        showModal(modalDialog(
-          title = "Number of groups in the panel(s) is not equal to 2, cannot perform Kruskall-Wallis test.",
-          easyClose = TRUE
-        ))
-        updateCheckboxInput(session, "kruskallwallisCheckbox", value = FALSE)
-        return(plotStub)
-      }
-      
-      g = ggplot_build(plotStub)
-      layerData = layer_data(plotStub)
-      facet_strip = as_tibble(g$layout$layout)
-      layerData = layerData %>% left_join(facet_strip, by = join_by(PANEL == PANEL)) 
-      layerData = layerData %>% group_by(!!sym(split_col)) %>% 
-        summarise(minx = if ("xmin" %in% colnames(.)) min(xmin) else min(x), 
-                  maxx = if ("xmax" %in% colnames(.)) max(xmax) else max(x),
-                  miny = if ("ymin" %in% colnames(.)) min(ymin) else min(y),
-                  maxy = if ("ymax" %in% colnames(.)) max(ymax) else max(y)) 
-      
-      kwToPlot = layerData %>% 
-        left_join(kruskal_results, by = join_by(!!sym(split_col) == !!sym(split_col))) %>% 
-        select(!!sym(split_col), minx, maxy, `p-value`) %>% rename("x" = minx, "y" = maxy) %>% 
-        mutate(`p-value` = paste0("p =", `p-value`))
-      
-      plotStub = plotStub + geom_text(data = kwToPlot, 
-                                                  aes(x = x, y = y, label = `p-value`), 
-                                                  color = "black", size = 3.5, 
-                                                  vjust=-1, hjust=0, 
-                                                  inherit.aes = FALSE)
-      
-      return(plotStub)
-    }
+    # addKWPValueToPlot <- function(plotStub,value_col,group_col,split_col,df){
+    #   kruskal_results = calculateKWTest(df, value_col, group_col, split_col)
+    #   kwToPlot = calculateKWTextPosition(plotStub,split_col,kruskal_results)
+    #   plotStub = plotStub + geom_text(data = kwToPlot, 
+    #                                   aes(x = x, y = y, label = `p-value`), 
+    #                                   color = "black", size = 3.5, 
+    #                                   vjust=-1, hjust=0, 
+    #                                   inherit.aes = FALSE)
+    # }
     
+    addKWToFacetTitle <- function(kruskal_results, plotStub, catVariableForSplitting) {
+      g = ggplotGrob(plotStub)
+      strip_indices <- which(grepl("strip-t", g$layout$name))
+      for (i in seq_along(strip_indices)) {
+        strip <- g$grobs[[strip_indices[i]]]
+        text_grob = strip$grobs[[1]]$children[[2]]$children[[1]]
+        old_label = text_grob$label
+        new_label = kruskal_results %>% filter(!!sym(catVariableForSplitting) == old_label) %>% 
+          mutate(`p-value` = paste0("p = ", `p-value`)) %>% pull(`p-value`)
+        new_label = paste(old_label," ",new_label)
+        text_grob$label = new_label
+        g$grobs[[strip_indices[i]]]$grobs[[1]]$children[[2]]$children[[1]] <- text_grob
+      }
+      return(ggplotify::as.ggplot(g))
+    }    
+        
     # Output histograms, kde's, boxplots, and violin plots based on categorical and numeric variable selection for refined plotting
     histoRefined = reactive({
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
@@ -745,9 +763,8 @@ server = function(input, output, session) {
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         
         if (input$kruskallwallisCheckbox) {
-          histogramCount = addKWPValueToPlot(histogramCount,
-                                             input$singleConVariable,input$catVariableForFill,input$catVariableForSplitting,
-                                             densityDataToHistoBoxRefined)
+          kruskal_results = calculateKWTest(densityDataToHistoBoxRefined, input$singleConVariable, input$catVariableForFill, input$catVariableForSplitting)
+          histogramCount = addKWToFacetTitle(kruskal_results, histogramCount, input$catVariableForSplitting)
         }
         
         histogramCount
@@ -768,11 +785,10 @@ server = function(input, output, session) {
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         
         if (input$kruskallwallisCheckbox) {
-          histogramPercentage = addKWPValueToPlot(histogramPercentage,
-                                             input$singleConVariable,input$catVariableForFill,input$catVariableForSplitting,
-                                             densityDataToHistoBoxRefined)
+          kruskal_results = calculateKWTest(densityDataToHistoBoxRefined, input$singleConVariable, input$catVariableForFill, input$catVariableForSplitting)
+          histogramPercentage = addKWToFacetTitle(kruskal_results, histogramPercentage, input$catVariableForSplitting)
         }
-        
+
         histogramPercentage
     })
     
@@ -790,9 +806,8 @@ server = function(input, output, session) {
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         
         if (input$kruskallwallisCheckbox) {
-          kdeSplit = addKWPValueToPlot(kdeSplit,
-                                      input$singleConVariable,input$catVariableForFill,input$catVariableForSplitting,
-                                      densityDataToHistoBoxRefined)
+          kruskal_results = calculateKWTest(densityDataToHistoBoxRefined, input$singleConVariable, input$catVariableForFill, input$catVariableForSplitting)
+          kdeSplit = addKWToFacetTitle(kruskal_results, kdeSplit, input$catVariableForSplitting)
         }
         
         kdeSplit
@@ -812,9 +827,8 @@ server = function(input, output, session) {
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         
         if (input$kruskallwallisCheckbox) {
-          kdeSplitPercentage = addKWPValueToPlot(kdeSplitPercentage,
-                                       input$singleConVariable,input$catVariableForFill,input$catVariableForSplitting,
-                                       densityDataToHistoBoxRefined)
+          kruskal_results = calculateKWTest(densityDataToHistoBoxRefined, input$singleConVariable, input$catVariableForFill, input$catVariableForSplitting)
+          kdeSplitPercentage = addKWToFacetTitle(kruskal_results, kdeSplitPercentage, input$catVariableForSplitting)
         }
         
         kdeSplitPercentage
@@ -878,10 +892,10 @@ server = function(input, output, session) {
         }
         
         if (input$kruskallwallisCheckbox) {
-          boxplot = addKWPValueToPlot(boxplot,
-                                     input$singleConVariable,input$catVariableForFill,input$catVariableForSplitting,
-                                     boxplotData)
+          kruskal_results = calculateKWTest(boxplotData, input$singleConVariable, input$catVariableForFill, input$catVariableForSplitting)
+          boxplot = addKWToFacetTitle(kruskal_results, boxplot, input$catVariableForSplitting)
         }
+        
         boxplot
     })
     
@@ -900,10 +914,10 @@ server = function(input, output, session) {
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         
         if (input$kruskallwallisCheckbox) {
-          violinplot = addKWPValueToPlot(violinplot,
-                                      input$singleConVariable,input$catVariableForFill,input$catVariableForSplitting,
-                                      densityDataToHistoBoxRefined)
+          kruskal_results = calculateKWTest(densityDataToHistoBoxRefined, input$singleConVariable, input$catVariableForFill, input$catVariableForSplitting)
+          violinplot = addKWToFacetTitle(kruskal_results, violinplot, input$catVariableForSplitting)
         }
+        
         violinplot
     })
     
@@ -1023,6 +1037,14 @@ server = function(input, output, session) {
         mutate(`p-value` = ifelse(`p_value` < 0.0001, "<0.0001", sprintf("%.4f", `p_value`))) %>% 
         mutate(`corrected p-value` = ifelse(`corrected_p_value` < 0.0001, "<0.0001", sprintf("%.4f", `corrected_p_value`))) %>%
         select(-`p_value`) %>% select(-`corrected_p_value`)
+      
+      # show modal KW not possible
+      if (sum(is.na(kruskal_results$statistic)) == nrow(kruskal_results)) {
+        showModal(modalDialog(
+          title = "Number of groups in the panel(s) is not equal to 2, cannot perform Kruskall-Wallis test.",
+          easyClose = TRUE
+        ))
+      }
       
       return(kruskal_results)
     }
