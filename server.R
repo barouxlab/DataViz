@@ -154,6 +154,114 @@ server = function(input, output, session) {
       {updateCheckboxGroupInput(session,"exportVariables",choices=numericVariables,selected=numericVariables)}
     })
     
+    getValuesFromOptVars <- function(searchVar) {
+      library("rjson")
+      res = rjson::fromJSON(file = "optionalvariables.json")
+      
+      for(elem in res$optionalvariables){
+        if (elem$name == searchVar) {
+          prVarOpts = c()
+          for (a in elem$variables){
+            prVarOpts = c(prVarOpts,a$name)
+          }
+          return(prVarOpts)
+        }
+      }
+    }
+    
+    output$checkBoxIV <- renderUI({
+      searchVar = "Intensity variables"
+      ivVarOpts <<- getValuesFromOptVars(searchVar)
+      checkboxGroupInput("ivVarsToCreate",h4(searchVar),choices=ivVarOpts)
+    })
+    
+    observe({
+      if(input$selectallIVvars == 0) return(NULL) 
+      else if (input$selectallIVvars%%2 == 0)
+      {updateCheckboxGroupInput(session,"ivVarsToCreate",choices=ivVarOpts)}
+      else
+      {updateCheckboxGroupInput(session,"ivVarsToCreate",choices=ivVarOpts,selected=ivVarOpts)}
+    })    
+    
+    output$checkBoxDV <- renderUI({
+      searchVar = "Distance variables"
+      dvVarOpts <<- getValuesFromOptVars(searchVar)
+      checkboxGroupInput("dvVarsToCreate",h4(searchVar),choices=dvVarOpts)
+    })    
+    
+    observe({
+      if(input$selectallDVvars == 0) return(NULL) 
+      else if (input$selectallDVvars%%2 == 0)
+      {updateCheckboxGroupInput(session,"dvVarsToCreate",choices=dvVarOpts)}
+      else
+      {updateCheckboxGroupInput(session,"dvVarsToCreate",choices=dvVarOpts,selected=dvVarOpts)}
+    })      
+    
+    output$checkBoxSV <- renderUI({
+      searchVar = "Shape variables"
+      svVarOpts <<- getValuesFromOptVars(searchVar)
+      checkboxGroupInput("svVarsToCreate",h4(searchVar),choices=svVarOpts)
+    })    
+    
+    observe({
+      if(input$selectallSVvars == 0) return(NULL) 
+      else if (input$selectallSVvars%%2 == 0)
+      {updateCheckboxGroupInput(session,"svVarsToCreate",choices=svVarOpts)}
+      else
+      {updateCheckboxGroupInput(session,"svVarsToCreate",choices=svVarOpts,selected=svVarOpts)}
+    })     
+    
+    output$checkBoxOC <- renderUI({
+      searchVar = "Object count"
+      ocVarOpts <<- getValuesFromOptVars(searchVar)
+      checkboxGroupInput("ocVarsToCreate",h4(searchVar),choices=ocVarOpts)
+    })  
+    
+    observe({
+      if(input$selectallOCvars == 0) return(NULL) 
+      else if (input$selectallOCvars%%2 == 0)
+      {updateCheckboxGroupInput(session,"ocVarsToCreate",choices=ocVarOpts)}
+      else
+      {updateCheckboxGroupInput(session,"ocVarsToCreate",choices=ocVarOpts,selected=ocVarOpts)}
+    })     
+    
+    output$checkBoxGV <- renderUI({
+      searchVar = "Group variables"
+      gvVarOpts <<- getValuesFromOptVars(searchVar)
+      checkboxGroupInput("gvVarsToCreate",h4(searchVar),choices=gvVarOpts)
+    })            
+    
+    observe({
+      if(input$selectallGVvars == 0) return(NULL) 
+      else if (input$selectallGVvars%%2 == 0)
+      {updateCheckboxGroupInput(session,"gvVarsToCreate",choices=gvVarOpts)}
+      else
+      {updateCheckboxGroupInput(session,"gvVarsToCreate",choices=gvVarOpts,selected=gvVarOpts)}
+    })     
+    
+    output$checkBoxOV <- renderUI({
+      searchVar = "Other variables"
+      ovVarOpts <<- getValuesFromOptVars(searchVar)
+      checkboxGroupInput("ovVarsToCreate",h4(searchVar),choices=ovVarOpts)
+    })            
+    
+    observe({
+      if(input$selectallOVvars == 0) return(NULL) 
+      else if (input$selectallOVvars%%2 == 0)
+      {updateCheckboxGroupInput(session,"ovVarsToCreate",choices=ovVarOpts)}
+      else
+      {updateCheckboxGroupInput(session,"ovVarsToCreate",choices=ovVarOpts,selected=ovVarOpts)}
+    })     
+    
+    combinedVarsToCreate <- reactive({
+      c(input$ivVarsToCreate, 
+        input$dvVarsToCreate,
+        input$svVarsToCreate,
+        input$ocVarsToCreate,
+        input$gvVarsToCreate,
+        input$ovVarsToCreate)
+    })
+    
     # Create an observe call the updates the ratio options for the processing step after the data is imported
     observe({
         subsettableData = importedData()
@@ -198,12 +306,12 @@ server = function(input, output, session) {
     })
     
     # Handle the selection of variables to create when processing
-    observeEvent(input$ratioSumsToCreate, {
-        if(length(input$ratioSumsToCreate) > 0){
-            updateCheckboxGroupInput(session,"varsToCreate",
-                                     selected=append(input$varsToCreate,"Intensity Sum Normalised per Nucleus"))
-        }
-    })
+    # observeEvent(input$ratioSumsToCreate, {
+    #     if(length(input$ratioSumsToCreate) > 0){
+    #         updateCheckboxGroupInput(session,"varsToCreate",
+    #                                  selected=append(input$varsToCreate,"Intensity Sum Normalised per Nucleus"))
+    #     }
+    # })
     
     # remove event (when any of the chX:chY selected, checkbox norm intensity mean)
     # observeEvent(input$ratioMeansToCreate, {
@@ -213,62 +321,112 @@ server = function(input, output, session) {
     #     }
     # })
     
-    observeEvent(input$varsToCreate, {
-        if("Signal Density" %in% input$varsToCreate){
-            updateCheckboxGroupInput(session,"varsToCreate",
-                                     selected=append(input$varsToCreate,"Intensity Sum Normalised per Nucleus"))
-        }
+    # observeEvent(input$varsToCreate, {
+    #     if("Signal Density" %in% input$varsToCreate){
+    #         updateCheckboxGroupInput(session,"varsToCreate",
+    #                                  selected=append(input$varsToCreate,"Intensity Sum Normalised per Nucleus"))
+    #     }
+    # })
+    
+    # observeEvent(input$varsToCreate, {
+    #     if("Intensity Sum Normalised by Group" %in% input$varsToCreate){
+    #         updateCheckboxGroupInput(session,"varsToCreate",
+    #                                  selected=append(input$varsToCreate,"Intensity Sum Normalised per Nucleus"))
+    #     }
+    # })
+    
+    # observeEvent(input$varsToCreate, {
+    #     if("Intensity Mean Normalised by Group" %in% input$varsToCreate){
+    #         updateCheckboxGroupInput(session,"varsToCreate",
+    #                                  selected=append(input$varsToCreate,"Intensity Mean Normalised per Nucleus"))
+    #     }
+    # })
+    
+    # observeEvent(input$varsToCreate, {
+    #     if("Group Intensity Sum Relative to Nucleus" %in% input$varsToCreate) {
+    #           updateCheckboxGroupInput(session,"varsToCreate",
+    #                                   selected=append(input$varsToCreate,"Group Intensity Sum"))
+    #     }
+    # })
+    
+    # observeEvent(input$varsToCreate, {
+    #     if("Group Intensity Mean Relative to Nucleus" %in% input$varsToCreate) {
+    #           updateCheckboxGroupInput(session,"varsToCreate",
+    #                                selected=append(input$varsToCreate,"Group Intensity Mean"))
+    #     }
+    # })
+    
+    # observeEvent(input$ratioSumsPerGroupToCreate, {
+    #   if(length(input$ratioSumsPerGroupToCreate) > 0){
+    #     updateCheckboxGroupInput(session,"varsToCreate",
+    #                              selected=append(input$varsToCreate,"Intensity Sum Normalised by Group"))
+    #   }
+    # })    
+    
+    # Create an observe() call for the select/clear all option in the processing area
+    # observe({
+    #     if(input$selectallvars == 0) return(NULL) 
+    #     else if (input$selectallvars%%2 == 0)
+    #     {updateCheckboxGroupInput(session,"varsToCreate",choices=processVarsOptions)}
+    #     else
+    #     {updateCheckboxGroupInput(session,"varsToCreate",choices=processVarsOptions,selected=processVarsOptions)}
+    # })
+    
+    observeEvent(input$ratioSumsToCreate, {
+      if(length(input$ratioSumsToCreate) > 0){
+        updateCheckboxGroupInput(session,"ivVarsToCreate",
+                                 selected=append(input$ivVarsToCreate,"Intensity Sum Normalised per Nucleus"))
+      }
     })
     
-    observeEvent(input$varsToCreate, {
-        if("Intensity Sum Normalised by Group" %in% input$varsToCreate){
-            updateCheckboxGroupInput(session,"varsToCreate",
-                                     selected=append(input$varsToCreate,"Intensity Sum Normalised per Nucleus"))
-        }
+    observeEvent(input$ovVarsToCreate, {
+      if("Signal Density" %in% input$ovVarsToCreate){
+        updateCheckboxGroupInput(session,"ivVarsToCreate",
+                                 selected=append(input$ivVarsToCreate,"Intensity Sum Normalised per Nucleus"))
+      }
     })
     
-    observeEvent(input$varsToCreate, {
-        if("Intensity Mean Normalised by Group" %in% input$varsToCreate){
-            updateCheckboxGroupInput(session,"varsToCreate",
-                                     selected=append(input$varsToCreate,"Intensity Mean Normalised per Nucleus"))
-        }
+    observeEvent(input$ivVarsToCreate, {
+      if("Intensity Sum Normalised by Group" %in% input$ivVarsToCreate){
+        updateCheckboxGroupInput(session,"ivVarsToCreate",
+                                 selected=append(input$ivVarsToCreate,"Intensity Sum Normalised per Nucleus"))
+      }
+    })    
+    
+    observeEvent(input$ivVarsToCreate, {
+      if("Intensity Mean Normalised by Group" %in% input$ivVarsToCreate){
+        updateCheckboxGroupInput(session,"ivVarsToCreate",
+                                 selected=append(input$ivVarsToCreate,"Intensity Mean Normalised per Nucleus"))
+      }
     })
     
-    observeEvent(input$varsToCreate, {
-        if("Group Intensity Sum Relative to Nucleus" %in% input$varsToCreate) {
-              updateCheckboxGroupInput(session,"varsToCreate",
-                                      selected=append(input$varsToCreate,"Group Intensity Sum"))
-        }
+    observeEvent(input$gvVarsToCreate, {
+      if("Group Intensity Sum Relative to Nucleus" %in% input$gvVarsToCreate) {
+        updateCheckboxGroupInput(session,"gvVarsToCreate",
+                                 selected=append(input$gvVarsToCreate,"Group Intensity Sum"))
+      }
     })
     
-    observeEvent(input$varsToCreate, {
-        if("Group Intensity Mean Relative to Nucleus" %in% input$varsToCreate) {
-              updateCheckboxGroupInput(session,"varsToCreate",
-                                   selected=append(input$varsToCreate,"Group Intensity Mean"))
-        }
+    observeEvent(input$gvVarsToCreate, {
+      if("Group Intensity Mean Relative to Nucleus" %in% input$gvVarsToCreate) {
+        updateCheckboxGroupInput(session,"gvVarsToCreate",
+                                 selected=append(input$gvVarsToCreate,"Group Intensity Mean"))
+      }
     })
     
     observeEvent(input$ratioSumsPerGroupToCreate, {
       if(length(input$ratioSumsPerGroupToCreate) > 0){
-        updateCheckboxGroupInput(session,"varsToCreate",
-                                 selected=append(input$varsToCreate,"Intensity Sum Normalised by Group"))
+        updateCheckboxGroupInput(session,"ivVarsToCreate",
+                                 selected=append(input$ivVarsToCreate,"Intensity Sum Normalised by Group"))
       }
     })    
-    
-    # Create an observe() call for the select/clear all option in the processing area
-    observe({
-        if(input$selectallvars == 0) return(NULL) 
-        else if (input$selectallvars%%2 == 0)
-        {updateCheckboxGroupInput(session,"varsToCreate",choices=processVarsOptions)}
-        else
-        {updateCheckboxGroupInput(session,"varsToCreate",choices=processVarsOptions,selected=processVarsOptions)}
-    })
     
     # Process the data
     processedData = eventReactive(input$processButton,{
         req(importedData())
         dataToProcess = importedData()
-        processedData = suppressWarnings(processingFunction(dataToProcess,input$varsToCreate,input$ratioSumsToCreate,input$ratioSumsPerGroupToCreate))
+        combinedVars <- unlist(as.list(combinedVarsToCreate()), recursive = TRUE)
+        processedData = suppressWarnings(processingFunction(dataToProcess,combinedVars,input$ratioSumsToCreate,input$ratioSumsPerGroupToCreate))
         processedDataToWrite = processedData
         write.csv(processedDataToWrite, "TMP__ProcessedData.csv", row.names = FALSE)
         processedDataToReturn = read.csv("TMP__ProcessedData.csv",check.names = FALSE)

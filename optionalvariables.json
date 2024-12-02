@@ -1,0 +1,68 @@
+{
+  "optionalvariables": [
+    {
+      "htmltype" : "h4",
+      "name" : "Intensity variables",
+      "variables" : [
+        {"name": "Intensity Sum Normalised per Nucleus", "desc" : ""},
+        {"name": "Intensity Mean Normalised per Nucleus", "desc" : ""},
+        {"name": "Intensity StdDev Normalised per Nucleus", "desc" : ""},
+        {"name": "Intensity Sum Normalised by Group", "desc" : ""},
+        {"name": "Intensity Mean Normalised by Group", "desc" : ""},
+        {"name": "Intensity StdDev Normalised by Group", "desc" : ""}
+      ]
+    },
+    {
+      "htmltype" : "h4",
+      "name" : "Channel ratio variables",
+      "variables" : [
+        {"name": "Ratio of Intensity Sum Normalized per Nucleus", "desc" : ""},
+        {"name": "Ratio of Intensity Sum Normalized by Group", "desc" : ""}
+      ]
+    },
+    {
+      "htmltype" : "h4",
+      "name" : "Distance variables",
+      "variables" : [
+        {"name": "Normalized Distance to Nucleus", "desc" : "SHOULD BE Distance Normalized per Nucleus"}
+      ]
+    },
+    {
+      "htmltype" : "h4",
+      "name" : "Shape variables",
+      "variables" : [
+        {"name": "Surface-to-Volume Ratio", "desc" : ""},
+        {"name": "Volume Relative to Nucleus", "desc" : ""},
+        {"name": "Volume Relative to Group", "desc" : ""},
+        {"name": "Group Volume", "desc" : ""},
+        {"name": "Group Surface", "desc" : ""},
+        {"name": "Group Volume Relative to Nucleus", "desc" : ""},
+        {"name": "Group Surface-to-Volume Ratio", "desc" : ""}
+      ]
+    },
+    {
+      "htmltype" : "h4",
+      "name" : "Object count",
+      "variables" : [
+        {"name": "Object Count", "desc" : "SHOULD BE Object Count per Group"}
+      ]
+    },
+    {
+      "htmltype" : "h4",
+      "name" : "Group variables",
+      "variables" : [
+        {"name": "Group Intensity Sum", "desc" : ""},
+        {"name": "Group Intensity Mean", "desc" : ""},
+        {"name": "Group Intensity Sum Relative to Nucleus", "desc" : ""},
+        {"name": "Group Intensity Mean Relative to Nucleus", "desc" : ""}
+      ]
+    },
+    {
+      "htmltype" : "h4",
+      "name" : "Other variables",
+      "variables" : [
+        {"name": "Signal Density", "desc" : ""}
+      ]
+    }
+  ]
+}
