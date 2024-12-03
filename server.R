@@ -202,7 +202,7 @@ server = function(input, output, session) {
       svVarOpts <<- getValuesFromOptVars(searchVar)
       checkboxGroupInput("svVarsToCreate",h4(searchVar),choices=svVarOpts)
     })    
-    
+
     observe({
       if(input$selectallSVvars == 0) return(NULL) 
       else if (input$selectallSVvars%%2 == 0)
@@ -555,6 +555,7 @@ server = function(input, output, session) {
         updateSelectInput(session, "scatterCatFacet", choices = categoricalVars, selected = scatterCatFacet_Reference)
     },ignoreNULL=TRUE)
     
+    # assign categories to continuous variables as defined in JSON file
     updateCategoriesContinuousVars <- function(continuousVars) {
       allOptVarsJSON = rjson::fromJSON(file = "optionalvariables.json")
       allOptVars = c()
@@ -566,50 +567,37 @@ server = function(input, output, session) {
       
       dfVars = continuousVars[!continuousVars %in% allOptVars]
       selectedOptVars = continuousVars[continuousVars %in% allOptVars]
-      selectedOptVars1 = selectedOptVars
-      ratioVars = dfVars[grepl("Ratio", dfVars)]
-      dfVars = dfVars[!grepl("Ratio", dfVars)]
+      ratioVars = dfVars[grepl("Ratio Ch", dfVars)]
+      dfVars = dfVars[!grepl("Ratio Ch", dfVars)]
       
       ll = list()
-      ll[["Non-optional variables"]] = dfVars
+      ll[[" "]] = dfVars
       
       # assign selected opt vars to categories from JSON
       for(elem in allOptVarsJSON$optionalvariables) {
-        if (length(selectedOptVars1) > 0) {
+        if (length(selectedOptVars) > 0) {
           categoryVar = elem$name
           varList = c()
           for(a in elem$variables){
             varList = c(varList, a$name)
           }
 
-          selCatVars = selectedOptVars1[selectedOptVars1 %in% varList]
+          selCatVars = selectedOptVars[selectedOptVars %in% varList]
           if (length(selCatVars) > 0) {
-            if (length(selCatVars) == 1) {
-              ll[[categoryVar]] = c(selCatVars,"")
-            } else {
-              ll[[categoryVar]] = selCatVars  
-            }
-            selectedOptVars1 = selectedOptVars1[!selectedOptVars1 %in% varList]
+            ll[[categoryVar]] = c(selCatVars,"")
+            selectedOptVars = selectedOptVars[!selectedOptVars %in% varList]
           }
         }
       }
       
       ratioVars_SumNormNucl = ratioVars[grepl("Intensity Sum Normalised per Nucleus", ratioVars)]
       if (length(ratioVars_SumNormNucl) > 0) {
-        if (length(ratioVars_SumNormNucl) == 1) {
-          ll[['Ratio of Intensity Sum Normalised per Nucleus']] = c(ratioVars_SumNormNucl,"")
-        } else {
-          ll[['Ratio of Intensity Sum Normalised per Nucleus']] = ratioVars_SumNormNucl
-        }
+        ll[['Ratio of Intensity Sum Normalised per Nucleus']] = c(ratioVars_SumNormNucl,"")
       }
 
       ratioVars_SumNormGr = ratioVars[grepl("Intensity Sum Normalised per Group", ratioVars)]
       if (length(ratioVars_SumNormGr) > 0) {
-        if (length(ratioVars_SumNormGr) == 1) {
-          ll[['Ratio of Intensity Sum Normalised per Group']] = c(ratioVars_SumNormGr,"")
-        } else {
-          ll[['Ratio of Intensity Sum Normalised per Group']] = ratioVars_SumNormGr
-        }
+        ll[['Ratio of Intensity Sum Normalised per Group']] = c(ratioVars_SumNormGr,"")
       }
       
       return(ll)
