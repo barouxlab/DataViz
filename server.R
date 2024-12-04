@@ -155,7 +155,6 @@ server = function(input, output, session) {
     })
     
     getValuesFromOptVars <- function(searchVar) {
-      library("rjson")
       res = rjson::fromJSON(file = "optionalvariables.json")
       
       for(elem in res$optionalvariables){
@@ -261,6 +260,98 @@ server = function(input, output, session) {
         input$gvVarsToCreate,
         input$ovVarsToCreate)
     })
+    
+    # Assign id attribute to individual checkbox elements
+    shinyjs::runjs(HTML('
+    
+      function setIDname(checkboxes) {
+        for(var i = 0; i < checkboxes.length; i++) {
+            let idName = checkboxes[i].getAttribute("value").replace(/\\s+/g, "-");
+            checkboxes[i].setAttribute("id", idName);
+          }
+      }
+      
+      var interval = setInterval(function() {
+        elemId = "ivVarsToCreate"
+        if (document.getElementById(elemId)) {
+          clearInterval(interval);
+          setIDname($("#" + elemId).find(".checkbox input"))
+        }
+      },100);
+
+      var interval = setInterval(function() {
+        elemId = "dvVarsToCreate"
+        if (document.getElementById(elemId)) {
+          clearInterval(interval);
+          setIDname($("#" + elemId).find(".checkbox input"))
+        }
+      },100);
+
+      var interval = setInterval(function() {
+        elemId = "svVarsToCreate"
+        if (document.getElementById(elemId)) {
+          clearInterval(interval);
+          setIDname($("#" + elemId).find(".checkbox input"))
+        }
+      },100);
+      
+      var interval = setInterval(function() {
+        elemId = "ocVarsToCreate"
+        if (document.getElementById(elemId)) {
+          clearInterval(interval);
+          setIDname($("#" + elemId).find(".checkbox input"))
+        }
+      },100);
+      
+      var interval = setInterval(function() {
+        elemId = "gvVarsToCreate"
+        if (document.getElementById(elemId)) {
+          clearInterval(interval);
+          setIDname($("#" + elemId).find(".checkbox input"))
+        }
+      },100);      
+
+      var interval = setInterval(function() {
+        elemId = "ovVarsToCreate"
+        if (document.getElementById(elemId)) {
+          clearInterval(interval);
+          setIDname($("#" + elemId).find(".checkbox input"))
+        }
+      },100);      
+      
+      var interval = setInterval(function() {
+        elemId = "ratioSumsToCreate"
+        if (document.getElementById(elemId)) {
+          clearInterval(interval);
+          var h5elem = $("#" + elemId).find("h5");
+          for(var i = 0; i < h5elem.length; i++) {
+            let idName = h5elem[i].outerText.replace(/\\s+/g, "-");
+            h5elem[i].setAttribute("id", idName);
+          }
+        }
+      },100);      
+
+    '))
+    
+    output$checkboxTooltips <- renderUI({
+      res = rjson::fromJSON(file = "optionalvariables.json")
+      
+      tooltips = c()
+      for(elem in res$optionalvariables){
+        for (a in elem$variables){
+          a$id = gsub("\\s+", "-", a$name)
+          tooltips = c(tooltips, list(a))
+        }
+      }
+      
+      bsTooltipList = lapply(tooltips, function(tooltip) {
+        bsTooltip(tooltip$id, tooltip$desc, placement = "top", trigger = "hover")
+      })
+
+      tagList(
+        bsTooltipList
+      )
+    })    
     
     # Create an observe call the updates the ratio options for the processing step after the data is imported
     observe({

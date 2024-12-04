@@ -55,7 +55,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              p(""),
                              p("Data processing is an optional step that adds normalized variables such as: Intensity sum, mean, and stdev normalised per nucleus; Normalized shortest distance to nucleus; Normalised intensity ratios (chX:chY); Group intensity sum, mean, and stdev; Signal density (intensity sum normalised per nucleus; volume)."),
                              p("After pressing the \"Process Data\" button, the data will appear in a table when the processing pipeline has finished. You will then be able to select the processed version of the data within the \"Filtering\" tab."),
-           p("See the FAQ section for more details."),
+                             p("See the FAQ section for more details."),
                              #checkboxGroupInput("varsToCreate",h3("Optional Variables"),choices=processVarsOptions),
                              #actionLink("selectallvars","Select/Clear All Variables"),
                              uiOutput("checkBoxIV"),
@@ -74,7 +74,8 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              uiOutput("checkBoxGV"),
                              actionLink("selectallGVvars","Select/Clear All Variables"),
                              uiOutput("checkBoxOV"),
-                             actionLink("selectallOVvars","Select/Clear All Variables")
+                             actionLink("selectallOVvars","Select/Clear All Variables"),
+                             uiOutput("checkboxTooltips")
                              #checkboxGroupInput("ratioMeansToCreate",h4("Ratio Variables - Normalized Mean")),
                              #actionLink("selectRatioMeans","Select/Clear All Mean Ratios")
                          ),
