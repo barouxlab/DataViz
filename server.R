@@ -209,7 +209,7 @@ server = function(input, output, session) {
       {updateCheckboxGroupInput(session,"svVarsToCreate",choices=svVarOpts)}
       else
       {updateCheckboxGroupInput(session,"svVarsToCreate",choices=svVarOpts,selected=svVarOpts)}
-    })     
+    })
     
     output$checkBoxOC <- renderUI({
       searchVar = "Object count"
@@ -419,7 +419,21 @@ server = function(input, output, session) {
         updateCheckboxGroupInput(session,"ivVarsToCreate",
                                  selected=append(input$ivVarsToCreate,"Intensity Sum Normalised by Group"))
       }
-    })    
+    }) 
+    
+    observeEvent(input$svVarsToCreate, {
+      if(any(c("Volume Relative to Group","Group Volume Relative to Nucleus") %in% input$svVarsToCreate)) {
+        updateCheckboxGroupInput(session,"svVarsToCreate",
+                                 selected=append(input$svVarsToCreate,"Group Volume"))
+      }
+    })
+    
+    observeEvent(input$svVarsToCreate, {
+      if("Group Surface Area-to-Volume Ratio" %in% input$svVarsToCreate) {
+        updateCheckboxGroupInput(session,"svVarsToCreate",
+                                 selected=append(input$svVarsToCreate,c("Group Volume","Group Surface Area")))
+      }
+    })
     
     # Process the data
     processedData = eventReactive(input$processButton,{
@@ -1060,7 +1074,11 @@ server = function(input, output, session) {
         if (input$singleConVariable %in% c("Group Intensity Sum", 
                                            "Group Intensity Mean", 
                                            "Group Intensity Sum Relative to Nucleus", 
-                                           "Group Intensity Mean Relative to Nucleus")) {
+                                           "Group Intensity Mean Relative to Nucleus",
+                                           "Group Volume",
+                                           "Group Volume Relative to Nucleus",
+                                           "Group Surface Area",
+                                           "Group Surface Area-to-Volume Ratio")) {
           l = sapply(boxplotData, class)
           categoricalVars = sort(names(l[str_which(l,pattern="character")]))
           categoricalVars = sort(categoricalVars[-which(categoricalVars=="Object ID")])

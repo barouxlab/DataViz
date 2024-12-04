@@ -31,13 +31,13 @@
       "htmltype" : "h4",
       "name" : "Shape variables",
       "variables" : [
-        {"name": "Surface-to-Volume Ratio", "desc" : ""},
+        {"name": "Surface Area-to-Volume Ratio", "desc" : ""},
         {"name": "Volume Relative to Nucleus", "desc" : ""},
         {"name": "Volume Relative to Group", "desc" : ""},
         {"name": "Group Volume", "desc" : ""},
-        {"name": "Group Surface", "desc" : ""},
+        {"name": "Group Surface Area", "desc" : ""},
         {"name": "Group Volume Relative to Nucleus", "desc" : ""},
-        {"name": "Group Surface-to-Volume Ratio", "desc" : ""}
+        {"name": "Group Surface Area-to-Volume Ratio", "desc" : ""}
       ]
     },
     {

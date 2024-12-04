@@ -221,6 +221,51 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
 
   }
   
+  # Add variable Volume Relative to Nucleus
+  if ("Volume Relative to Nucleus" %in% varsToInclude & ("Volume" %in% names(dataToProcess))){
+    dataToProcess = dataToProcess %>% group_by(`Image File`) %>% 
+      mutate("Volume Relative to Nucleus" = 
+               if ("Nucleus" %in% Object & "Surface" %in% Category) {`Volume`/`Volume`[`Object`=="Nucleus" & `Category`=="Surface"]} else {NA_real_}) %>%
+      ungroup()
+  }
+  
+  # Add variable Group Volume
+  if ("Group Volume" %in% varsToInclude & ("Volume" %in% names(dataToProcess))){
+    dataToProcess = dataToProcess %>% group_by(`Image File`, `Object`) %>% 
+      mutate("Group Volume" = sum(`Volume`)) %>%
+      ungroup()
+  }
+  
+  # Add Volume Relative to Group
+  if ("Volume Relative to Group" %in% varsToInclude & ("Volume" %in% names(dataToProcess)) & ("Group Volume" %in% names(dataToProcess))){
+    dataToProcess = dataToProcess %>% mutate("Volume Relative to Group" = `Volume`/`Group Volume`) 
+  }
+  
+  # Add Group Volume Relative to Nucleus
+  if ("Group Volume Relative to Nucleus" %in% varsToInclude & ("Volume" %in% names(dataToProcess)) & ("Group Volume" %in% names(dataToProcess))){
+    dataToProcess = dataToProcess %>% group_by(`Image File`) %>% 
+      mutate("Group Volume Relative to Nucleus" = 
+               if ("Nucleus" %in% Object & "Surface" %in% Category) {`Group Volume`/`Volume`[`Object`=="Nucleus" & `Category`=="Surface"]} else {NA_real_}) %>%
+      ungroup()
+  }
+  
+  # Add Surface Area-to-Volume Ratio
+  if ("Surface Area-to-Volume Ratio" %in% varsToInclude & ("Volume" %in% names(dataToProcess)) & ("Area" %in% names(dataToProcess))){
+    dataToProcess = dataToProcess %>% mutate("Surface Area-to-Volume Ratio" = `Area` / `Volume`)
+  }
+  
+  # Add Group Surface Area
+  if ("Group Surface Area" %in% varsToInclude & ("Area" %in% names(dataToProcess))){
+    dataToProcess = dataToProcess %>% group_by(`Image File`, `Object`) %>% 
+      mutate("Group Surface Area" = sum(`Area`)) %>%
+      ungroup()
+  }
+  
+  # Add Group Surface Area-to-Volume Ratio
+  if ("Group Surface Area-to-Volume Ratio" %in% varsToInclude & ("Group Volume" %in% names(dataToProcess)) & ("Group Surface Area" %in% names(dataToProcess))){
+    dataToProcess = dataToProcess %>% mutate("Group Surface Area-to-Volume Ratio" = `Group Surface Area` / `Group Volume`)
+  }
+  
   # Relocate the Image Subset and Time variables and make final data type casts
   finalDataToReturn = dataToProcess %>% relocate(c("Image Subset","Time"),.after=last_col())
   finalDataToReturn$Channel = as.character(finalDataToReturn$Channel)
