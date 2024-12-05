@@ -153,39 +153,90 @@ server = function(input, output, session) {
       else
       {updateCheckboxGroupInput(session,"exportVariables",choices=numericVariables,selected=numericVariables)}
     })
+
+        
+    # Create an observe call the updates the ratio options for the processing step after the data is imported
+    observe({
+        subsettableData = importedData()
+        
+        # create normalization variable choice
+        # check Object uniqueness, except Object=Nucleus as it is default
+        normVars = subsettableData %>% filter(Category == "Surface" & Object != "Nucleus") %>% 
+          group_by(`Image File`,Channel,Object,Category) %>% 
+          summarise(nc_obj = n(), .groups = "drop") %>% filter(nc_obj == 1) %>% 
+          mutate(nc_img_ch = n_distinct(paste(`Image File`,Channel, sep="_"))) %>% 
+          group_by(Object, nc_img_ch) %>% summarise(nc_img_ch_obj = n(), .groups = "drop") %>% 
+          filter(nc_img_ch == nc_img_ch_obj) %>% pull(Object)
+        
+        # add Nucleus back
+        if ("Nucleus" %in% subsettableData$Object) {
+          normVars = c('Nucleus',normVars)
+        }
+        updateSelectInput(session, "normalizationVar", choices = normVars, selected = "")
+
+        # Compute the potential channel pairings
+        potentialChannelPairsDF = do.call(expand.grid, rep(list(unique(subsettableData[["Channel"]])), 2)) %>% filter(Var1 != Var2)
+        channelPairsList <<- unname(as.list(as.data.frame(t(potentialChannelPairsDF))))
+        channelPairsStrings = lapply(channelPairsList,toString)
+        formatChannelStrings = function(s){return(paste("Ch",toString(strsplit(s[[1]],", ")[[1]][1]),":Ch",toString(strsplit(s[[1]],", ")[[1]][2]),sep=""))}
+        channelPairsStringsFormatted <<- lapply(channelPairsStrings,formatChannelStrings)
+        names(channelPairsStrings) = channelPairsStringsFormatted
+        channelPairsStringsForDisplay <<- channelPairsStrings
+        # Update the relevant areas in the Processing Section
+        updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay)
+        updateCheckboxGroupInput(session,"ratioSumsPerGroupToCreate",choices=channelPairsStringsForDisplay)
+    })
     
-    getValuesFromOptVars <- function(searchVar) {
-      res = rjson::fromJSON(file = "optionalvariables.json")
+    output$ratioSumsToCreateTitle <- renderText({
+      paste0("Ratio of Intensity Sum Normalised per ",input$normalizationVar)
+    })
+    
+    # update Process Tab checkbox Optional Variables based on Normalization selection
+    observeEvent(input$normalizationVar, {
+
+      searchVar = "Intensity variables"
+      ivVarOpts <<- getValuesFromOptVarsNormalize(searchVar,input$normalizationVar)
+      updateCheckboxGroupInput(session,"ivVarsToCreate",choices=ivVarOpts)
+
+      searchVar = "Distance variables"
+      dvVarOpts <<- getValuesFromOptVarsNormalize(searchVar,input$normalizationVar)
+      updateCheckboxGroupInput(session,"dvVarsToCreate",choices=dvVarOpts)
+
+      searchVar = "Shape variables"
+      svVarOpts <<- getValuesFromOptVarsNormalize(searchVar,input$normalizationVar)
+      updateCheckboxGroupInput(session,"svVarsToCreate",choices=svVarOpts)
+
+      searchVar = "Object count"
+      ocVarOpts <<- getValuesFromOptVarsNormalize(searchVar,input$normalizationVar)
+      updateCheckboxGroupInput(session,"ocVarsToCreate",choices=ocVarOpts)
+
+      searchVar = "Group variables"
+      gvVarOpts <<- getValuesFromOptVarsNormalize(searchVar,input$normalizationVar)
+      updateCheckboxGroupInput(session,"gvVarsToCreate",choices=gvVarOpts)
+
+      searchVar = "Other variables"
+      ovVarOpts <<- getValuesFromOptVarsNormalize(searchVar,input$normalizationVar)
+      updateCheckboxGroupInput(session,"ovVarsToCreate",choices=ovVarOpts)
+
+    }, ignoreInit = TRUE)
+    
+    getValuesFromOptVarsNormalize <- function(searchVar, normVar) {
+      res = rjson::fromJSON(file = "optionalvariables_w_normalization.json")
       
       for(elem in res$optionalvariables){
         if (elem$name == searchVar) {
-          prVarOpts = c()
-          for (a in elem$variables){
-            prVarOpts = c(prVarOpts,a$name)
-          }
-          return(prVarOpts)
+          return(getVariableNames_w_Normalization(elem,normVar))
         }
       }
     }
     
-    output$checkBoxIV <- renderUI({
-      searchVar = "Intensity variables"
-      ivVarOpts <<- getValuesFromOptVars(searchVar)
-      checkboxGroupInput("ivVarsToCreate",h4(searchVar),choices=ivVarOpts)
-    })
-    
+    # select all handlers
     observe({
       if(input$selectallIVvars == 0) return(NULL) 
       else if (input$selectallIVvars%%2 == 0)
       {updateCheckboxGroupInput(session,"ivVarsToCreate",choices=ivVarOpts)}
       else
       {updateCheckboxGroupInput(session,"ivVarsToCreate",choices=ivVarOpts,selected=ivVarOpts)}
-    })    
-    
-    output$checkBoxDV <- renderUI({
-      searchVar = "Distance variables"
-      dvVarOpts <<- getValuesFromOptVars(searchVar)
-      checkboxGroupInput("dvVarsToCreate",h4(searchVar),choices=dvVarOpts)
     })    
     
     observe({
@@ -196,12 +247,6 @@ server = function(input, output, session) {
       {updateCheckboxGroupInput(session,"dvVarsToCreate",choices=dvVarOpts,selected=dvVarOpts)}
     })      
     
-    output$checkBoxSV <- renderUI({
-      searchVar = "Shape variables"
-      svVarOpts <<- getValuesFromOptVars(searchVar)
-      checkboxGroupInput("svVarsToCreate",h4(searchVar),choices=svVarOpts)
-    })    
-
     observe({
       if(input$selectallSVvars == 0) return(NULL) 
       else if (input$selectallSVvars%%2 == 0)
@@ -209,12 +254,6 @@ server = function(input, output, session) {
       else
       {updateCheckboxGroupInput(session,"svVarsToCreate",choices=svVarOpts,selected=svVarOpts)}
     })
-    
-    output$checkBoxOC <- renderUI({
-      searchVar = "Object count"
-      ocVarOpts <<- getValuesFromOptVars(searchVar)
-      checkboxGroupInput("ocVarsToCreate",h4(searchVar),choices=ocVarOpts)
-    })  
     
     observe({
       if(input$selectallOCvars == 0) return(NULL) 
@@ -224,12 +263,6 @@ server = function(input, output, session) {
       {updateCheckboxGroupInput(session,"ocVarsToCreate",choices=ocVarOpts,selected=ocVarOpts)}
     })     
     
-    output$checkBoxGV <- renderUI({
-      searchVar = "Group variables"
-      gvVarOpts <<- getValuesFromOptVars(searchVar)
-      checkboxGroupInput("gvVarsToCreate",h4(searchVar),choices=gvVarOpts)
-    })            
-    
     observe({
       if(input$selectallGVvars == 0) return(NULL) 
       else if (input$selectallGVvars%%2 == 0)
@@ -237,12 +270,6 @@ server = function(input, output, session) {
       else
       {updateCheckboxGroupInput(session,"gvVarsToCreate",choices=gvVarOpts,selected=gvVarOpts)}
     })     
-    
-    output$checkBoxOV <- renderUI({
-      searchVar = "Other variables"
-      ovVarOpts <<- getValuesFromOptVars(searchVar)
-      checkboxGroupInput("ovVarsToCreate",h4(searchVar),choices=ovVarOpts)
-    })            
     
     observe({
       if(input$selectallOVvars == 0) return(NULL) 
@@ -333,8 +360,9 @@ server = function(input, output, session) {
 
     '))
     
+    # to do update tooltips to get desc from correct ID
     output$checkboxTooltips <- renderUI({
-      res = rjson::fromJSON(file = "optionalvariables.json")
+      res = rjson::fromJSON(file = "optionalvariables_w_normalization.json")
       
       tooltips = c()
       for(elem in res$optionalvariables){
@@ -347,30 +375,13 @@ server = function(input, output, session) {
       bsTooltipList = lapply(tooltips, function(tooltip) {
         bsTooltip(tooltip$id, tooltip$desc, placement = "top", trigger = "hover")
       })
-
+      
       tagList(
         bsTooltipList
       )
     })    
     
-    # Create an observe call the updates the ratio options for the processing step after the data is imported
-    observe({
-        subsettableData = importedData()
-        # Compute the potential channel pairings
-        potentialChannelPairsDF = do.call(expand.grid, rep(list(unique(subsettableData[["Channel"]])), 2)) %>% filter(Var1 != Var2)
-        channelPairsList <<- unname(as.list(as.data.frame(t(potentialChannelPairsDF))))
-        channelPairsStrings = lapply(channelPairsList,toString)
-        formatChannelStrings = function(s){return(paste("Ch",toString(strsplit(s[[1]],", ")[[1]][1]),":Ch",toString(strsplit(s[[1]],", ")[[1]][2]),sep=""))}
-        channelPairsStringsFormatted <<- lapply(channelPairsStrings,formatChannelStrings)
-        names(channelPairsStrings) = channelPairsStringsFormatted
-        channelPairsStringsForDisplay <<- channelPairsStrings
-        # Update the relevant areas in the Processing Section
-        updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay)
-        updateCheckboxGroupInput(session,"ratioSumsPerGroupToCreate",choices=channelPairsStringsForDisplay)
-        #updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay)
-    })
-    
-    # Create buttons to select/clear ratio options
+    # select all handlers for Ratio variables
     observe({
         if(input$selectRatioSums == 0) return(NULL) 
         else if (input$selectRatioSums%%2 == 0)
@@ -378,15 +389,6 @@ server = function(input, output, session) {
         else
         {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay,selected=channelPairsStringsForDisplay)}
     })
-    
-    # remove event (when actionlink Select/Clear mean ratios is selected, checkbox norm intensity mean)
-    # observe({
-    #     if(input$selectRatioMeans == 0) return(NULL) 
-    #     else if (input$selectRatioMeans%%2 == 0)
-    #     {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay)}
-    #     else
-    #     {updateCheckboxGroupInput(session,"ratioMeansToCreate",choices=channelPairsStringsForDisplay,selected=channelPairsStringsForDisplay)}
-    # })
     
     observe({
         if(input$selectRatioSumsPerGroup == 0) return(NULL) 
@@ -396,110 +398,45 @@ server = function(input, output, session) {
         {updateCheckboxGroupInput(session,"ratioSumsPerGroupToCreate",choices=channelPairsStringsForDisplay,selected=channelPairsStringsForDisplay)}
     })
     
-    # Handle the selection of variables to create when processing
-    # observeEvent(input$ratioSumsToCreate, {
-    #     if(length(input$ratioSumsToCreate) > 0){
-    #         updateCheckboxGroupInput(session,"varsToCreate",
-    #                                  selected=append(input$varsToCreate,"Intensity Sum Normalised per Nucleus"))
-    #     }
-    # })
-    
-    # remove event (when any of the chX:chY selected, checkbox norm intensity mean)
-    # observeEvent(input$ratioMeansToCreate, {
-    #     if(length(input$ratioMeansToCreate) > 0){
-    #         updateCheckboxGroupInput(session,"varsToCreate",
-    #                                  selected=append(input$varsToCreate,"Normalized Intensity Mean"))
-    #     }
-    # })
-    
-    # observeEvent(input$varsToCreate, {
-    #     if("Signal Density" %in% input$varsToCreate){
-    #         updateCheckboxGroupInput(session,"varsToCreate",
-    #                                  selected=append(input$varsToCreate,"Intensity Sum Normalised per Nucleus"))
-    #     }
-    # })
-    
-    # observeEvent(input$varsToCreate, {
-    #     if("Intensity Sum Normalised by Group" %in% input$varsToCreate){
-    #         updateCheckboxGroupInput(session,"varsToCreate",
-    #                                  selected=append(input$varsToCreate,"Intensity Sum Normalised per Nucleus"))
-    #     }
-    # })
-    
-    # observeEvent(input$varsToCreate, {
-    #     if("Intensity Mean Normalised by Group" %in% input$varsToCreate){
-    #         updateCheckboxGroupInput(session,"varsToCreate",
-    #                                  selected=append(input$varsToCreate,"Intensity Mean Normalised per Nucleus"))
-    #     }
-    # })
-    
-    # observeEvent(input$varsToCreate, {
-    #     if("Group Intensity Sum Relative to Nucleus" %in% input$varsToCreate) {
-    #           updateCheckboxGroupInput(session,"varsToCreate",
-    #                                   selected=append(input$varsToCreate,"Group Intensity Sum"))
-    #     }
-    # })
-    
-    # observeEvent(input$varsToCreate, {
-    #     if("Group Intensity Mean Relative to Nucleus" %in% input$varsToCreate) {
-    #           updateCheckboxGroupInput(session,"varsToCreate",
-    #                                selected=append(input$varsToCreate,"Group Intensity Mean"))
-    #     }
-    # })
-    
-    # observeEvent(input$ratioSumsPerGroupToCreate, {
-    #   if(length(input$ratioSumsPerGroupToCreate) > 0){
-    #     updateCheckboxGroupInput(session,"varsToCreate",
-    #                              selected=append(input$varsToCreate,"Intensity Sum Normalised by Group"))
-    #   }
-    # })    
-    
-    # Create an observe() call for the select/clear all option in the processing area
-    # observe({
-    #     if(input$selectallvars == 0) return(NULL) 
-    #     else if (input$selectallvars%%2 == 0)
-    #     {updateCheckboxGroupInput(session,"varsToCreate",choices=processVarsOptions)}
-    #     else
-    #     {updateCheckboxGroupInput(session,"varsToCreate",choices=processVarsOptions,selected=processVarsOptions)}
-    # })
-    
+    # Dependency checkbox
     observeEvent(input$ratioSumsToCreate, {
       if(length(input$ratioSumsToCreate) > 0){
+        
         updateCheckboxGroupInput(session,"ivVarsToCreate",
-                                 selected=append(input$ivVarsToCreate,"Intensity Sum Normalised per Nucleus"))
+                                 selected=append(input$ivVarsToCreate, paste0("Intensity Sum Normalised per ",input$normalizationVar)))
       }
     })
     
     observeEvent(input$ovVarsToCreate, {
       if("Signal Density" %in% input$ovVarsToCreate){
         updateCheckboxGroupInput(session,"ivVarsToCreate",
-                                 selected=append(input$ivVarsToCreate,"Intensity Sum Normalised per Nucleus"))
+                                 selected=append(input$ivVarsToCreate, paste0("Intensity Sum Normalised per ",input$normalizationVar)))
       }
     })
     
     observeEvent(input$ivVarsToCreate, {
       if("Intensity Sum Normalised by Group" %in% input$ivVarsToCreate){
         updateCheckboxGroupInput(session,"ivVarsToCreate",
-                                 selected=append(input$ivVarsToCreate,"Intensity Sum Normalised per Nucleus"))
+                                 selected=append(input$ivVarsToCreate, paste0("Intensity Sum Normalised per ",input$normalizationVar)))
       }
     })    
     
     observeEvent(input$ivVarsToCreate, {
       if("Intensity Mean Normalised by Group" %in% input$ivVarsToCreate){
         updateCheckboxGroupInput(session,"ivVarsToCreate",
-                                 selected=append(input$ivVarsToCreate,"Intensity Mean Normalised per Nucleus"))
+                                 selected=append(input$ivVarsToCreate, paste0("Intensity Mean Normalised per ",input$normalizationVar)))
       }
     })
     
     observeEvent(input$gvVarsToCreate, {
-      if("Group Intensity Sum Relative to Nucleus" %in% input$gvVarsToCreate) {
+      if(paste0("Group Intensity Sum Relative to ",input$normalizationVar) %in% input$gvVarsToCreate) {
         updateCheckboxGroupInput(session,"gvVarsToCreate",
                                  selected=append(input$gvVarsToCreate,"Group Intensity Sum"))
       }
     })
     
     observeEvent(input$gvVarsToCreate, {
-      if("Group Intensity Mean Relative to Nucleus" %in% input$gvVarsToCreate) {
+      if(paste0("Group Intensity Mean Relative to ",input$normalizationVar) %in% input$gvVarsToCreate) {
         updateCheckboxGroupInput(session,"gvVarsToCreate",
                                  selected=append(input$gvVarsToCreate,"Group Intensity Mean"))
       }
@@ -513,7 +450,7 @@ server = function(input, output, session) {
     }) 
     
     observeEvent(input$svVarsToCreate, {
-      if(any(c("Volume Relative to Group","Group Volume Relative to Nucleus") %in% input$svVarsToCreate)) {
+      if(any(c("Volume Relative to Group",paste0("Group Volume Relative to ",input$normalizationVar)) %in% input$svVarsToCreate)) {
         updateCheckboxGroupInput(session,"svVarsToCreate",
                                  selected=append(input$svVarsToCreate,"Group Volume"))
       }
@@ -649,6 +586,8 @@ server = function(input, output, session) {
         categoricalVars = sort(names(l[str_which(l,pattern="character")]))
         categoricalVars = sort(categoricalVars[-which(categoricalVars=="Object ID")])
         continuousVars = sort(names(l[str_which(l,pattern="character",negate=TRUE)]))
+        
+        updateCategoriesContinuousVars <- updateCategoriesContinuousVars1()
         updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = catVariableForFill_Reference)
         updateSelectInput(session, "singleConVariable", choices = updateCategoriesContinuousVars(continuousVars), selected = singleConVariable_Reference)
         updateSelectInput(session, "binningVariable", choices = updateCategoriesContinuousVars(continuousVars), selected = binningVariable_Reference)
@@ -660,54 +599,67 @@ server = function(input, output, session) {
         updateSelectInput(session, "scatterCatFacet", choices = categoricalVars, selected = scatterCatFacet_Reference)
     },ignoreNULL=TRUE)
     
-    # assign categories to continuous variables as defined in JSON file
-    updateCategoriesContinuousVars <- function(continuousVars) {
-      allOptVarsJSON = rjson::fromJSON(file = "optionalvariables.json")
+    
+    getVariableNames_w_Normalization <- function(elem,normVar) {
       allOptVars = c()
-      for(elem in allOptVarsJSON$optionalvariables) {
-        for(a in elem$variables){
-          allOptVars = c(allOptVars, a$name)
+      for(a in elem$variables){
+        if (a$is_norm == "true" & normVar != "Nucleus") {
+          a$name = gsub("Nucleus",normVar,a$name)
         }
+        allOptVars = c(allOptVars, a$name)
       }
-      
-      dfVars = continuousVars[!continuousVars %in% allOptVars]
-      selectedOptVars = continuousVars[continuousVars %in% allOptVars]
-      ratioVars = dfVars[grepl("Ratio Ch", dfVars)]
-      dfVars = dfVars[!grepl("Ratio Ch", dfVars)]
-      
-      ll = list()
-      ll[[" "]] = dfVars
-      
-      # assign selected opt vars to categories from JSON
-      for(elem in allOptVarsJSON$optionalvariables) {
-        if (length(selectedOptVars) > 0) {
-          categoryVar = elem$name
-          varList = c()
-          for(a in elem$variables){
-            varList = c(varList, a$name)
-          }
-
-          selCatVars = selectedOptVars[selectedOptVars %in% varList]
-          if (length(selCatVars) > 0) {
-            ll[[categoryVar]] = c(selCatVars,"")
-            selectedOptVars = selectedOptVars[!selectedOptVars %in% varList]
-          }
-        }
-      }
-      
-      ratioVars_SumNormNucl = ratioVars[grepl("Intensity Sum Normalised per Nucleus", ratioVars)]
-      if (length(ratioVars_SumNormNucl) > 0) {
-        ll[['Ratio of Intensity Sum Normalised per Nucleus']] = c(ratioVars_SumNormNucl,"")
-      }
-
-      ratioVars_SumNormGr = ratioVars[grepl("Intensity Sum Normalised per Group", ratioVars)]
-      if (length(ratioVars_SumNormGr) > 0) {
-        ll[['Ratio of Intensity Sum Normalised per Group']] = c(ratioVars_SumNormGr,"")
-      }
-      
-      return(ll)
+      return(allOptVars)
     }
     
+    # assign categories to continuous variables as defined in JSON file
+    updateCategoriesContinuousVars1 <- reactive({
+      function(continuousVars) {
+        
+        normVar = input$normalizationVar
+        
+        allOptVarsJSON = rjson::fromJSON(file = "optionalvariables_w_normalization.json")
+        allOptVars = c()
+        for(elem in allOptVarsJSON$optionalvariables) {
+          allOptVars = c(allOptVars, getVariableNames_w_Normalization(elem,normVar))
+        }
+        
+        dfVars = continuousVars[!continuousVars %in% allOptVars]
+        selectedOptVars = continuousVars[continuousVars %in% allOptVars]
+        ratioVars = dfVars[grepl("Ratio Ch", dfVars)]
+        dfVars = dfVars[!grepl("Ratio Ch", dfVars)]
+        
+        ll = list()
+        ll[[" "]] = dfVars
+        
+        # assign selected opt vars to categories from JSON
+        for(elem in allOptVarsJSON$optionalvariables) {
+          if (length(selectedOptVars) > 0) {
+            categoryVar = elem$name
+            varList = getVariableNames_w_Normalization(elem,normVar)
+            
+            selCatVars = selectedOptVars[selectedOptVars %in% varList]
+            if (length(selCatVars) > 0) {
+              ll[[categoryVar]] = c(selCatVars,"")
+              selectedOptVars = selectedOptVars[!selectedOptVars %in% varList]
+            }
+          }
+        }
+        
+        ratioVars_SumNormNucl = ratioVars[grepl(paste0("Intensity Sum Normalised per ",normVar), ratioVars)]
+        if (length(ratioVars_SumNormNucl) > 0) {
+          ll[[paste0('Ratio of Intensity Sum Normalised per ',normVar)]] = c(ratioVars_SumNormNucl,"")
+        }
+        
+        ratioVars_SumNormGr = ratioVars[grepl("Intensity Sum Normalised per Group", ratioVars)]
+        if (length(ratioVars_SumNormGr) > 0) {
+          ll[['Ratio of Intensity Sum Normalised per Group']] = c(ratioVars_SumNormGr,"")
+        }
+        
+        return(ll)
+        
+      }
+    })
+
     # Finalize the exporting / downloading functionality of the filtered/selected data
     output$selectedDQD = downloadHandler(
         filename = function() {
@@ -1161,13 +1113,15 @@ server = function(input, output, session) {
         boxplotData = applyMinMax(densityDataToHistoBoxRefined(),input$singleConVariable,input$yLLBoxplot,input$yULBoxplot)
         req(nrow(boxplotData)>0)
 
+        normVar = input$normalizationVar
+        
         # deduplicate (take 1st row) for group variables
         if (input$singleConVariable %in% c("Group Intensity Sum", 
                                            "Group Intensity Mean", 
-                                           "Group Intensity Sum Relative to Nucleus", 
-                                           "Group Intensity Mean Relative to Nucleus",
+                                           paste0("Group Intensity Sum Relative to ",normVar), 
+                                           paste0("Group Intensity Mean Relative to ",normVar),
                                            "Group Volume",
-                                           "Group Volume Relative to Nucleus",
+                                           paste0("Group Volume Relative to ",normVar),
                                            "Group Surface Area",
                                            "Group Surface Area-to-Volume Ratio")) {
           l = sapply(boxplotData, class)

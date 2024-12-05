@@ -1,0 +1,158 @@
+{
+  "optionalvariables": [
+    {
+      "htmltype" : "h4",
+      "name" : "Intensity variables",
+      "variables" : [
+        {
+          "name": "Intensity Sum Normalised per Nucleus", 
+          "desc" : "For each image, each object, each channel, the Intensity Sum of the object is divided by the Intensity Sum in the Surface \"Nucleus\"",
+          "is_norm" : "true"
+        },
+        {
+          "name": "Intensity Mean Normalised per Nucleus", 
+          "desc" : "For each image, each object, each channel, the Intensity Mean of the object is divided by the Intensity Mean in the Surface \"Nucleus\"",
+          "is_norm" : "true"
+        },
+        {
+          "name": "Intensity StdDev Normalised per Nucleus", 
+          "desc" : "For each image, each object, each channel, the Intensity StdDev of the object is divided by the Intensity StdDev in the Surface \"Nucleus\"",
+          "is_norm" : "true"
+        },
+        {
+          "name": "Intensity Sum Normalised by Group", 
+          "desc" : "For each object, each channel, the Intensity Sum is divided by the Group Intensity Sum",
+          "is_norm" : "false"
+        },
+        {
+          "name": "Intensity Mean Normalised by Group", 
+          "desc" : "For each object, each channel, the Intensity Mean is divided by the Group Intensity Mean",
+          "is_norm" : "false"
+        },
+        {
+          "name": "Intensity StdDev Normalised by Group", 
+          "desc" : "",
+          "is_norm" : "false"
+        }
+      ]
+    },
+    {
+      "htmltype" : "h4",
+      "name" : "Channel ratio variables",
+      "variables" : [
+        {
+          "name": "Ratio of Intensity Sum Normalised per Nucleus", 
+          "desc" : "For each object, the ratio is made between the values: Intensity Sum Normalized per Nucleus",
+          "is_norm" : "true"
+        },
+        {
+          "name": "Ratio of Intensity Sum Normalised by Group", 
+          "desc" : "For each object, the ratio is made between the values: Intensity Sum Normalized by Group",
+          "is_norm" : "false"
+        }
+      ]
+    },
+    {
+      "htmltype" : "h4",
+      "name" : "Distance variables",
+      "variables" : [
+        {
+          "name": "Normalized Distance to Nucleus", 
+          "desc" : "", 
+          "is_norm" : "true",
+          "comment" : "SHOULD BE Distance Normalized per Nucleus"
+        }
+      ]
+    },
+    {
+      "htmltype" : "h4",
+      "name" : "Shape variables",
+      "variables" : [
+        {
+          "name": "Surface Area-to-Volume Ratio", 
+          "desc" : "",
+          "is_norm" : "false"
+        },
+        {
+          "name": "Volume Relative to Nucleus", 
+          "desc" : "",
+          "is_norm" : "true"
+        },
+        {
+          "name": "Volume Relative to Group", 
+          "desc" : "Per object, the Volume is divided by the Group Volume in the same image",
+          "is_norm" : "false"
+        },
+        {
+          "name": "Group Volume", 
+          "desc" : "",
+          "is_norm" : "false"
+        },
+        {
+          "name": "Group Surface Area", 
+          "desc" : "The surface of objects belonging to the same group, same image, are summed up",
+          "is_norm" : "false"
+        },
+        {
+          "name": "Group Volume Relative to Nucleus", 
+          "desc" : "",
+          "is_norm" : "true"
+        },
+        {
+          "name": "Group Surface Area-to-Volume Ratio", 
+          "desc" : "",
+          "is_norm" : "false"
+        }
+      ]
+    },
+    {
+      "htmltype" : "h4",
+      "name" : "Object count",
+      "variables" : [
+        {
+          "name": "Object Count", 
+          "desc" : "", 
+          "is_norm" : "false",
+          "comment" : "SHOULD BE Object Count per Group"
+        }
+      ]
+    },
+    {
+      "htmltype" : "h4",
+      "name" : "Group variables",
+      "variables" : [
+        {
+          "name": "Group Intensity Sum", 
+          "desc" : "For a given group of objects carrying the same name, the Intensity Sums are added up (Sum of Intensity Sum)",
+          "is_norm" : "false"
+        },
+        {
+          "name": "Group Intensity Mean", 
+          "desc" : "",
+          "is_norm" : "false"
+        },
+        {
+          "name": "Group Intensity Sum Relative to Nucleus", 
+          "desc" : "",
+          "is_norm" : "true"
+        },
+        {
+          "name": "Group Intensity Mean Relative to Nucleus", 
+          "desc" : "",
+          "is_norm" : "true"
+        }
+      ]
+    },
+    {
+      "htmltype" : "h4",
+      "name" : "Other variables",
+      "variables" : [
+        {
+          "name": "Signal Density", 
+          "desc" : "",
+          "is_norm" : "false"
+        }
+      ]
+    }
+  ]
+}

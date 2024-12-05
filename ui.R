@@ -56,28 +56,35 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              p("Data processing is an optional step that adds normalized variables such as: Intensity sum, mean, and stdev normalised per nucleus; Normalized shortest distance to nucleus; Normalised intensity ratios (chX:chY); Group intensity sum, mean, and stdev; Signal density (intensity sum normalised per nucleus; volume)."),
                              p("After pressing the \"Process Data\" button, the data will appear in a table when the processing pipeline has finished. You will then be able to select the processed version of the data within the \"Filtering\" tab."),
                              p("See the FAQ section for more details."),
-                             #checkboxGroupInput("varsToCreate",h3("Optional Variables"),choices=processVarsOptions),
-                             #actionLink("selectallvars","Select/Clear All Variables"),
-                             uiOutput("checkBoxIV"),
+
+                             selectInput(inputId = "normalizationVar","Select Normalization Variable",choices = list("Select Data First"=""), selected = NULL),
+                             
+                             checkboxGroupInput("ivVarsToCreate",h4("Intensity variables")),
                              actionLink("selectallIVvars","Select/Clear All Variables"),
+                             
                              h4("Channel ratio variables"),
-                             checkboxGroupInput("ratioSumsToCreate",h5("Ratio of Intensity Sum Normalised per Nucleus")),
+                             checkboxGroupInput("ratioSumsToCreate",h5(textOutput("ratioSumsToCreateTitle"))),
                              actionLink("selectRatioSums","Select/Clear All Sum Ratios"),
+                             
                              checkboxGroupInput("ratioSumsPerGroupToCreate",h5("Ratio of Intensity Sum Normalised by Group")),
                              actionLink("selectRatioSumsPerGroup","Select/Clear All Sum per Group Ratios"),
-                             uiOutput("checkBoxDV"),           
+                             
+                             checkboxGroupInput("dvVarsToCreate",h4("Distance variables")),
                              actionLink("selectallDVvars","Select/Clear All Variables"),
-                             uiOutput("checkBoxSV"),
+                             
+                             checkboxGroupInput("svVarsToCreate",h4("Shape variables")),
                              actionLink("selectallSVvars","Select/Clear All Variables"),
-                             uiOutput("checkBoxOC"),
+                             
+                             checkboxGroupInput("ocVarsToCreate",h4("Object count")),
                              actionLink("selectallOCvars","Select/Clear All Variables"),
-                             uiOutput("checkBoxGV"),
+                             
+                             checkboxGroupInput("gvVarsToCreate",h4("Group variables")),
                              actionLink("selectallGVvars","Select/Clear All Variables"),
-                             uiOutput("checkBoxOV"),
+                             
+                             checkboxGroupInput("ovVarsToCreate",h4("Other variables")),
                              actionLink("selectallOVvars","Select/Clear All Variables"),
+                             
                              uiOutput("checkboxTooltips")
-                             #checkboxGroupInput("ratioMeansToCreate",h4("Ratio Variables - Normalized Mean")),
-                             #actionLink("selectRatioMeans","Select/Clear All Mean Ratios")
                          ),
                          mainPanel(
                              tabPanel("Table",dataTableOutput("processedTableToView"))
