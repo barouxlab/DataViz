@@ -468,7 +468,7 @@ server = function(input, output, session) {
         req(importedData())
         dataToProcess = importedData()
         combinedVars <- unlist(as.list(combinedVarsToCreate()), recursive = TRUE)
-        processedData = suppressWarnings(processingFunction(dataToProcess,combinedVars,input$ratioSumsToCreate,input$ratioSumsPerGroupToCreate))
+        processedData = suppressWarnings(processingFunction(dataToProcess,combinedVars,input$ratioSumsToCreate,input$ratioSumsPerGroupToCreate,input$normalizationVar))
         processedDataToWrite = processedData
         write.csv(processedDataToWrite, "TMP__ProcessedData.csv", row.names = FALSE)
         processedDataToReturn = read.csv("TMP__ProcessedData.csv",check.names = FALSE)
