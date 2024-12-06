@@ -31,7 +31,7 @@
         },
         {
           "name": "Intensity StdDev Normalised by Group", 
-          "desc" : "",
+          "desc" : "For each object, each channel, the Intensity StdDev is divided by the Group Intensity StdDev",
           "is_norm" : "false"
         }
       ]
@@ -58,7 +58,7 @@
       "variables" : [
         {
           "name": "Normalized Distance to Nucleus", 
-          "desc" : "", 
+          "desc" : "For each image, the shortest distance of the spot = \"Nucleus Center Of Mass\" to the surface = \"Nucleus\" is taken as a reference distance", 
           "is_norm" : "true",
           "comment" : "SHOULD BE Distance Normalized per Nucleus"
         }
@@ -70,12 +70,12 @@
       "variables" : [
         {
           "name": "Surface Area-to-Volume Ratio", 
-          "desc" : "",
+          "desc" : "Per object, the surface is divided by the volume",
           "is_norm" : "false"
         },
         {
           "name": "Volume Relative to Nucleus", 
-          "desc" : "",
+          "desc" : "Per object, the volume is divided by the volume of the Surface=Nucleus in the same image",
           "is_norm" : "true"
         },
         {
@@ -85,7 +85,7 @@
         },
         {
           "name": "Group Volume", 
-          "desc" : "",
+          "desc" : "Per image, the volumes of objects belonging to the same group, same image, are summed up",
           "is_norm" : "false"
         },
         {
@@ -95,12 +95,12 @@
         },
         {
           "name": "Group Volume Relative to Nucleus", 
-          "desc" : "",
+          "desc" : "This variable requires the \"Group Volume\" variable. The Group Volume is divided by the volume of the Surface=Nucleus in the same image",
           "is_norm" : "true"
         },
         {
           "name": "Group Surface Area-to-Volume Ratio", 
-          "desc" : "",
+          "desc" : "This variable requires the variables \"Group Surface\" and \"Group Volume\". Per group of object, the \"Group Surface\" is divided by the \"Group Volume\"",
           "is_norm" : "false"
         }
       ]
@@ -111,7 +111,7 @@
       "variables" : [
         {
           "name": "Object Count", 
-          "desc" : "", 
+          "desc" : "Description comes", 
           "is_norm" : "false",
           "comment" : "SHOULD BE Object Count per Group"
         }
@@ -128,17 +128,17 @@
         },
         {
           "name": "Group Intensity Mean", 
-          "desc" : "",
+          "desc" : "For a given group of objects carrying the same name, the Intensity Means are averaged (Mean of Intensity Mean)",
           "is_norm" : "false"
         },
         {
           "name": "Group Intensity Sum Relative to Nucleus", 
-          "desc" : "",
+          "desc" : "This variable requires the \"Group Intensity Sum\" and a reference surface, \"Nucleus\". For each object, each channel, the Group Intensity Sum is divided by the Intensity Sum in the Nucleus. This variable expresses the relative fraction of signal in a group of segmented objects relative to the total signal in the reference surface, \"Nucleus\"",
           "is_norm" : "true"
         },
         {
           "name": "Group Intensity Mean Relative to Nucleus", 
-          "desc" : "",
+          "desc" : "This variable requires the \"Group Intensity Mean\" and a reference surface, \"Nucleus\". For each object, each channel, the Group Intensity Mean is divided by the Intensity Mean in the Nucleus. This variable expresses the relative density of the signal in a group of segmented objects relative to the density overall in the reference surface, \"Nucleus\"",
           "is_norm" : "true"
         }
       ]
@@ -149,7 +149,7 @@
       "variables" : [
         {
           "name": "Signal Density", 
-          "desc" : "",
+          "desc" : "Description comes",
           "is_norm" : "false"
         }
       ]

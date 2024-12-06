@@ -367,6 +367,13 @@ server = function(input, output, session) {
       tooltips = c()
       for(elem in res$optionalvariables){
         for (a in elem$variables){
+          
+          # check normalization / change to generate correct tooltip id
+          if (a$is_norm == "true" & input$normalizationVar != "Nucleus") {
+            a$name = gsub("Nucleus",input$normalizationVar,a$name)
+            a$desc = gsub("Nucleus",input$normalizationVar,a$desc)
+          }
+          
           a$id = gsub("\\s+", "-", a$name)
           tooltips = c(tooltips, list(a))
         }
