@@ -35,7 +35,9 @@ server = function(input, output, session) {
             inputtedDataToReturn = cleaningFunction(tmpDirName)
             inputtedDataToReturn$`Object ID` = as.character(inputtedDataToReturn$`Object ID`)
             inputtedDataToReturn$`Channel` = as.character(inputtedDataToReturn$`Channel`)
-            inputtedDataToReturn$`Time` = as.character(inputtedDataToReturn$`Time`)
+            if ("Time" %in% colnames(inputtedDataToReturn)) {
+              inputtedDataToReturn$`Time` = as.character(inputtedDataToReturn$`Time`)
+            }
             inputtedDataToReturn[["Channel"]][is.na(inputtedDataToReturn[["Channel"]])] = "NA"
             unlink(tmpDirName, recursive = TRUE)
             return(inputtedDataToReturn)
@@ -43,7 +45,9 @@ server = function(input, output, session) {
             importedData = read.csv(dataToImport$datapath,check.names = FALSE)
             importedData$`Object ID` = as.character(importedData$`Object ID`)
             importedData$`Channel` = as.character(importedData$`Channel`)
-            importedData$`Time` = as.character(importedData$`Time`)
+            if ("Time" %in% colnames(importedData)) {
+              importedData$`Time` = as.character(importedData$`Time`)
+            }
             importedData[["Channel"]][is.na(importedData[["Channel"]])] = "NA"
             inputtedDataToReturn = as_tibble(importedData) %>% relocate(c("Genotype",
                                                                           "Treatment",
@@ -928,7 +932,7 @@ server = function(input, output, session) {
             } 
             
             downloadDataStub = downloadDataStub %>% 
-              select(!!sym(input$singleConVariable), !!sym(input$catVariableForFill), !!sym(input$catVariableForSplitting))
+              select("Image File","Treatment", "Genotype",!!sym(input$singleConVariable), !!sym(input$catVariableForFill), !!sym(input$catVariableForSplitting))
             write.csv(downloadDataStub, file, row.names = FALSE)
         }
     )
@@ -1793,9 +1797,9 @@ server = function(input, output, session) {
           mutate(!!sym(log_scatterX) := log(!!sym(input$scatterX)), !!sym(log_scatterY) := log(!!sym(input$scatterY)))
         
         if (!input$contourCheckbox & !is.null(input$scatterCatColor)) { 
-          scatterPlotDataStub = scatterPlotDataStub %>% select(!!sym(input$scatterX),!!sym(input$scatterY),!!sym(input$scatterCatFacet),!!sym(input$scatterCatColor),!!sym(log_scatterX),!!sym(log_scatterY)) 
+          scatterPlotDataStub = scatterPlotDataStub %>% select("Image File","Treatment", "Genotype",!!sym(input$scatterX),!!sym(input$scatterY),!!sym(input$scatterCatFacet),!!sym(input$scatterCatColor),!!sym(log_scatterX),!!sym(log_scatterY)) 
         } else {
-          scatterPlotDataStub = scatterPlotDataStub %>% select(!!sym(input$scatterX),!!sym(input$scatterY),!!sym(input$scatterCatFacet),!!sym(log_scatterX),!!sym(log_scatterY)) 
+          scatterPlotDataStub = scatterPlotDataStub %>% select("Image File","Treatment", "Genotype",!!sym(input$scatterX),!!sym(input$scatterY),!!sym(input$scatterCatFacet),!!sym(log_scatterX),!!sym(log_scatterY)) 
         }
         write.csv(scatterPlotDataStub, file, row.names = FALSE)
       }

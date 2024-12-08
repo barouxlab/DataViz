@@ -82,26 +82,6 @@
           "name": "Volume Relative to Group", 
           "desc" : "Per object, the Volume is divided by the Group Volume in the same image",
           "is_norm" : "false"
-        },
-        {
-          "name": "Group Volume", 
-          "desc" : "Per image, the volumes of objects belonging to the same group, same image, are summed up",
-          "is_norm" : "false"
-        },
-        {
-          "name": "Group Surface Area", 
-          "desc" : "The surface of objects belonging to the same group, same image, are summed up",
-          "is_norm" : "false"
-        },
-        {
-          "name": "Group Volume Relative to Nucleus", 
-          "desc" : "This variable requires the \"Group Volume\" variable. The Group Volume is divided by the volume of the Surface=Nucleus in the same image",
-          "is_norm" : "true"
-        },
-        {
-          "name": "Group Surface Area-to-Volume Ratio", 
-          "desc" : "This variable requires the variables \"Group Surface\" and \"Group Volume\". Per group of object, the \"Group Surface\" is divided by the \"Group Volume\"",
-          "is_norm" : "false"
         }
       ]
     },
@@ -140,7 +120,27 @@
           "name": "Group Intensity Mean Relative to Nucleus", 
           "desc" : "This variable requires the \"Group Intensity Mean\" and a reference surface, \"Nucleus\". For each object, each channel, the Group Intensity Mean is divided by the Intensity Mean in the Nucleus. This variable expresses the relative density of the signal in a group of segmented objects relative to the density overall in the reference surface, \"Nucleus\"",
           "is_norm" : "true"
-        }
+        },
+        {
+          "name": "Group Volume", 
+          "desc" : "Per image, the volumes of objects belonging to the same group, same image, are summed up",
+          "is_norm" : "false"
+        },
+        {
+          "name": "Group Surface Area", 
+          "desc" : "The surface of objects belonging to the same group, same image, are summed up",
+          "is_norm" : "false"
+        },
+        {
+          "name": "Group Volume Relative to Nucleus", 
+          "desc" : "This variable requires the \"Group Volume\" variable. The Group Volume is divided by the volume of the Surface=Nucleus in the same image",
+          "is_norm" : "true"
+        },
+        {
+          "name": "Group Surface Area-to-Volume Ratio", 
+          "desc" : "This variable requires the variables \"Group Surface\" and \"Group Volume\". Per group of object, the \"Group Surface\" is divided by the \"Group Volume\"",
+          "is_norm" : "false"
+        }        
       ]
     },
     {
