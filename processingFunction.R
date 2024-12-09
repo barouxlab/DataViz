@@ -3,6 +3,7 @@
 # made (i.e., processed) from the original variables.
 
 processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratioSumsPerGroupToCreate,normVar){
+  print(varsToInclude)
   # Before any processing, drop columns with no names
   if("" %in% colnames(importedData)){
     importedData = importedData %>% dplyr::select(-c(""))
@@ -252,7 +253,7 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
   # Add variable Volume Relative to NORMALIZATION_VARIABLE
   newVar = paste0("Volume Relative to ",normVar)
   if (newVar %in% varsToInclude & ("Volume" %in% names(dataToProcess))){
-    dataToProcess = dataToProcess %>% group_by(`Image File`) %>% 
+    dataToProcess = dataToProcess %>% group_by(`Image File`, Channel) %>% 
       mutate(!!newVar := 
                if (normVar %in% Object & "Surface" %in% Category) {`Volume`/`Volume`[`Object`==normVar & `Category`=="Surface"]} else {NA_real_}) %>%
       ungroup()
@@ -263,7 +264,7 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
   
   # Add variable Group Volume
   if ("Group Volume" %in% varsToInclude & ("Volume" %in% names(dataToProcess))){
-    dataToProcess = dataToProcess %>% group_by(`Image File`, `Object`) %>% 
+    dataToProcess = dataToProcess %>% group_by(`Image File`,Object,Channel,Category) %>% 
       mutate("Group Volume" = sum(`Volume`)) %>%
       ungroup()
   }
@@ -276,7 +277,7 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
   # Add Group Volume Relative to NORMALIZATION_VARIABLE
   newVar = paste0("Group Volume Relative to ",normVar)
   if (newVar %in% varsToInclude & ("Volume" %in% names(dataToProcess)) & ("Group Volume" %in% names(dataToProcess))){
-    dataToProcess = dataToProcess %>% group_by(`Image File`) %>% 
+    dataToProcess = dataToProcess %>% group_by(`Image File`,Channel) %>% 
       mutate(!!newVar := 
                if (normVar %in% Object & "Surface" %in% Category) {`Group Volume`/`Volume`[`Object`==normVar & `Category`=="Surface"]} else {NA_real_}) %>%
       ungroup()
@@ -292,7 +293,7 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
   
   # Add Group Surface Area
   if ("Group Surface Area" %in% varsToInclude & ("Area" %in% names(dataToProcess))){
-    dataToProcess = dataToProcess %>% group_by(`Image File`, `Object`) %>% 
+    dataToProcess = dataToProcess %>% group_by(`Image File`,Object,Channel,Category) %>% 
       mutate("Group Surface Area" = sum(`Area`)) %>%
       ungroup()
   }
