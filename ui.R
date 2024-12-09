@@ -57,7 +57,8 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              p("After pressing the \"Process Data\" button, the data will appear in a table when the processing pipeline has finished. You will then be able to select the processed version of the data within the \"Filtering\" tab."),
                              p("See the FAQ section for more details."),
 
-                             selectInput(inputId = "normalizationVar","Select Normalization Variable",choices = list("Select Data First"=""), selected = NULL),
+                             selectInput(inputId = "normalizationVar","Select reference object for normalisation",choices = list("Select Data First"=""), selected = NULL),
+                             p("Reference objects in the list are present in all images and unique per image. If an object of interest is not shown, please verify your data for absence and/or duplicate objects", style = "font-size: 11px;"),
                              
                              checkboxGroupInput("ivVarsToCreate",h4("Intensity variables")),
                              actionLink("selectallIVvars","Select/Clear All Variables"),
