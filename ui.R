@@ -428,7 +428,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   textInput("scatterplotHexStrings",label="Optionally edit the non-contour colors",value=toString(colorDF["Custom1","hexcodes"][[1]]))
                                                  ),
                                          tabPanel("Transparency",
-                                                  numericInput("scatterplotTransparency",label="Alpha",value=0.9,min=0,max=1,step=0.05)
+                                                  numericInput("scatterplotTransparency",label="Transparency",value=0.9,min=0,max=1,step=0.05)
                                          )
                              )
                          ),
