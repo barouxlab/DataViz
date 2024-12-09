@@ -1475,15 +1475,24 @@ server = function(input, output, session) {
             req(reactiveDF$filteredDataset)
         
             # Retrieve the breaks
-            breaksForBinning = as.list(strsplit(input$binCuts, ",")[[1]])
+            binCuts = input$binCuts
+            binCuts = paste0("-Inf,",binCuts) # add -Inf to create <= group
+            
+            breaksForBinning = as.list(strsplit(binCuts, ",")[[1]])
             # Make a new group variable name
             groupVarName <<- paste("Bin - ",toString(input$binningVariable))
 
             # Apply the breaks
-            # TODO: fix the lower threshold (incorrect bin assignment)
             dataToBin = reactiveDF$filteredDataset
             binnedDataset = dataToBin %>% mutate(Group=cut(!!sym(input$binningVariable),breaks=breaksForBinning),
                                                  Group=forcats::fct_explicit_na(Group,paste("> ",toString(tail(breaksForBinning, n=1)))))
+            
+            # TODO: treat NAs in diff group?
+            # rename the <= Lowest Value group, will ignore if curLabel doesn't exist
+            lowVal = breaksForBinning[[2]] 
+            curLabel = paste0("(-Inf,",lowVal,"]")
+            newLabel = paste0("<= ", lowVal)
+            binnedDataset = binnedDataset %>% mutate(Group = fct_recode(Group, !!newLabel := curLabel))
             
             # keep threshold only
             reactiveDF$filteredDataset = binnedDataset %>% rename(!!groupVarName:=Group)
