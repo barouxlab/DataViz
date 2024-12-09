@@ -3,7 +3,6 @@
 # made (i.e., processed) from the original variables.
 
 processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratioSumsPerGroupToCreate,normVar){
-  print(varsToInclude)
   # Before any processing, drop columns with no names
   if("" %in% colnames(importedData)){
     importedData = importedData %>% dplyr::select(-c(""))

@@ -459,18 +459,25 @@ server = function(input, output, session) {
                                  selected=append(input$ivVarsToCreate,"Intensity Sum Normalised by Group"))
       }
     }) 
-    
+
     observeEvent(input$svVarsToCreate, {
-      if(any(c("Volume Relative to Group",paste0("Group Volume Relative to ",input$normalizationVar)) %in% input$svVarsToCreate)) {
-        updateCheckboxGroupInput(session,"svVarsToCreate",
-                                 selected=append(input$svVarsToCreate,"Group Volume"))
+      if("Volume Relative to Group" %in% input$svVarsToCreate) {
+        updateCheckboxGroupInput(session,"gvVarsToCreate",
+                                 selected=append(input$gvVarsToCreate,"Group Volume"))
+      }
+    })
+        
+    observeEvent(input$gvVarsToCreate, {
+      if(paste0("Group Volume Relative to ",input$normalizationVar) %in% input$gvVarsToCreate) {
+        updateCheckboxGroupInput(session,"gvVarsToCreate",
+                                 selected=append(input$gvVarsToCreate,"Group Volume"))
       }
     })
     
-    observeEvent(input$svVarsToCreate, {
-      if("Group Surface Area-to-Volume Ratio" %in% input$svVarsToCreate) {
-        updateCheckboxGroupInput(session,"svVarsToCreate",
-                                 selected=append(input$svVarsToCreate,c("Group Volume","Group Surface Area")))
+    observeEvent(input$gvVarsToCreate, {
+      if("Group Surface Area-to-Volume Ratio" %in% input$gvVarsToCreate) {
+        updateCheckboxGroupInput(session,"gvVarsToCreate",
+                                 selected=append(input$gvVarsToCreate,c("Group Volume","Group Surface Area")))
       }
     })
     
