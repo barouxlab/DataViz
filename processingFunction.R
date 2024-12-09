@@ -303,10 +303,16 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
   }
   
   # Relocate the Image Subset and Time variables and make final data type casts
-  finalDataToReturn = dataToProcess %>% relocate(c("Image Subset","Time"),.after=last_col())
+  finalDataToReturn = dataToProcess
+  if ("Image Subset" %in% colnames(dataToProcess)) {
+    finalDataToReturn = dataToProcess %>% relocate(c("Image Subset"),.after=last_col())  
+  }
+  if ("Time" %in% colnames(finalDataToReturn)) {
+    finalDataToReturn = finalDataToReturn %>% relocate(c("Time"),.after=last_col())  
+    finalDataToReturn$`Time` = as.character(finalDataToReturn$`Time`)
+  }
   finalDataToReturn$Channel = as.character(finalDataToReturn$Channel)
   finalDataToReturn$`Object ID` = as.character(finalDataToReturn$`Object ID`)
-  finalDataToReturn$`Time` = as.character(finalDataToReturn$`Time`)
   
   return(finalDataToReturn)
 }

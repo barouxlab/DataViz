@@ -493,7 +493,9 @@ server = function(input, output, session) {
         updateRadioButtons(session,"dataToSelect",choices=c("Original Data"="rawData","Processed Data"="processedData"))
         processedDataToReturn$`Object ID` = as.character(processedDataToReturn$`Object ID`)
         processedDataToReturn$`Channel` = as.character(processedDataToReturn$`Channel`)
-        processedDataToReturn$`Time` = as.numeric(processedDataToReturn$`Time`)
+        if ("Time" %in% colnames(processedDataToReturn)) {
+          processedDataToReturn$`Time` = as.numeric(processedDataToReturn$`Time`) 
+        }
         processedDataToReturn[["Channel"]][is.na(processedDataToReturn[["Channel"]])] = "NA"
         finalProcessedDataToReturn = as_tibble(processedDataToReturn)
         unlink("TMP__ProcessedData.csv")
