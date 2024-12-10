@@ -187,6 +187,8 @@ server = function(input, output, session) {
         names(channelPairsStrings) = channelPairsStringsFormatted
         channelPairsStringsForDisplay <<- channelPairsStrings
         # Update the relevant areas in the Processing Section
+        updateCheckboxGroupInput(session,"ratioSumsUnnormToCreate",choices=channelPairsStringsForDisplay)
+        updateCheckboxGroupInput(session,"ratioMeansUnnormToCreate",choices=channelPairsStringsForDisplay)
         updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay)
         updateCheckboxGroupInput(session,"ratioSumsPerGroupToCreate",choices=channelPairsStringsForDisplay)
     })
@@ -394,6 +396,22 @@ server = function(input, output, session) {
     
     # select all handlers for Ratio variables
     observe({
+      if(input$selectRatioSumsUnnorm == 0) return(NULL) 
+      else if (input$selectRatioSumsUnnorm%%2 == 0)
+      {updateCheckboxGroupInput(session,"ratioSumsUnnormToCreate",choices=channelPairsStringsForDisplay)}
+      else
+      {updateCheckboxGroupInput(session,"ratioSumsUnnormToCreate",choices=channelPairsStringsForDisplay,selected=channelPairsStringsForDisplay)}
+    })
+
+    observe({
+      if(input$selectRatioMeansUnnorm == 0) return(NULL) 
+      else if (input$selectRatioMeansUnnorm%%2 == 0)
+      {updateCheckboxGroupInput(session,"ratioMeansUnnormToCreate",choices=channelPairsStringsForDisplay)}
+      else
+      {updateCheckboxGroupInput(session,"ratioMeansUnnormToCreate",choices=channelPairsStringsForDisplay,selected=channelPairsStringsForDisplay)}
+    })
+        
+    observe({
         if(input$selectRatioSums == 0) return(NULL) 
         else if (input$selectRatioSums%%2 == 0)
         {updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay)}
@@ -412,7 +430,6 @@ server = function(input, output, session) {
     # Dependency checkbox
     observeEvent(input$ratioSumsToCreate, {
       if(length(input$ratioSumsToCreate) > 0){
-        
         updateCheckboxGroupInput(session,"ivVarsToCreate",
                                  selected=append(input$ivVarsToCreate, paste0("Intensity Sum Normalised per ",input$normalizationVar)))
       }
@@ -486,7 +503,10 @@ server = function(input, output, session) {
         req(importedData())
         dataToProcess = importedData()
         combinedVars <- unlist(as.list(combinedVarsToCreate()), recursive = TRUE)
-        processedData = suppressWarnings(processingFunction(dataToProcess,combinedVars,input$ratioSumsToCreate,input$ratioSumsPerGroupToCreate,input$normalizationVar))
+        processedData = suppressWarnings(processingFunction(dataToProcess,combinedVars,
+                                                            input$ratioSumsUnnormToCreate,input$ratioMeansUnnormToCreate,
+                                                            input$ratioSumsToCreate,input$ratioSumsPerGroupToCreate,
+                                                            input$normalizationVar))
         processedDataToWrite = processedData
         write.csv(processedDataToWrite, "TMP__ProcessedData.csv", row.names = FALSE)
         processedDataToReturn = read.csv("TMP__ProcessedData.csv",check.names = FALSE)
@@ -663,6 +683,16 @@ server = function(input, output, session) {
               selectedOptVars = selectedOptVars[!selectedOptVars %in% varList]
             }
           }
+        }
+        
+        ratioVars_SumNucl = ratioVars[grepl("Intensity Sum", ratioVars)]
+        if (length(ratioVars_SumNucl) > 0) {
+          ll[["Ratio of Intensity Sum"]] = c(ratioVars_SumNucl,"")
+        }
+        
+        ratioVars_MeanNucl = ratioVars[grepl("Intensity Mean", ratioVars)]
+        if (length(ratioVars_MeanNucl) > 0) {
+          ll[["Ratio of Intensity Mean"]] = c(ratioVars_MeanNucl,"")
         }
         
         ratioVars_SumNormNucl = ratioVars[grepl(paste0("Intensity Sum Normalised per ",normVar), ratioVars)]

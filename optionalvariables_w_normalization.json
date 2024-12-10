@@ -41,6 +41,16 @@
       "name" : "Channel ratio variables",
       "variables" : [
         {
+          "name": "Ratio of Intensity Sum", 
+          "desc" : "For each object, the ratio is made between the values: Intensity Sum",
+          "is_norm" : "false"
+        },
+        {
+          "name": "Ratio of Intensity Mean", 
+          "desc" : "For each object, the ratio is made between the values: Intensity Mean",
+          "is_norm" : "false"
+        },
+        {
           "name": "Ratio of Intensity Sum Normalised per Nucleus", 
           "desc" : "For each object, the ratio is made between the values: Intensity Sum Normalized per Nucleus",
           "is_norm" : "true"

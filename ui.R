@@ -64,11 +64,17 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              actionLink("selectallIVvars","Select/Clear All Variables"),
                              
                              h4("Channel ratio variables"),
+                             checkboxGroupInput("ratioSumsUnnormToCreate",h5("Ratio of Intensity Sum")),
+                             actionLink("selectRatioSumsUnnorm","Select/Clear All Sum Ratios"),
+                             
+                             checkboxGroupInput("ratioMeansUnnormToCreate",h5("Ratio of Intensity Mean")),
+                             actionLink("selectRatioMeansUnnorm","Select/Clear All Mean Ratios"),
+                             
                              checkboxGroupInput("ratioSumsToCreate",h5(textOutput("ratioSumsToCreateTitle"))),
-                             actionLink("selectRatioSums","Select/Clear All Sum Ratios"),
+                             actionLink("selectRatioSums","Select/Clear All Sum Ratios Normalised"),
                              
                              checkboxGroupInput("ratioSumsPerGroupToCreate",h5("Ratio of Intensity Sum Normalised by Group")),
-                             actionLink("selectRatioSumsPerGroup","Select/Clear All Sum per Group Ratios"),
+                             actionLink("selectRatioSumsPerGroup","Select/Clear All Sum per Group Ratios Normalised"),
                              
                              checkboxGroupInput("dvVarsToCreate",h4("Distance variables")),
                              actionLink("selectallDVvars","Select/Clear All Variables"),

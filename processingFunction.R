@@ -2,7 +2,7 @@
 # The "processed data" is defined as the original cleaned data with added custom variables that are
 # made (i.e., processed) from the original variables.
 
-processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratioSumsPerGroupToCreate,normVar){
+processingFunction = function(importedData,varsToInclude,ratioSumsUnnormToCreate,ratioMeansUnnormToCreate,ratioSumsToCreate,ratioSumsPerGroupToCreate,normVar){
   # Before any processing, drop columns with no names
   if("" %in% colnames(importedData)){
     importedData = importedData %>% dplyr::select(-c(""))
@@ -105,6 +105,62 @@ processingFunction = function(importedData,varsToInclude,ratioSumsToCreate,ratio
       ungroup()
   }
   
+  # Create Ratio Ch[a]:Ch[b] Unnormalised
+  condVar = "Intensity Sum"
+  if (length(ratioSumsUnnormToCreate) != 0 & (condVar %in% names(dataToProcess))){
+    
+    # calculate ratios
+    for (c in ratioSumsUnnormToCreate){
+      splitStrings = lapply(strsplit(c,", "),as.numeric)
+      ch_a = splitStrings[[1]][1]
+      ch_b = splitStrings[[1]][2]
+      stringTitle = paste("Ratio Ch",ch_a,":Ch",ch_b," of Intensity Sum",sep = "")
+      dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`,`Category`) %>%
+        mutate(!!stringTitle := .data[[condVar]][.data$Channel == ch_a] / .data[[condVar]][.data$Channel == ch_b]) %>%
+        ungroup()
+    }
+    
+    # assign NAs to non-relevant channels
+    for (c in ratioSumsUnnormToCreate){
+      splitStrings = lapply(strsplit(c,", "),as.numeric)
+      ch_a = splitStrings[[1]][1]
+      ch_b = splitStrings[[1]][2]
+      stringTitle = paste("Ratio Ch",ch_a,":Ch",ch_b," of Intensity Sum",sep = "")
+      dataToProcess = dataToProcess %>% 
+        mutate(!!sym(stringTitle) := replace(!!sym(stringTitle),!(`Channel` %in% c(ch_a,ch_b)),NA_real_))
+    }
+    
+    matchCol = "Ratio Ch.*Intensity Sum"
+    dataToProcess = dataToProcess %>% mutate(across(matches(matchCol), ~ replace(., . %in% c(Inf, -Inf, NaN), NA_real_)))
+  }
+
+  condVar = "Intensity Mean"
+  if (length(ratioMeansUnnormToCreate) != 0 & (condVar %in% names(dataToProcess))){
+    
+    # calculate ratios
+    for (c in ratioMeansUnnormToCreate){
+      splitStrings = lapply(strsplit(c,", "),as.numeric)
+      ch_a = splitStrings[[1]][1]
+      ch_b = splitStrings[[1]][2]
+      stringTitle = paste("Ratio Ch",ch_a,":Ch",ch_b," of Intensity Mean",sep = "")
+      dataToProcess = dataToProcess %>% group_by(`Image File`,`Object ID`,`Object`,`Category`) %>%
+        mutate(!!stringTitle := .data[[condVar]][.data$Channel == ch_a] / .data[[condVar]][.data$Channel == ch_b]) %>%
+        ungroup()
+    }
+    
+    # assign NAs to non-relevant channels
+    for (c in ratioMeansUnnormToCreate){
+      splitStrings = lapply(strsplit(c,", "),as.numeric)
+      ch_a = splitStrings[[1]][1]
+      ch_b = splitStrings[[1]][2]
+      stringTitle = paste("Ratio Ch",ch_a,":Ch",ch_b," of Intensity Mean",sep = "")
+      dataToProcess = dataToProcess %>% 
+        mutate(!!sym(stringTitle) := replace(!!sym(stringTitle),!(`Channel` %in% c(ch_a,ch_b)),NA_real_))
+    }
+    
+    matchCol = "Ratio Ch.*Intensity Mean"
+    dataToProcess = dataToProcess %>% mutate(across(matches(matchCol), ~ replace(., . %in% c(Inf, -Inf, NaN), NA_real_)))
+  }
   
   # Create Ratio Ch[a]:Ch[b] of Intensity Sum Normalised per NORMALIZATION_VARIABLE (former, "Normalized Intensity Sum Ratio Ch2:Ch1")
   # Variable "Normalized Intensity Mean Ratio Ch2:Ch1" is NOT created.
