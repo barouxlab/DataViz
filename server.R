@@ -1763,6 +1763,9 @@ server = function(input, output, session) {
                                                                !!sym(input$scatterX) >= input$xLLScatter &
                                                                !!sym(input$scatterX) <= input$xULScatter)
         
+        # apply auto-/ free-scale
+        scalesVar = scalesXYSwitcher(input$scatterXAutoScale,input$scatterYAutoScale)
+        
         if(input$contourCheckbox==FALSE){
             scatterPlotStub = 
             ggplot(densityDataToScatter,
@@ -1770,7 +1773,7 @@ server = function(input, output, session) {
                        x=!!sym(input$scatterX),
                        color=!!sym(input$scatterCatColor))) +
             geom_point(alpha=input$scatterplotTransparency) +
-            facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE, scales = "free") +
+            facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE, scales = scalesVar) +
             scatterplotTheme() +
             scale_color_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) +
             theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
@@ -1781,7 +1784,7 @@ server = function(input, output, session) {
                    aes(y=!!sym(input$scatterY),
                        x=!!sym(input$scatterX))) +
             stat_density_2d(aes(fill = ..level..), geom = "polygon", colour="white",contour_var = "ndensity") +
-            facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE, scales = "free") +
+            facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE, scales = scalesVar) +
             scatterplotTheme() +
             scale_fill_continuous(type = input$contourColor) +
             theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
