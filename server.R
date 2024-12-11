@@ -1066,7 +1066,18 @@ server = function(input, output, session) {
         }
       }
       return(ggplotify::as.ggplot(g))
-    }    
+    }   
+    
+    scalesXYSwitcher <- function(freeX, freeY) {
+      if (freeX & !freeY) {
+        return("free_x")
+      } else if (freeX & freeY) {
+        return("free")
+      } else if (!freeX & freeY) {
+        return("free_y")
+      }
+      return("fixed")
+    }
         
     # Output histograms, kde's, boxplots, and violin plots based on categorical and numeric variable selection for refined plotting
     histoRefined = reactive({
@@ -1074,10 +1085,13 @@ server = function(input, output, session) {
         densityDataToHistoBoxRefined = applyMinMax(densityDataToHistoBoxRefined(),input$singleConVariable,input$xLLHistogram,input$xULHistogram)
         histogramCount = ggplot(densityDataToHistoBoxRefined,aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) +
         geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Count") +
-        plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
+        plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         
+        histogramCount = histogramCount +
+          facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=scalesXYSwitcher(input$histoXAutoScale,input$histoYAutoScale))
+
         if (input$kruskallwallisCheckbox) {
           kruskal_results = calculateKWTest(densityDataToHistoBoxRefined, input$singleConVariable, input$catVariableForFill, input$catVariableForSplitting)
           histogramCount = addKWToFacetTitle(kruskal_results, histogramCount, input$catVariableForSplitting)
@@ -1096,10 +1110,13 @@ server = function(input, output, session) {
         densityDataToHistoBoxRefined = applyMinMax(densityDataToHistoBoxRefined(),input$singleConVariable,input$xLLHistogram,input$xULHistogram)
         histogramPercentage = ggplot(densityDataToHistoBoxRefined,aes(x=!!sym(input$singleConVariable),y=after_stat(count / ave(count, PANEL, FUN = sum)),fill=!!sym(input$catVariableForFill))) +
         geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
-        plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
+        plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         
+        histogramPercentage = histogramPercentage +
+          facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=scalesXYSwitcher(input$histoXAutoScale,input$histoYAutoScale))
+
         if (input$kruskallwallisCheckbox) {
           kruskal_results = calculateKWTest(densityDataToHistoBoxRefined, input$singleConVariable, input$catVariableForFill, input$catVariableForSplitting)
           histogramPercentage = addKWToFacetTitle(kruskal_results, histogramPercentage, input$catVariableForSplitting)
@@ -1117,9 +1134,12 @@ server = function(input, output, session) {
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         densityDataToHistoBoxRefined = applyMinMax(densityDataToHistoBoxRefined(),input$singleConVariable,input$xLLKDE,input$xULKDE)
         kdeSplit = ggplot(densityDataToHistoBoxRefined,aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) + geom_density(adjust=input$kdeAdjust, alpha=input$kdeTransparency) + ylab("Density") +
-        ylim(input$yLLKDE,input$yULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
+        ylim(input$yLLKDE,input$yULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+
+        kdeSplit = kdeSplit + 
+          facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=scalesXYSwitcher(input$kdeXScale,input$kdeYScale))
         
         if (input$kruskallwallisCheckbox) {
           kruskal_results = calculateKWTest(densityDataToHistoBoxRefined, input$singleConVariable, input$catVariableForFill, input$catVariableForSplitting)
@@ -1138,9 +1158,12 @@ server = function(input, output, session) {
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         densityDataToHistoBoxRefined = applyMinMax(densityDataToHistoBoxRefined(),input$singleConVariable,input$xLLKDE,input$xULKDE)
         kdeSplitPercentage = ggplot(densityDataToHistoBoxRefined,aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) + geom_density(stat='bin',bins=as.numeric(input$kdeNumOfBinsRefined), alpha=input$kdeTransparency) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
-        plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
+        plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        
+        kdeSplitPercentage = kdeSplitPercentage + 
+          facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=scalesXYSwitcher(input$kdeXScale,input$kdeYScale))
         
         if (input$kruskallwallisCheckbox) {
           kruskal_results = calculateKWTest(densityDataToHistoBoxRefined, input$singleConVariable, input$catVariableForFill, input$catVariableForSplitting)
@@ -1192,11 +1215,15 @@ server = function(input, output, session) {
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         boxplot = ggplot(boxplotData,aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_boxplot(varwidth = FALSE, width = input$boxplotBoxWidth, outlier.alpha = 0.3, outlier.size = 0.6) +
         stat_summary(fun.y=mean, geom="point", shape=20, size=0, color="NA") +
-        plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
+        plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         
-        if (input$boxplotYScale == "logY") {
+        scalesVar = if (input$boxplotYScale) "free" else "fixed"
+        boxplot = boxplot + 
+            facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=scalesVar)
+
+        if (input$boxplotYTransform == "logY") {
           boxplot = boxplot + scale_y_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}),limits=c(yLLBoxplot,yULBoxplot))
         }
         
@@ -1231,10 +1258,14 @@ server = function(input, output, session) {
         densityDataToHistoBoxRefined = applyMinMax(densityDataToHistoBoxRefined(),input$singleConVariable,input$yLLBoxplot,input$yULBoxplot)
         req(nrow(densityDataToHistoBoxRefined)>0)
         violinplot = ggplot(densityDataToHistoBoxRefined,aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_violin(draw_quantiles = c(0.5), width = input$boxplotBoxWidth) +
-        plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales="free") +
+        plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         
+        scalesVar = if (input$boxplotYScale) "free" else "fixed"
+        violinplot = violinplot + 
+            facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=scalesVar)
+
         if (input$kruskallwallisCheckbox) {
           kruskal_results = calculateKWTest(densityDataToHistoBoxRefined, input$singleConVariable, input$catVariableForFill, input$catVariableForSplitting)
           violinplot = addKWToFacetTitle(kruskal_results, violinplot, input$catVariableForSplitting)
@@ -1490,12 +1521,12 @@ server = function(input, output, session) {
     observe({ 
       if(input$tabs1Dplots == "Boxplots") {
         shinyjs::show(id = "boxplotDistribution")
-        shinyjs::show(id = "boxplotYScale")
+        shinyjs::show(id = "boxplotYTransform")
         shinyjs::show(id = "boxplotPointSize")
         shinyjs::show(id = "boxplotPointTransparency")
       } else if(input$tabs1Dplots == "Violin Plots"){
         shinyjs::hide(id = "boxplotDistribution")
-        shinyjs::hide(id = "boxplotYScale")
+        shinyjs::hide(id = "boxplotYTransform")
         shinyjs::hide(id = "boxplotPointSize")
         shinyjs::hide(id = "boxplotPointTransparency")
       }

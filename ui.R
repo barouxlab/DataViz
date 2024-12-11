@@ -211,7 +211,9 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                   numericInput("xULHistogram",label="X Max",value=1)
                                                                  ),
                                                              ))),
-                                                  numericInput("numOfBinsRefined","# of Bins",value="30")
+                                                  numericInput("numOfBinsRefined","# of Bins",value="30"),
+                                                  checkboxInput("histoXAutoScale",label="Auto-scale X axis?",value = FALSE),
+                                                  checkboxInput("histoYAutoScale",label="Auto-scale Y axis?",value = FALSE)
                                                  ),
                                          tabPanel("Density",
                                                   fluidRow(
@@ -226,6 +228,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                   numericInput("xULKDE",label="X Max",value=1)
                                                                  ),
                                                              ))),
+                                                  checkboxInput("kdeXScale",label="Auto-scale X axis?",value = FALSE),
                                                   fluidRow(
                                                       column(
                                                           width = 6,
@@ -238,6 +241,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                   numericInput("yULKDE",label="Y Max",value=1)
                                                                  ),
                                                              ))),
+                                                  checkboxInput("kdeYScale",label="Auto-scale Y axis?",value = FALSE),
                                                   fluidRow(
                                                       column(
                                                           width = 6,
@@ -277,7 +281,8 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                   numericInput("yULBoxplot",label="Y Max",value=1)
                                                                  ),
                                                              ))),
-                                                  radioButtons(inputId="boxplotYScale",label="Y scale",choices=c("Linear"="linearY","Log"="logY"),selected="linearY",inline=TRUE),
+                                                  checkboxInput("boxplotYScale",label="Auto-scale Y axis?",value = FALSE),
+                                                  radioButtons(inputId="boxplotYTransform",label="Y transform",choices=c("Linear"="linearY","Log"="logY"),selected="linearY",inline=TRUE),
                                                   fluidRow(
                                                       column(
                                                           width = 6,
