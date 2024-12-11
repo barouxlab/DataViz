@@ -1055,12 +1055,15 @@ server = function(input, output, session) {
       for (i in seq_along(strip_indices)) {
         strip <- g$grobs[[strip_indices[i]]]
         text_grob = strip$grobs[[1]]$children[[2]]$children[[1]]
-        old_label = text_grob$label
-        new_label = kruskal_results %>% filter(!!sym(catVariableForSplitting) == old_label) %>% 
-          mutate(`p-value` = paste0("p = ", `p-value`)) %>% pull(`p-value`)
-        new_label = paste(old_label," ",new_label)
-        text_grob$label = new_label
-        g$grobs[[strip_indices[i]]]$grobs[[1]]$children[[2]]$children[[1]] <- text_grob
+        # handles uneven num. of facets for even grid
+        if (!is.null(text_grob)) {
+          old_label = text_grob$label
+          new_label = kruskal_results %>% filter(!!sym(catVariableForSplitting) == old_label) %>% 
+            mutate(`p-value` = paste0("p = ", `p-value`)) %>% pull(`p-value`)
+          new_label = paste(old_label," ",new_label)
+          text_grob$label = new_label
+          g$grobs[[strip_indices[i]]]$grobs[[1]]$children[[2]]$children[[1]] <- text_grob
+        }
       }
       return(ggplotify::as.ggplot(g))
     }    
