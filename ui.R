@@ -212,8 +212,8 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                  ),
                                                              ))),
                                                   numericInput("numOfBinsRefined","# of Bins",value="30"),
-                                                  checkboxInput("histoXAutoScale",label="Auto-scale X axis?",value = FALSE),
-                                                  checkboxInput("histoYAutoScale",label="Auto-scale Y axis?",value = FALSE)
+                                                  checkboxInput("histoXAutoScale",label="Auto-scale X axis",value = FALSE),
+                                                  checkboxInput("histoYAutoScale",label="Auto-scale Y axis",value = FALSE)
                                                  ),
                                          tabPanel("Density",
                                                   fluidRow(
@@ -228,7 +228,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                   numericInput("xULKDE",label="X Max",value=1)
                                                                  ),
                                                              ))),
-                                                  checkboxInput("kdeXScale",label="Auto-scale X axis?",value = FALSE),
+                                                  checkboxInput("kdeXScale",label="Auto-scale X axis",value = FALSE),
                                                   fluidRow(
                                                       column(
                                                           width = 6,
@@ -241,7 +241,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                   numericInput("yULKDE",label="Y Max",value=1)
                                                                  ),
                                                              ))),
-                                                  checkboxInput("kdeYScale",label="Auto-scale Y axis?",value = FALSE),
+                                                  checkboxInput("kdeYScale",label="Auto-scale Y axis",value = FALSE),
                                                   fluidRow(
                                                       column(
                                                           width = 6,
@@ -281,7 +281,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                                   numericInput("yULBoxplot",label="Y Max",value=1)
                                                                  ),
                                                              ))),
-                                                  checkboxInput("boxplotYScale",label="Auto-scale Y axis?",value = FALSE),
+                                                  checkboxInput("boxplotYScale",label="Auto-scale Y axis",value = FALSE),
                                                   radioButtons(inputId="boxplotYTransform",label="Y transform",choices=c("Linear"="linearY","Log"="logY"),selected="linearY",inline=TRUE),
                                                   fluidRow(
                                                       column(
@@ -424,9 +424,9 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                             ),
                                                         ))),
                                              radioButtons(inputId="scatterplotXScale",label="X scale",choices=c("Linear"="linearX","Log"="logX"),selected="linearX",inline=TRUE),
-                                             checkboxInput("scatterXAutoScale",label="Auto-scale X axis?",value = FALSE),
+                                             checkboxInput("scatterXAutoScale",label="Auto-scale X axis",value = FALSE),
                                              radioButtons(inputId="scatterplotYScale",label="Y scale",choices=c("Linear"="linearY","Log"="logY"),selected="linearY",inline=TRUE),
-                                             checkboxInput("scatterYAutoScale",label="Auto-scale Y axis?",value = FALSE),
+                                             checkboxInput("scatterYAutoScale",label="Auto-scale Y axis",value = FALSE),
                                              checkboxInput("scatterplotPearsonCheckbox",label="Pearson correlation",value = FALSE)
                                          ),
                                          tabPanel("Layout",
