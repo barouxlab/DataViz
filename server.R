@@ -970,6 +970,9 @@ server = function(input, output, session) {
                 filter(!!sym(input$singleConVariable) <= input$yULBoxplot)
             } 
             
+            
+            # TODO: when downloading GROUP variables + Object count, do deduplication
+            
             downloadDataStub = downloadDataStub %>% 
               select("Image File","Treatment", "Genotype",!!sym(input$singleConVariable), !!sym(input$catVariableForFill), !!sym(input$catVariableForSplitting))
             write.csv(downloadDataStub, file, row.names = FALSE)
@@ -1192,6 +1195,7 @@ server = function(input, output, session) {
         normVar = input$normalizationVar
         
         # deduplicate (take 1st row) for group variables
+        # TODO: check ObjectCount as well
         if (input$singleConVariable %in% c("Group Intensity Sum", 
                                            "Group Intensity Mean", 
                                            paste0("Group Intensity Sum Relative to ",normVar), 
@@ -1690,21 +1694,41 @@ server = function(input, output, session) {
         }
         req(nrow(dataForPlotParams) > 0, message = "No available data.")
         
-        xRangeScatter = dataForPlotParams %>%
-          summarize(min_value = min(!!sym(input$scatterX), na.rm = TRUE), 
-                    max_value = max(!!sym(input$scatterX), na.rm = TRUE)) %>% unlist() %>% as.array()
-        
-        yRangeScatter = dataForPlotParams %>%
-          summarize(min_value = min(!!sym(input$scatterY), na.rm = TRUE), 
-                    max_value = max(!!sym(input$scatterY), na.rm = TRUE)) %>% unlist() %>% as.array()
-        
-        names(xRangeScatter) <- NULL
-        names(yRangeScatter) <- NULL
+        # calculate X/Y ranges
+        if(input$contourCheckbox){ # density plots
+          
+          scatterForParams = ggplot(dataForPlotParams, 
+                                    aes(y=!!sym(input$scatterY), 
+                                        x=!!sym(input$scatterX))) +
+                            stat_density_2d(aes(fill = ..level..), geom = "polygon", colour="white") +
+                            facet_wrap(paste("~", paste("`",input$scatterCatFacet,"`",sep="")),ncol=input$scatterNumColumns,drop=FALSE)
+          
+          plot_build <- ggplot_build(scatterForParams)
+          x_ranges <- sapply(plot_build$layout$panel_params, function(panel) panel$x.range)
+          y_ranges <- sapply(plot_build$layout$panel_params, function(panel) panel$y.range)
+          xRangeScatter <<- range(x_ranges)
+          yRangeScatter <<- range(y_ranges)
+
+        } else { # scatterplot
+          
+          xRangeScatter <<- dataForPlotParams %>%
+            summarize(min_value = min(!!sym(input$scatterX), na.rm = TRUE), 
+                      max_value = max(!!sym(input$scatterX), na.rm = TRUE)) %>% unlist() %>% as.array()
+          
+          yRangeScatter <<- dataForPlotParams %>%
+            summarize(min_value = min(!!sym(input$scatterY), na.rm = TRUE), 
+                      max_value = max(!!sym(input$scatterY), na.rm = TRUE)) %>% unlist() %>% as.array()
+          
+          names(xRangeScatter) <- NULL
+          names(yRangeScatter) <- NULL
+
+        }
         
         updateNumericInput(session,"xLLScatter",value=xRangeScatter[1])
         updateNumericInput(session,"xULScatter",value=xRangeScatter[2])
         updateNumericInput(session,"yLLScatter",value=yRangeScatter[1])
         updateNumericInput(session,"yULScatter",value=yRangeScatter[2])
+
     })
     
     # Output scatterplots
