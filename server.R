@@ -970,9 +970,27 @@ server = function(input, output, session) {
                 filter(!!sym(input$singleConVariable) <= input$yULBoxplot)
             } 
             
-            
-            # TODO: when downloading GROUP variables + Object count, do deduplication
-            
+            normVar = input$normalizationVar
+            if (input$singleConVariable %in% c("Group Intensity Sum", 
+                                               "Group Intensity Mean", 
+                                               paste0("Group Intensity Sum Relative to ",normVar), 
+                                               paste0("Group Intensity Mean Relative to ",normVar),
+                                               "Group Volume",
+                                               paste0("Group Volume Relative to ",normVar),
+                                               "Group Surface Area",
+                                               "Group Surface Area-to-Volume Ratio",
+                                               "Object Count")) {
+              l = sapply(downloadDataStub, class)
+              categoricalVars = sort(names(l[str_which(l,pattern="character")]))
+              categoricalVars = sort(categoricalVars[-which(categoricalVars=="Object ID")])
+              downloadDataStub = downloadDataStub %>% distinct(!!!syms(categoricalVars), .keep_all = TRUE) 
+              
+              # additionally deduplicate per selection
+              downloadDataStub = downloadDataStub %>% 
+                distinct("Image File","Treatment", "Genotype",!!sym(input$singleConVariable), !!sym(input$catVariableForFill), !!sym(input$catVariableForSplitting), 
+                         .keep_all = TRUE) 
+            }
+
             downloadDataStub = downloadDataStub %>% 
               select("Image File","Treatment", "Genotype",!!sym(input$singleConVariable), !!sym(input$catVariableForFill), !!sym(input$catVariableForSplitting))
             write.csv(downloadDataStub, file, row.names = FALSE)
@@ -1195,7 +1213,6 @@ server = function(input, output, session) {
         normVar = input$normalizationVar
         
         # deduplicate (take 1st row) for group variables
-        # TODO: check ObjectCount as well
         if (input$singleConVariable %in% c("Group Intensity Sum", 
                                            "Group Intensity Mean", 
                                            paste0("Group Intensity Sum Relative to ",normVar), 
@@ -1203,7 +1220,8 @@ server = function(input, output, session) {
                                            "Group Volume",
                                            paste0("Group Volume Relative to ",normVar),
                                            "Group Surface Area",
-                                           "Group Surface Area-to-Volume Ratio")) {
+                                           "Group Surface Area-to-Volume Ratio",
+                                           "Object Count")) {
           l = sapply(boxplotData, class)
           categoricalVars = sort(names(l[str_which(l,pattern="character")]))
           categoricalVars = sort(categoricalVars[-which(categoricalVars=="Object ID")])
