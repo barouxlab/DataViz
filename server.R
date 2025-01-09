@@ -655,55 +655,70 @@ server = function(input, output, session) {
     updateCategoriesContinuousVars1 <- reactive({
       function(continuousVars) {
         
-        normVar = input$normalizationVar
-        
         allOptVarsJSON = rjson::fromJSON(file = "optionalvariables_w_normalization.json")
-        allOptVars = c()
-        for(elem in allOptVarsJSON$optionalvariables) {
-          allOptVars = c(allOptVars, getVariableNames_w_Normalization(elem,normVar))
-        }
-        
-        dfVars = continuousVars[!continuousVars %in% allOptVars]
-        selectedOptVars = continuousVars[continuousVars %in% allOptVars]
-        ratioVars = dfVars[grepl("Ratio Ch", dfVars)]
-        dfVars = dfVars[!grepl("Ratio Ch", dfVars)]
         
         ll = list()
-        ll[[" "]] = dfVars
         
         # assign selected opt vars to categories from JSON
         for(elem in allOptVarsJSON$optionalvariables) {
-          if (length(selectedOptVars) > 0) {
-            categoryVar = elem$name
-            varList = getVariableNames_w_Normalization(elem,normVar)
+          categoryVar = elem$name
+          
+          if (elem$name != "Channel ratio variables") {
+            categoryVars = c()
+            for(a in elem$variables){
+              checkStr = gsub("Nucleus",'',a$name)
+              
+              if (elem$name == "Shape variables") {
+                vs = continuousVars[grepl(checkStr, continuousVars) & !grepl("^Group", continuousVars)]
+              } else if (elem$name == "Group variables") {
+                vs = continuousVars[grepl(checkStr, continuousVars)]
+              } else {
+                vs = continuousVars[grepl(checkStr, continuousVars) & !grepl("Ratio", continuousVars)]
+              }
+              continuousVars = continuousVars[!continuousVars %in% vs]
+              categoryVars = c(categoryVars, vs)
+            }
             
-            selCatVars = selectedOptVars[selectedOptVars %in% varList]
-            if (length(selCatVars) > 0) {
-              ll[[categoryVar]] = c(selCatVars,"")
-              selectedOptVars = selectedOptVars[!selectedOptVars %in% varList]
+            if (length(categoryVars) > 0) {
+              ll[[categoryVar]] = c(categoryVars,"")
             }
           }
         }
         
+        # assign Ratio variables
+        ratioVars = continuousVars[grepl("Ratio Ch", continuousVars)]
+        continuousVars = continuousVars[!continuousVars %in% ratioVars]
+        
+        ratioVars_SumNormGr = ratioVars[grepl("Intensity Sum Normalised per Group", ratioVars)]
+        ratioVars = ratioVars[!ratioVars %in% ratioVars_SumNormGr]
+        
+        ratioVars_SumNormNucl = ratioVars[grepl("Intensity Sum Normalised per ", ratioVars)]
+        ratioVars = ratioVars[!ratioVars %in% ratioVars_SumNormNucl]
+        
+        ratioVars_MeanNucl = ratioVars[grepl("Intensity Mean", ratioVars)]
+        ratioVars = ratioVars[!ratioVars %in% ratioVars_MeanNucl]
+        
         ratioVars_SumNucl = ratioVars[grepl("Intensity Sum", ratioVars)]
+        ratioVars = ratioVars[!ratioVars %in% ratioVars_SumNucl]
+        
         if (length(ratioVars_SumNucl) > 0) {
           ll[["Ratio of Intensity Sum"]] = c(ratioVars_SumNucl,"")
         }
         
-        ratioVars_MeanNucl = ratioVars[grepl("Intensity Mean", ratioVars)]
         if (length(ratioVars_MeanNucl) > 0) {
           ll[["Ratio of Intensity Mean"]] = c(ratioVars_MeanNucl,"")
         }
         
-        ratioVars_SumNormNucl = ratioVars[grepl(paste0("Intensity Sum Normalised per ",normVar), ratioVars)]
         if (length(ratioVars_SumNormNucl) > 0) {
-          ll[[paste0('Ratio of Intensity Sum Normalised per ',normVar)]] = c(ratioVars_SumNormNucl,"")
+          ll[["Ratio of Intensity Sum Normalised"]] = c(ratioVars_SumNormNucl,"")
         }
         
-        ratioVars_SumNormGr = ratioVars[grepl("Intensity Sum Normalised per Group", ratioVars)]
         if (length(ratioVars_SumNormGr) > 0) {
           ll[['Ratio of Intensity Sum Normalised per Group']] = c(ratioVars_SumNormGr,"")
         }
+        
+        # add non-optional variables
+        ll <- c(list(" " = continuousVars), ll)        
         
         return(ll)
         

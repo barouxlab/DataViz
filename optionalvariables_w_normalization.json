@@ -56,8 +56,8 @@
           "is_norm" : "true"
         },
         {
-          "name": "Ratio of Intensity Sum Normalised by Group", 
-          "desc" : "For each object, the ratio is made between the values: Intensity Sum Normalized by Group",
+          "name": "Ratio of Intensity Sum Normalised per Group", 
+          "desc" : "For each object, the ratio is made between the values: Intensity Sum Normalized per Group",
           "is_norm" : "false"
         }
       ]
