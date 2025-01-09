@@ -1551,9 +1551,16 @@ server = function(input, output, session) {
         shinyjs::hide(id = "boxplotYTransform")
         shinyjs::hide(id = "boxplotPointSize")
         shinyjs::hide(id = "boxplotPointTransparency")
+      } else if(input$tabs1DplotsKDE == "KDE by Density"){
+        shinyjs::show(id = "kdeAdjust")
+        shinyjs::hide(id = "kdeNumOfBinsRefined")
+      } else if(input$tabs1DplotsKDE == "KDE by Percent"){
+        shinyjs::show(id = "kdeNumOfBinsRefined")
+        shinyjs::hide(id = "kdeAdjust")
       }
     })
     
+
     # Create the option to apply bins to the data then remove them if desired
     groupVarName <<- "__reset"
     observeEvent(input$addBins,{

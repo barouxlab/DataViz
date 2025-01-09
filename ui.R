@@ -216,6 +216,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   checkboxInput("histoYAutoScale",label="Auto-scale Y axis",value = FALSE)
                                                  ),
                                          tabPanel("Density",
+                                                  shinyjs::useShinyjs(), 
                                                   fluidRow(
                                                       column(
                                                           width = 6,
@@ -243,6 +244,14 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                              ))),
                                                   checkboxInput("kdeYScale",label="Auto-scale Y axis",value = FALSE),
                                                   fluidRow(
+                                                    column(
+                                                      width = 6,
+                                                      div(style = "white-space: nowrap;", 
+                                                          div(style="display: inline-block; width: 100%;",
+                                                              numericInput("kdeTransparency",label="Transparency",value=0.9,min=0,max=1,step=0.05)
+                                                          )
+                                                      ))),
+                                                  fluidRow(
                                                       column(
                                                           width = 6,
                                                           div(style = "white-space: nowrap;", 
@@ -255,17 +264,9 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                           width = 6,
                                                           div(style = "white-space: nowrap;", 
                                                               div(style="display: inline-block; width: 100%;",
-                                                                  numericInput("kdeNumOfBinsRefined",label="# of Bins for % KDE",value=30)
+                                                                  numericInput("kdeNumOfBinsRefined",label="# of Bins for % KDE Smoothing",value=30)
                                                                  )
-                                                             ))),
-                                                  fluidRow(
-                                                    column(
-                                                      width = 6,
-                                                      div(style = "white-space: nowrap;", 
-                                                          div(style="display: inline-block; width: 100%;",
-                                                              numericInput("kdeTransparency",label="Transparency",value=0.9,min=0,max=1,step=0.05)
-                                                          )
-                                                      )))
+                                                             )))
                                                  ),
                                          tabPanel("Box/Vio",
                                                   shinyjs::useShinyjs(), 
@@ -344,6 +345,7 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                                                   ),
                                          tabPanel("Density Plots",
                                                   tabsetPanel(type = "tabs",
+                                                              id = "tabs1DplotsKDE",
                                                               tabPanel("KDE by Density",
                                                                        plotOutput("kdeRefined",height="auto")),
                                                               tabPanel("KDE by Percent",
