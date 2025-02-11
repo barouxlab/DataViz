@@ -98,13 +98,15 @@ cleaningFunction = function(inputTopLevelDirectory){
                                group_by(`Image File`,`Treatment`,`Object ID`,`Category`,`Channel`,`Surpass Object`,`Surfaces`) %>% 
                                summarise_all(coalesce_by_column) %>% ungroup()
     
+    
     pivotColumnList = c("Shortest Distance to Surfaces","Overlapped Volume to Surfaces","Overlapped Volume Ratio to Surfaces")
-    
+    pivotColumnList = pivotColumnList[pivotColumnList %in% colnames(dataToPivot)]
     finalData = dataToPivot %>% distinct() %>%
-                               pivot_wider(names_from="Surfaces",names_glue = "{.value} - {Surfaces}", values_from=pivotColumnList) %>%
-                               dplyr::select(-c(`Shortest Distance to Surfaces - NA`)) %>% dplyr::select(-c(`Overlapped Volume to Surfaces - NA`)) %>%
-                               dplyr::select(-c(`Overlapped Volume Ratio to Surfaces - NA`))
+                               pivot_wider(names_from="Surfaces",names_glue = "{.value} - {Surfaces}", values_from=pivotColumnList) 
     
+    pivotColumnList = paste0(pivotColumnList, " - NA")
+    finalData = finalData %>% dplyr::select(-all_of(pivotColumnList))
+
     # Augment the Shortest Distance to Spots Columns in the same way
     if("Shortest Distance to Spots" %in% colnames(finalData)){
         finalData = finalData %>% 
