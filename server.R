@@ -871,7 +871,7 @@ server = function(input, output, session) {
     
     # gets min and max of a column from dataframe
     getMinMax <- function(df,col) {
-      df = df %>% filter(!is.na(!!sym(col)))
+      df = df %>% filter(!is.na(!!sym(col))) %>% filter(is.finite(!!sym(col)))
       rangeCol = df %>%
         summarize(min_value = min(!!sym(col), na.rm = TRUE), 
                   max_value = max(!!sym(col), na.rm = TRUE)) %>% unlist() %>% as.array()
@@ -1723,9 +1723,11 @@ server = function(input, output, session) {
     # Generate data for the scatterplot
     observe({
         dataForPlotParams = densityDataToScatterParams()
-
         # ensure NA from X and Y are removed
-        dataForPlotParams = dataForPlotParams %>% filter(!is.na(!!sym(input$scatterX)) & !is.na(!!sym(input$scatterY)))
+        # ensure NaN, Inf and -Inf are removed
+        dataForPlotParams = dataForPlotParams %>% 
+          filter(!is.na(!!sym(input$scatterX)) & !is.na(!!sym(input$scatterY))) %>% 
+          filter(is.finite(!!sym(input$scatterX)) & is.finite(!!sym(input$scatterY)))
         if (nrow(dataForPlotParams) == 0) {
           showModal(modalDialog(
             title = "Data is NA in both X and Y variables. Use other variables.",
@@ -1750,7 +1752,6 @@ server = function(input, output, session) {
           yRangeScatter <<- range(y_ranges)
 
         } else { # scatterplot
-          
           xRangeScatter <<- dataForPlotParams %>%
             summarize(min_value = min(!!sym(input$scatterX), na.rm = TRUE), 
                       max_value = max(!!sym(input$scatterX), na.rm = TRUE)) %>% unlist() %>% as.array()
@@ -1758,7 +1759,6 @@ server = function(input, output, session) {
           yRangeScatter <<- dataForPlotParams %>%
             summarize(min_value = min(!!sym(input$scatterY), na.rm = TRUE), 
                       max_value = max(!!sym(input$scatterY), na.rm = TRUE)) %>% unlist() %>% as.array()
-          
           names(xRangeScatter) <- NULL
           names(yRangeScatter) <- NULL
 
