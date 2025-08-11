@@ -90,14 +90,21 @@ cleaningFunction = function(inputTopLevelDirectory){
     # Augment the Shortest Distance to Surfaces Columns via a pivot then a coalesce to merge jagged rows
     
     # Make a coalesce by column function for the coalesce step
-    coalesce_by_column = function(df) {
-        return(dplyr::coalesce(!!! as.list(df)))
-    }
+    #coalesce_by_column = function(df) {
+    #    return(dplyr::coalesce(!!! as.list(df)))
+    #}
 
-    dataToPivot = dataToCoalesce %>%
-                               group_by(`Image File`,`Treatment`,`Object ID`,`Category`,`Channel`,`Surpass Object`,`Surfaces`) %>% 
-                               summarise_all(coalesce_by_column) %>% ungroup()
-    
+    #dataToPivot = dataToCoalesce %>%
+    #                           group_by(`Image File`,`Treatment`,`Object ID`,`Category`,`Channel`,`Surpass Object`,`Surfaces`) %>%
+    #                           summarise_all(coalesce_by_column) %>% ungroup()
+
+    # per every group by=(), find the first non-NA value in each column
+    setDT(dataToCoalesce)
+    dataToPivot <- dataToCoalesce[
+      , lapply(.SD, function(x) x[which(!is.na(x))[1]]),
+      by = .(`Image File`, `Treatment`, `Object ID`, `Category`, `Channel`, `Surpass Object`, `Surfaces`)
+    ]
+    dataToPivot <- as_tibble(dataToPivot)
     
     pivotColumnList = c("Shortest Distance to Surfaces","Overlapped Volume to Surfaces","Overlapped Volume Ratio to Surfaces")
     pivotColumnList = pivotColumnList[pivotColumnList %in% colnames(dataToPivot)]
