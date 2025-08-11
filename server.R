@@ -187,16 +187,34 @@ server = function(input, output, session) {
         names(channelPairsStrings) = channelPairsStringsFormatted
         channelPairsStringsForDisplay <<- channelPairsStrings
         # Update the relevant areas in the Processing Section
+        # not dependent on normalisation variable
         updateCheckboxGroupInput(session,"ratioSumsUnnormToCreate",choices=channelPairsStringsForDisplay)
         updateCheckboxGroupInput(session,"ratioMeansUnnormToCreate",choices=channelPairsStringsForDisplay)
-        updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay)
-        updateCheckboxGroupInput(session,"ratioSumsPerGroupToCreate",choices=channelPairsStringsForDisplay)
     })
     
     output$ratioSumsToCreateTitle <- renderText({
       paste0("Ratio of Intensity Sum Normalised per ",input$normalizationVar)
     })
     
+    # in Process Tab creates checkbox Optional Variables not dependent on Normalization selection if it is NULL
+    observe({
+
+      if (input$normalizationVar == "") {
+          searchVar = "Shape variables"
+          svVarOpts <<- getValuesFromOptVarsNormalize(searchVar,input$normalizationVar)
+          updateCheckboxGroupInput(session,"svVarsToCreate",choices=svVarOpts)
+
+          searchVar = "Object count"
+          ocVarOpts <<- getValuesFromOptVarsNormalize(searchVar,input$normalizationVar)
+          updateCheckboxGroupInput(session,"ocVarsToCreate",choices=ocVarOpts)
+
+          searchVar = "Group variables"
+          gvVarOpts <<- getValuesFromOptVarsNormalize(searchVar,input$normalizationVar)
+          updateCheckboxGroupInput(session,"gvVarsToCreate",choices=gvVarOpts)
+      }
+
+    })
+
     # update Process Tab checkbox Optional Variables based on Normalization selection
     observeEvent(input$normalizationVar, {
 
@@ -224,8 +242,11 @@ server = function(input, output, session) {
       ovVarOpts <<- getValuesFromOptVarsNormalize(searchVar,input$normalizationVar)
       updateCheckboxGroupInput(session,"ovVarsToCreate",choices=ovVarOpts)
 
+      # dependent on normalisation variable
+      updateCheckboxGroupInput(session,"ratioSumsToCreate",choices=channelPairsStringsForDisplay)
+      updateCheckboxGroupInput(session,"ratioSumsPerGroupToCreate",choices=channelPairsStringsForDisplay)
     }, ignoreInit = TRUE)
-    
+
     getValuesFromOptVarsNormalize <- function(searchVar, normVar) {
       res = rjson::fromJSON(file = "optionalvariables_w_normalization.json")
       
@@ -643,10 +664,17 @@ server = function(input, output, session) {
     getVariableNames_w_Normalization <- function(elem,normVar) {
       allOptVars = c()
       for(a in elem$variables){
-        if (a$is_norm == "true" & normVar != "Nucleus") {
+        # substitute default=Nucleus with selected normVar
+        if (a$is_norm == "true" & normVar != "") {
           a$name = gsub("Nucleus",normVar,a$name)
+          allOptVars = c(allOptVars, a$name)
+        # if no selection, do nothing
+        } else if (a$is_norm == "true" & normVar == "") {
+          # do not create anything
+        # if not to normalize just add variable
+        } else if (a$is_norm == "false") {
+          allOptVars = c(allOptVars, a$name)
         }
-        allOptVars = c(allOptVars, a$name)
       }
       return(allOptVars)
     }
