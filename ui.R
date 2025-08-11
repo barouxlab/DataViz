@@ -26,14 +26,50 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                              fileInput("inputFile", "Upload a Zip or CSV file", accept = c(".zip",".csv")),
                              actionButton("confirmUpload", "Import Data"),
                              downloadButton("quickDownload", "Download Data"),
-                             p(""),
-                             p("Press the \"Import Data\" button after selecting/uploading your file of interest."),
-                             p(""),
-                             p("Either a zipped file of original Imaris tables can be selected or a CSV of pre-processed data."),
-                             p(""),
-                             p("Note: because Zip files are cleaned upon import they will take longer to appear. CSV file imports will be much faster."),
-                             p(""),
-                             p("Recommended workflow: upload your Zip file and allow it to be cleaned during the import process, then immediately download the data using the \"Download Data\" button. You can then re-upload the CSV very quickly (bypassing the cleaning pipeline).")
+
+                             br(),
+                             tags$ol(
+                               style = "padding-left: 1.2em;",
+
+                               tags$li(
+                                 "Browse for your file of interest.",
+                                 tags$p(
+                                   style = "margin-top: 0.3em; margin-bottom: 0.8em; margin-left: -1.2em;",
+                                   "DataViz accepts the following:"
+                                   ),
+                                 tags$ul(
+                                   style = "list-style-type: disc; padding-left: 0; margin-top: 0.5em; margin-bottom: 0.5em;",
+                                   tags$li("a zipped file of Imaris Statistics for Imaris 8, 9 and 10"),
+                                   tags$li("a CSV file downloaded from Dataviz and from a previously imported dataset"),
+                                   tags$li("a CSV file with the required format – see FAQs section")
+                                 )
+                               ),
+                               tags$li(
+                                 "Press the \"Import Data\" button.",
+                                 tags$p(
+                                   style = "margin-top: 0.3em; margin-bottom: 0.8em; margin-left: -1.2em;",
+                                   "Because Zip files are cleaned upon import they will take longer to appear. CSV file imports are much faster. When import is complete, a table appears on the right."
+                                 )
+                               ),
+                               tags$li(
+                                 "Check the \"Data Integrity\" Tab.",
+                                 tags$p(
+                                   style = "margin-top: 0.3em; margin-bottom: 0.8em; margin-left: -1.2em;",
+                                   "It indicates images with missing variables replaced with NA by the cleaning function, and images with missing components/objects which will consequently not appear in the \"reference\" object list in the \"Process Tab\"."
+                                 )
+                               ),
+                               tags$li(
+                                 "Download the Data.",
+                                 tags$p(
+                                   style = "margin-top: 0.3em; margin-bottom: 0.8em; margin-left: -1.2em;",
+                                   "Data cleaned and merged by DataViz as shown on the right can be directed downloaded with the \"Download Data\" button above."
+                                 ),
+                                 tags$p(
+                                   style = "margin-top: 0.3em; margin-bottom: 0.8em; margin-left: -1.2em;",
+                                   "For Downloading only a selection of Data, go to the tab \"Data Export\"."
+                                 )
+                               )
+                             )
                          ),
                          mainPanel(
                              tabsetPanel(type = "tabs",
@@ -505,6 +541,17 @@ ui = navbarPage("DataViz",theme = shinytheme("cerulean"),
                         ),
                 tabPanel("FAQs",
                          mainPanel(
+                           h4("Instructions to create own dataframe for uploading in DataViz"),
+                           HTML("<p>It is possible to upload Data issued by a different software than Imaris 8-10 or by a newer version of Imaris providing that it follows the following structure and format. The user can find its own equivalency to fit different data type.</p>"),
+                           HTML("<p><b>Rows:</b></p>"),
+                           HTML("<p>1st row = Headings. Avoid special characters.<br>Following rows = data corresponding to individual datapoints.</p>"),
+                           HTML("<p><b>Columns:</b></p>"),
+                           HTML("<p>The first 6 columns are <i>categorical variables</i> used for plotting (layout and esthetics).<br><br>
+                                    The first 3 columns (A-C) are describing the experimental levels = A) Genotype,  B) Treatment, C) Replicate called here \"Image File\".<br><br>
+                                    The next 3 columns (D-F) are describing the segments of the image = D) Category = this is the Object type created at segmentation (Spot, Surface, Cell etc.); E) Object = Name of the Object given by the user (eg Nucleus, Protein A, Centromere etc..); F) Channel number.<br><br>
+                                    Note: While this data structure was initially designed for image data, it can be used for alternative dataset where the user can define its own equivalency. But importantly, the headings must match the above names and no categorical column must be skipped. By default fill with NA. For instance, Treatment can refer to time points (TP1, TP2 etc..), Genotype can refer to an organ type, Category can refer to a tissue type etc.<br><br>
+                                    The following columns (G and above) are <i>numerical variables</i>. DataViz has no limits set on the number of variables, but it has been tested only for up to 30 variables.
+                                </p>"),
                              h4("What is involved in the 'Data Cleaning' step?"),
                              p("The data cleaning step refers to taking the original data from Imaris, which is formatted within a zipped directory structure, and harmonizing it into a single outputted CSV file/table. The cleaningFunction.R script shows all cleaning steps in code with paired annotations. Of note: the directory structure of the original data, in addition to the directory names, must be specified according to the example .zip file for the cleaning process to work properly. This step will only occur when the data is loaded as a prepared .zip file; if a CSV is uploaded, the data is sent directly to the Processing function."),
                              h4("What is the 'Data Integrity' check on the Landing Page?"),
