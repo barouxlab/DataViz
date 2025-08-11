@@ -40,7 +40,6 @@ server = function(input, output, session) {
             }
             inputtedDataToReturn[["Channel"]][is.na(inputtedDataToReturn[["Channel"]])] = "NA"
             unlink(tmpDirName, recursive = TRUE)
-            return(inputtedDataToReturn)
         } else if(file_ext(dataToImport$name)=="csv"){
             importedData = read.csv(dataToImport$datapath,check.names = FALSE)
             importedData$`Object ID` = as.character(importedData$`Object ID`)
@@ -52,9 +51,10 @@ server = function(input, output, session) {
             inputtedDataToReturn = as_tibble(importedData) %>% relocate(c("Genotype",
                                                                           "Treatment",
                                                                           "Image File"))
-            return(inputtedDataToReturn)
         }
-            dataToCheck = inputtedDataToReturn
+        dataToCheck = inputtedDataToReturn
+        # enforce order of columns
+        dataToCheck <- dataToCheck %>% select("Genotype", "Treatment", `Image File`, "Category", "Object", "Channel", `Object ID`, everything())
         return(dataToCheck)
     })
     
