@@ -120,11 +120,16 @@ cleaningFunction = function(inputTopLevelDirectory){
                     pivot_wider(names_from="Spots",values_from="Shortest Distance to Spots",names_prefix="Distance to Spot ") %>% dplyr::select(-c(`Distance to Spot NA`))
     }
     
-    # Perform final data type changes, column movements, and column name changes
-    finalData = finalData %>% relocate(c("Image Subset","Time"),.after=last_col())
+    # Perform final data  type changes, column movements, and column name changes
+    if("Image Subset" %in% colnames(finalData)){
+        finalData = finalData %>% relocate(c("Image Subset"),.after=last_col())  
+    }
+    if("Time" %in% colnames(finalData)){
+      finalData = finalData %>% relocate(c("Time"),.after=last_col())  
+      finalData$`Time` = as.character(finalData$`Time`)
+    }
     finalData$Channel = as.character(finalData$Channel)
     finalData$`Object ID` = as.character(finalData$`Object ID`)
-    finalData$`Time` = as.character(finalData$`Time`)
     finalData = finalData %>% rename(`Object`= "Surpass Object")
     
     if("Average Distance To 3 Nearest Neighbours" %in% colnames(finalData)){
