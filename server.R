@@ -648,7 +648,7 @@ server = function(input, output, session) {
         categoricalVars = sort(categoricalVars[-which(categoricalVars=="Object ID")])
         continuousVars = sort(names(l[str_which(l,pattern="character",negate=TRUE)]))
         
-        updateCategoriesContinuousVars <- updateCategoriesContinuousVars1()
+        updateCategoriesContinuousVars <- updateCategoriesContinuousVars2()
         updateSelectInput(session, "catVariableForFill", choices = categoricalVars, selected = catVariableForFill_Reference)
         updateSelectInput(session, "singleConVariable", choices = updateCategoriesContinuousVars(continuousVars), selected = singleConVariable_Reference)
         updateSelectInput(session, "binningVariable", choices = updateCategoriesContinuousVars(continuousVars), selected = binningVariable_Reference)
@@ -679,7 +679,65 @@ server = function(input, output, session) {
       return(allOptVars)
     }
     
-    # assign categories to continuous variables as defined in JSON file
+    # keyword-based categorization of all continuous variables
+    updateCategoriesContinuousVars2 <- reactive({
+      function(continuousVars) {
+
+        ll = list()
+
+        # intensity vars
+        vs <- continuousVars[
+          !grepl("^(Ratio|Group)", continuousVars, ignore.case = TRUE) &
+            grepl("Intensity", continuousVars, ignore.case = TRUE)
+        ]
+        continuousVars = continuousVars[!continuousVars %in% vs]
+        if (length(vs) > 0) {
+          ll[["Intensity variables"]] = c(vs,"")
+        }
+
+        # distance vars
+        vs <- continuousVars[
+          !grepl("^(Ratio|Group)", continuousVars, ignore.case = TRUE) &
+            grepl("Distance", continuousVars, ignore.case = TRUE)
+        ]
+        continuousVars = continuousVars[!continuousVars %in% vs]
+        if (length(vs) > 0) {
+          ll[["Distance variables"]] = c(vs,"")
+        }
+
+        # shape vars
+        vs <- continuousVars[
+          !grepl("^(Ratio|Group)", continuousVars, ignore.case = TRUE) &
+            grepl("Volume|Area|Sphericity|Ellipticity|Circularity|Surface", continuousVars, ignore.case = TRUE)
+        ]
+        continuousVars = continuousVars[!continuousVars %in% vs]
+        if (length(vs) > 0) {
+          ll[["Shape variables"]] = c(vs,"")
+        }
+
+        # ratio vars
+        vs = continuousVars[grepl('^Ratio', continuousVars)]
+        continuousVars = continuousVars[!continuousVars %in% vs]
+        if (length(vs) > 0) {
+          ll[["Ratio variables"]] = c(vs,"")
+        }
+
+        # group vars
+        vs = continuousVars[grepl('Group', continuousVars, ignore.case = TRUE)]
+        continuousVars = continuousVars[!continuousVars %in% vs]
+        if (length(vs) > 0) {
+          ll[["Group variables"]] = c(vs,"")
+        }
+
+        # other variables
+        ll[["Other variables"]] = c(continuousVars,"")
+
+        return(ll)
+      }
+    })
+
+    # assign categories to OPTIONAL continuous variables as defined in JSON file
+    # non-optional cont. variables are non-categorized
     updateCategoriesContinuousVars1 <- reactive({
       function(continuousVars) {
         
