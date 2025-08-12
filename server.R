@@ -1214,7 +1214,8 @@ server = function(input, output, session) {
         geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Count") +
         plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
-        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))) +
+        coord_cartesian(xlim = c(input$xLLHistogram, input$xULHistogram))
         
         histogramCount = histogramCount +
           facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=scalesXYSwitcher(input$histoXAutoScale,input$histoYAutoScale))
@@ -1239,7 +1240,8 @@ server = function(input, output, session) {
         geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
         plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
-        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))) +
+        coord_cartesian(xlim = c(input$xLLHistogram, input$xULHistogram))
         
         histogramPercentage = histogramPercentage +
           facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=scalesXYSwitcher(input$histoXAutoScale,input$histoYAutoScale))
@@ -1261,9 +1263,10 @@ server = function(input, output, session) {
         listOfColors = as.list(strsplit(input$hexStrings, ",")[[1]])
         densityDataToHistoBoxRefined = applyMinMax(densityDataToHistoBoxRefined(),input$singleConVariable,input$xLLKDE,input$xULKDE)
         kdeSplit = ggplot(densityDataToHistoBoxRefined,aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) + geom_density(adjust=input$kdeAdjust, alpha=input$kdeTransparency) + ylab("Density") +
-        ylim(input$yLLKDE,input$yULKDE) + plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
+        plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
-        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))) +
+        coord_cartesian(xlim = c(input$xLLKDE, input$xULKDE), ylim = c(input$yLLKDE,input$yULKDE))
 
         kdeSplit = kdeSplit + 
           facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=scalesXYSwitcher(input$kdeXScale,input$kdeYScale))
@@ -1287,7 +1290,8 @@ server = function(input, output, session) {
         kdeSplitPercentage = ggplot(densityDataToHistoBoxRefined,aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) + geom_density(stat='bin',bins=as.numeric(input$kdeNumOfBinsRefined), alpha=input$kdeTransparency) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
         plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
-        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))) +
+        coord_cartesian(xlim = c(input$xLLKDE, input$xULKDE))
         
         kdeSplitPercentage = kdeSplitPercentage + 
           facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=scalesXYSwitcher(input$kdeXScale,input$kdeYScale))
@@ -1353,6 +1357,9 @@ server = function(input, output, session) {
 
         if (input$boxplotYTransform == "logY") {
           boxplot = boxplot + scale_y_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}),limits=c(yLLBoxplot,yULBoxplot))
+        } else {
+          # allows custom axis (esp. if >max)
+          boxplot = boxplot + scale_y_continuous(limits = c(yLLBoxplot, yULBoxplot), expand = expansion(mult = c(0, 0)))
         }
         
         if (input$boxplotDistribution != "list") {
@@ -1388,7 +1395,8 @@ server = function(input, output, session) {
         violinplot = ggplot(densityDataToHistoBoxRefined,aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_violin(draw_quantiles = c(0.5), width = input$boxplotBoxWidth) +
         plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
-        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))) +
+        scale_y_continuous(limits = c(input$yLLBoxplot, input$yULBoxplot))
         
         scalesVar = if (input$boxplotYScale) "free" else "fixed"
         violinplot = violinplot + 
@@ -1830,7 +1838,7 @@ server = function(input, output, session) {
           ))
         }
         req(nrow(dataForPlotParams) > 0, message = "No available data.")
-        
+
         # calculate X/Y ranges
         if(input$contourCheckbox){ # density plots
           
@@ -1963,13 +1971,17 @@ server = function(input, output, session) {
         if (xULScatter == 0) {xULScatter = xULScatter + 0.00001}
         
         # add log X / log Y
-        scatterPlotStub = scatterPlotStub +
-          {
-            if (input$scatterplotXScale == "logX") scale_x_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}),limits=c(xLLScatter,xULScatter))
-          } +
-          {
-            if (input$scatterplotYScale == "logY") scale_y_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}),limits=c(yLLScatter,yULScatter))
-          }
+        if (input$scatterplotXScale == "logX") {
+            scatterPlotStub = scatterPlotStub + scale_x_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}),limits=c(xLLScatter,xULScatter))
+        } else {
+            scatterPlotStub = scatterPlotStub + scale_x_continuous(limits = c(xLLScatter, xULScatter))
+        }
+
+        if (input$scatterplotYScale == "logY") {
+            scatterPlotStub = scatterPlotStub + scale_y_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}),limits=c(yLLScatter,yULScatter))
+        } else {
+            scatterPlotStub = scatterPlotStub + scale_y_continuous(limits = c(yLLScatter, yULScatter))
+        }
         
         # add Pearson correlation
         scatterPlotStub = scatterPlotStub +
