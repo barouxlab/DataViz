@@ -1057,44 +1057,49 @@ server = function(input, output, session) {
         content = function(file) {
           
             downloadDataStub = reactiveDF$filteredDataset
-            if(input$tabs1Dplots == "Histograms") {
-              downloadDataStub = downloadDataStub %>% 
-                filter(!!sym(input$singleConVariable) >= input$xLLHistogram) %>% 
-                filter(!!sym(input$singleConVariable) <= input$xULHistogram)
-            } else if(input$tabs1Dplots == "Density Plots") {
-              downloadDataStub = downloadDataStub %>% 
-                filter(!!sym(input$singleConVariable) >= input$xLLKDE) %>% 
-                filter(!!sym(input$singleConVariable) <= input$xULKDE)
-            } else if(input$tabs1Dplots %in% c("Boxplots", "Boxplot Stats", "Violin Plots")) {
-              downloadDataStub = downloadDataStub %>% 
-                filter(!!sym(input$singleConVariable) >= input$yLLBoxplot) %>% 
-                filter(!!sym(input$singleConVariable) <= input$yULBoxplot)
-            } 
             
-            normVar = input$normalizationVar
-            if (input$singleConVariable %in% c("Group Intensity Sum", 
-                                               "Group Intensity Mean", 
-                                               paste0("Group Intensity Sum Relative to ",normVar), 
-                                               paste0("Group Intensity Mean Relative to ",normVar),
-                                               "Group Volume",
-                                               paste0("Group Volume Relative to ",normVar),
-                                               "Group Surface Area",
-                                               "Group Surface Area-to-Volume Ratio",
-                                               "Object Count")) {
-              l = sapply(downloadDataStub, class)
-              categoricalVars = sort(names(l[str_which(l,pattern="character")]))
-              categoricalVars = sort(categoricalVars[-which(categoricalVars=="Object ID")])
-              downloadDataStub = downloadDataStub %>% distinct(!!!syms(categoricalVars), .keep_all = TRUE) 
+            if(input$tabs1Dplots %in% c("Boxplot Stats")) {
+              write.csv(boxplot_summary_data(), file, row.names = FALSE)
+            } else {
+              if(input$tabs1Dplots == "Histograms") {
+                downloadDataStub = downloadDataStub %>% 
+                  filter(!!sym(input$singleConVariable) >= input$xLLHistogram) %>% 
+                  filter(!!sym(input$singleConVariable) <= input$xULHistogram)
+              } else if(input$tabs1Dplots == "Density Plots") {
+                downloadDataStub = downloadDataStub %>% 
+                  filter(!!sym(input$singleConVariable) >= input$xLLKDE) %>% 
+                  filter(!!sym(input$singleConVariable) <= input$xULKDE)
+              } else if(input$tabs1Dplots %in% c("Boxplots", "Violin Plots")) {
+                downloadDataStub = downloadDataStub %>% 
+                  filter(!!sym(input$singleConVariable) >= input$yLLBoxplot) %>% 
+                  filter(!!sym(input$singleConVariable) <= input$yULBoxplot)
+              }
               
-              # additionally deduplicate per selection
-              downloadDataStub = downloadDataStub %>% 
-                distinct("Image File","Treatment", "Genotype",!!sym(input$singleConVariable), !!sym(input$catVariableForFill), !!sym(input$catVariableForSplitting), 
-                         .keep_all = TRUE) 
-            }
+              normVar = input$normalizationVar
+              if (input$singleConVariable %in% c("Group Intensity Sum", 
+                                                 "Group Intensity Mean", 
+                                                 paste0("Group Intensity Sum Relative to ",normVar), 
+                                                 paste0("Group Intensity Mean Relative to ",normVar),
+                                                 "Group Volume",
+                                                 paste0("Group Volume Relative to ",normVar),
+                                                 "Group Surface Area",
+                                                 "Group Surface Area-to-Volume Ratio",
+                                                 "Object Count")) {
+                l = sapply(downloadDataStub, class)
+                categoricalVars = sort(names(l[str_which(l,pattern="character")]))
+                categoricalVars = sort(categoricalVars[-which(categoricalVars=="Object ID")])
+                downloadDataStub = downloadDataStub %>% distinct(!!!syms(categoricalVars), .keep_all = TRUE) 
 
-            downloadDataStub = downloadDataStub %>% 
-              select("Image File","Treatment", "Genotype",!!sym(input$singleConVariable), !!sym(input$catVariableForFill), !!sym(input$catVariableForSplitting))
-            write.csv(downloadDataStub, file, row.names = FALSE)
+                # additionally deduplicate per selection
+                downloadDataStub = downloadDataStub %>% 
+                  distinct("Image File","Treatment", "Genotype",!!sym(input$singleConVariable), !!sym(input$catVariableForFill), !!sym(input$catVariableForSplitting), 
+                           .keep_all = TRUE) 
+              }
+
+              downloadDataStub = downloadDataStub %>% 
+                select("Image File","Treatment", "Genotype",!!sym(input$singleConVariable), !!sym(input$catVariableForFill), !!sym(input$catVariableForSplitting))
+              write.csv(downloadDataStub, file, row.names = FALSE)
+            }
         }
     )
     
@@ -1402,49 +1407,53 @@ server = function(input, output, session) {
         violinplotRefined()
         },height=plotHeight)
     
+    # get boxplot summary data
+    boxplot_summary_data <- reactive({
+
+      singleConVariable = input$singleConVariable
+      catVariableForFill = input$catVariableForFill
+      catVariableForSplitting = input$catVariableForSplitting
+      yLLBoxplot = input$yLLBoxplot
+      yULBoxplot = input$yULBoxplot
+
+      g = ggplot_build(boxplotRefined())
+
+      # get stats + mean
+      layerData = layer_data(boxplotRefined()) %>% select(lower,middle,upper,PANEL,group,fill)
+      layerData = layerData %>% mutate(fill = sapply(fill, as.character))
+      boxplot_means_df = as_tibble(g$data[[2]]) %>% select(group,PANEL,"mean"=y,fill)
+      boxplot_means_df = boxplot_means_df %>% mutate(fill = sapply(fill, as.character))
+      layerData = left_join(layerData, boxplot_means_df,by = c("PANEL", "group", "fill")) %>% mutate_if(is.numeric, round, 3)
+
+      # Panel Assignments
+      facet_strip = as_tibble(g$layout$layout)
+      layerData = layerData %>% left_join(facet_strip, by = join_by(PANEL == PANEL))
+
+      # X-Label / Group Assignments
+      color_scale = g$plot$scales$get_scales("fill")
+      legend_labels = color_scale$get_labels()
+      legend_colors = unlist(color_scale$palette(length(legend_labels))[1:length(legend_labels)])
+      legend_info = data.frame(legend_labels,legend_colors,check.names = FALSE)
+      names(legend_info) <- c(catVariableForFill, "fill")
+      layerData = layerData %>% left_join(legend_info, by = join_by(fill == fill))
+
+      # bring count data n()
+      bx_data = applyMinMax(densityDataToHistoBoxRefined(),singleConVariable,yLLBoxplot,yULBoxplot)
+      countData = bx_data %>% group_by(!!sym(catVariableForSplitting),!!sym(catVariableForFill)) %>% summarise(n = n(), .groups="drop")
+      layerData = layerData %>% 
+        left_join(countData, by = c(setNames(catVariableForSplitting,catVariableForSplitting),
+                                    setNames(catVariableForFill,catVariableForFill)))
+
+      # Select then rename the columns
+      boxDataToDisplay = layerData %>% 
+        select(!!sym(catVariableForSplitting),!!sym(catVariableForFill),lower,middle,mean,upper,n) %>% 
+        rename(Lower = lower, Middle = middle, Mean = mean, Upper = upper)
+
+    })
+
     # Create a summary table of values from the boxplot
     output$summaryTableFromBoxplot = renderDataTable({
-
-        singleConVariable = input$singleConVariable
-        catVariableForFill = input$catVariableForFill
-        catVariableForSplitting = input$catVariableForSplitting
-        yLLBoxplot = input$yLLBoxplot
-        yULBoxplot = input$yULBoxplot
-      
-        g = ggplot_build(boxplotRefined())
-        
-        # get stats + mean
-        layerData = layer_data(boxplotRefined()) %>% select(lower,middle,upper,PANEL,group,fill)
-        layerData = layerData %>% mutate(fill = sapply(fill, as.character))
-        boxplot_means_df = as_tibble(g$data[[2]]) %>% select(group,PANEL,"mean"=y,fill)
-        boxplot_means_df = boxplot_means_df %>% mutate(fill = sapply(fill, as.character))
-        layerData = left_join(layerData, boxplot_means_df,by = c("PANEL", "group", "fill")) %>% mutate_if(is.numeric, round, 3)
-
-        # Panel Assignments
-        facet_strip = as_tibble(g$layout$layout)
-        layerData = layerData %>% left_join(facet_strip, by = join_by(PANEL == PANEL)) 
-        
-        # X-Label / Group Assignments
-        color_scale = g$plot$scales$get_scales("fill")
-        legend_labels = color_scale$get_labels()
-        legend_colors = unlist(color_scale$palette(length(legend_labels))[1:length(legend_labels)])
-        legend_info = data.frame(legend_labels,legend_colors,check.names = FALSE)
-        names(legend_info) <- c(catVariableForFill, "fill")
-        layerData = layerData %>% left_join(legend_info, by = join_by(fill == fill))
-        
-        # bring count data n()
-        bx_data = applyMinMax(densityDataToHistoBoxRefined(),singleConVariable,yLLBoxplot,yULBoxplot)
-        countData = bx_data %>% group_by(!!sym(catVariableForSplitting),!!sym(catVariableForFill)) %>% summarise(n = n(), .groups="drop")
-        layerData = layerData %>% 
-          left_join(countData, by = c(setNames(catVariableForSplitting,catVariableForSplitting),
-                                      setNames(catVariableForFill,catVariableForFill)))
-        
-        # Select then rename the columns
-        boxDataToDisplay = layerData %>% 
-          select(!!sym(catVariableForSplitting),!!sym(catVariableForFill),lower,middle,mean,upper,n) %>% 
-          rename(Lower = lower, Middle = middle, Mean = mean, Upper = upper)
-
-        DT::datatable(boxDataToDisplay, extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 2)))
+        DT::datatable(boxplot_summary_data(), extensions = "FixedColumns",plugins = "natural",options = list(scrollX = TRUE, scrollY = "500px", scrollCollapse=TRUE, fixedColumns = list(leftColumns = 2)))
     })
     
     # calculate Kruskall-Wallis test
