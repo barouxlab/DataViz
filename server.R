@@ -1001,7 +1001,7 @@ server = function(input, output, session) {
     # updates Filtering/Binning Tab Channel selection
     observe({
       if ("Channel" %in% names(reactiveDF$filteredDataset)) {
-        updateSelectInput(session, "filterChOI", choices = c("All", sort(unique(reactiveDF$filteredDataset %>% pull(`Channel`)))),selected=input$filterChOI)
+        updateSelectInput(session, "filterChOI", choices = c("All", sort(unique(reactiveDF$filteredDataset %>% pull(`Channel`)))),selected="All")
       }
     })
     
