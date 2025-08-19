@@ -1393,9 +1393,14 @@ server = function(input, output, session) {
 
         if (input$boxplotYTransform == "logY") {
           boxplot = boxplot + scale_y_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}),limits=c(yLLBoxplot,yULBoxplot))
-        } else {
-          # allows custom axis (esp. if >max)
-          boxplot = boxplot + scale_y_continuous(limits = c(yLLBoxplot, yULBoxplot), expand = expansion(mult = c(0, 0)))
+        }
+
+        ylims <- if (!scalesVar %in% c("free")) {
+          c(yLLBoxplot, yULBoxplot)
+        } else NULL
+
+        if (!is.null(ylims)) {
+          boxplot = boxplot + coord_cartesian(ylim = ylims)
         }
         
         if (input$boxplotDistribution != "list") {
@@ -1431,12 +1436,19 @@ server = function(input, output, session) {
         violinplot = ggplot(densityDataToHistoBoxRefined,aes(y=!!sym(input$singleConVariable),x=!!sym(input$catVariableForFill),fill=!!sym(input$catVariableForFill))) + geom_violin(draw_quantiles = c(0.5), width = input$boxplotBoxWidth) +
         plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
-        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))) +
-        scale_y_continuous(limits = c(input$yLLBoxplot, input$yULBoxplot))
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         
         scalesVar = if (input$boxplotYScale) "free" else "fixed"
         violinplot = violinplot + 
             facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=scalesVar)
+
+        ylims <- if (!scalesVar %in% c("free")) {
+          c(input$yLLBoxplot, input$yULBoxplot)
+        } else NULL
+
+        if (!is.null(ylims)) {
+          violinplot = violinplot + coord_cartesian(ylim = ylims)
+        }
 
         if (input$kruskallwallisCheckbox) {
           kruskal_results = calculateKWTest(densityDataToHistoBoxRefined, input$singleConVariable, input$catVariableForFill, input$catVariableForSplitting)
@@ -2009,14 +2021,23 @@ server = function(input, output, session) {
         # add log X / log Y
         if (input$scatterplotXScale == "logX") {
             scatterPlotStub = scatterPlotStub + scale_x_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}),limits=c(xLLScatter,xULScatter))
-        } else {
-            scatterPlotStub = scatterPlotStub + scale_x_continuous(limits = c(xLLScatter, xULScatter))
         }
 
         if (input$scatterplotYScale == "logY") {
             scatterPlotStub = scatterPlotStub + scale_y_continuous(trans = scales::log_trans(),labels = scales::label_math(e^.x, format = function(x){scales::number(log(x), accuracy = 0.1)}),limits=c(yLLScatter,yULScatter))
-        } else {
-            scatterPlotStub = scatterPlotStub + scale_y_continuous(limits = c(yLLScatter, yULScatter))
+        }
+
+        # apply custom X / Y
+        xlims <- if (!scalesVar %in% c("free", "free_x")) {
+          c(xLLScatter, xULScatter)
+        } else NULL
+
+        ylims <- if (!scalesVar %in% c("free", "free_y")) {
+          c(yLLScatter,yULScatter)
+        } else NULL
+
+        if (!is.null(xlims) || !is.null(ylims)) {
+          scatterPlotStub = scatterPlotStub + coord_cartesian(xlim = xlims, ylim = ylims)
         }
         
         # add Pearson correlation
