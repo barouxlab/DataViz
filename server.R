@@ -1214,11 +1214,19 @@ server = function(input, output, session) {
         geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Count") +
         plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
-        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))) +
-        coord_cartesian(xlim = c(input$xLLHistogram, input$xULHistogram))
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         
+        facet_scales = scalesXYSwitcher(input$histoXAutoScale,input$histoYAutoScale)
         histogramCount = histogramCount +
-          facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=scalesXYSwitcher(input$histoXAutoScale,input$histoYAutoScale))
+          facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=facet_scales)
+
+        xlims <- if (!facet_scales %in% c("free", "free_x")) {
+          c(input$xLLHistogram, input$xULHistogram)
+        } else NULL
+
+        if (!is.null(xlims)) {
+          histogramCount = histogramCount + coord_cartesian(xlim = xlims)
+        }
 
         if (input$kruskallwallisCheckbox) {
           kruskal_results = calculateKWTest(densityDataToHistoBoxRefined, input$singleConVariable, input$catVariableForFill, input$catVariableForSplitting)
@@ -1240,11 +1248,19 @@ server = function(input, output, session) {
         geom_histogram(bins=as.numeric(input$numOfBinsRefined)) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
         plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
-        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))) +
-        coord_cartesian(xlim = c(input$xLLHistogram, input$xULHistogram))
-        
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
+
+        facet_scales = scalesXYSwitcher(input$histoXAutoScale,input$histoYAutoScale)
         histogramPercentage = histogramPercentage +
-          facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=scalesXYSwitcher(input$histoXAutoScale,input$histoYAutoScale))
+          facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=facet_scales)
+
+        xlims <- if (!facet_scales %in% c("free", "free_x")) {
+          c(input$xLLHistogram, input$xULHistogram)
+        } else NULL
+
+        if (!is.null(xlims)) {
+          histogramPercentage = histogramPercentage + coord_cartesian(xlim = xlims)
+        }
 
         if (input$kruskallwallisCheckbox) {
           kruskal_results = calculateKWTest(densityDataToHistoBoxRefined, input$singleConVariable, input$catVariableForFill, input$catVariableForSplitting)
@@ -1265,12 +1281,24 @@ server = function(input, output, session) {
         kdeSplit = ggplot(densityDataToHistoBoxRefined,aes(x=!!sym(input$singleConVariable),fill=!!sym(input$catVariableForFill))) + geom_density(adjust=input$kdeAdjust, alpha=input$kdeTransparency) + ylab("Density") +
         plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
-        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))) +
-        coord_cartesian(xlim = c(input$xLLKDE, input$xULKDE), ylim = c(input$yLLKDE,input$yULKDE))
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
 
+        facet_scales = scalesXYSwitcher(input$kdeXScale, input$kdeYScale)
         kdeSplit = kdeSplit + 
-          facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=scalesXYSwitcher(input$kdeXScale,input$kdeYScale))
-        
+          facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=facet_scales)
+
+        xlims <- if (!facet_scales %in% c("free", "free_x")) {
+          c(input$xLLKDE, input$xULKDE)
+        } else NULL
+
+        ylims <- if (!facet_scales %in% c("free", "free_y")) {
+          c(input$yLLKDE,input$yULKDE)
+        } else NULL
+
+        if (!is.null(xlims) || !is.null(ylims)) {
+          kdeSplit = kdeSplit + coord_cartesian(xlim = xlims, ylim = ylims)
+        }
+
         if (input$kruskallwallisCheckbox) {
           kruskal_results = calculateKWTest(densityDataToHistoBoxRefined, input$singleConVariable, input$catVariableForFill, input$catVariableForSplitting)
           kdeSplit = addKWToFacetTitle(kruskal_results, kdeSplit, input$catVariableForSplitting)
@@ -1290,12 +1318,20 @@ server = function(input, output, session) {
         kdeSplitPercentage = ggplot(densityDataToHistoBoxRefined,aes(x=!!sym(input$singleConVariable),y=stat(count)/sum(stat(count)),fill=!!sym(input$catVariableForFill))) + geom_density(stat='bin',bins=as.numeric(input$kdeNumOfBinsRefined), alpha=input$kdeTransparency) + ylab("Percent") + scale_y_continuous(labels=scales::percent) +
         plotTheme() + scale_fill_manual(values=lapply(listOfColors,function(x){str_replace_all(x," ", "")})) + 
         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
-        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))) +
-        coord_cartesian(xlim = c(input$xLLKDE, input$xULKDE))
+        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)))
         
+        facet_scales = scalesXYSwitcher(input$kdeXScale, input$kdeYScale)
         kdeSplitPercentage = kdeSplitPercentage + 
-          facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=scalesXYSwitcher(input$kdeXScale,input$kdeYScale))
-        
+          facet_wrap(paste("~", paste("`",input$catVariableForSplitting,"`",sep="")),ncol=input$numColumns,drop=FALSE,scales=facet_scales)
+
+        xlims <- if (!facet_scales %in% c("free", "free_x")) {
+          c(input$xLLKDE, input$xULKDE)
+        } else NULL
+
+        if (!is.null(xlims)) {
+          kdeSplitPercentage = kdeSplitPercentage + coord_cartesian(xlim = xlims)
+        }
+
         if (input$kruskallwallisCheckbox) {
           kruskal_results = calculateKWTest(densityDataToHistoBoxRefined, input$singleConVariable, input$catVariableForFill, input$catVariableForSplitting)
           kdeSplitPercentage = addKWToFacetTitle(kruskal_results, kdeSplitPercentage, input$catVariableForSplitting)
