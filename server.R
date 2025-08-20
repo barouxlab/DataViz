@@ -54,7 +54,8 @@ server = function(input, output, session) {
         }
         dataToCheck = inputtedDataToReturn
         # enforce order of columns
-        dataToCheck <- dataToCheck %>% select("Genotype", "Treatment", `Image File`, "Category", "Object", "Channel", `Object ID`, everything())
+        dataToCheck = dataToCheck %>% select("Genotype", "Treatment", `Image File`, "Category", "Object", "Channel", `Object ID`, everything())
+        dataToCheck = dataToCheck %>% distinct()
         return(dataToCheck)
     })
     
